@@ -1,0 +1,602 @@
+<x-app-layout>
+    <!-- main section start-->
+    <main>
+        <!-- breadcrumb start -->
+        <section class="breadcrumb-area">
+            <div class="container">
+                <div class="col">
+                    <div class="row">
+                        <div class="breadcrumb-index">
+                            <!-- breadcrumb-list start -->
+                            <ul class="breadcrumb-ul">
+                                <li class="breadcrumb-li">
+                                    <a class="breadcrumb-link" href="{{ route('home') }}">Inicio</a>
+                                </li>
+                                <li class="breadcrumb-li">
+                                    <span class="breadcrumb-text">Cámara 360</span>
+                                </li>
+                            </ul>
+                            <!-- breadcrumb-list end -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- breadcrumb end -->
+        <!-- pro-detail-page-tab start -->
+        <section class="product-details-page pro-style4 bg-color section-pt">
+            <div class="container">
+                <div class="row">
+                    <div class="col">
+                        <div class="pro-details-pos pro-details-left-pos">
+                            <!-- Product slider start -->
+                            <div class="product-detail-slider product-details-lr product-details product-details-sticky">
+                                <!-- Product slider start -->
+                                <div class="product-detail-img product-detail-img-left">
+                                    <div class="product-img-top">
+                                        <button class="full-view"><i class="bi bi-arrows-fullscreen"></i></button>
+                                        <!-- blog slick slider start -->
+                                        <div class="style4-slider-big slick-slider">
+                                            @foreach ($product->images as $image)
+                                            <div class="slick-slide">
+                                                <a href="{{ Storage::url($image) }}" class="product-single">
+                                                    <figure class="zoom" onmousemove="zoom(event)" style="background-image: url('{{ Storage::url($image) }}');">
+                                                        <img src="{{ Storage::url($image) }}" class="img-fluid" alt="{{ $product->name }}">
+                                                    </figure>
+                                                </a>
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <!-- blog slick slider end -->
+                                    <!-- small slick-slider start -->
+                                    <div class="pro-slider">
+                                        <div class="style4-slider-small pro-detail-slider">
+                                            @foreach ($product->images as $image)
+                                            <div class="slick-slide">
+                                                <a href="javascript:void(0)" class="product-single--thumbnail">
+                                                    <img src="{{ Storage::url($image) }}" class="img-fluid" alt="{{ $product->name }}">
+                                                </a>
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <!-- small slick-slider end -->
+                                </div>
+                                <!-- Product slider end -->
+                            </div>
+                            <!-- peoduct detail start -->
+                            <div class="product-details-wrap product-details-lr product-details">
+                                <div class="product-details-info">
+                                    <div class="pro-nprist">
+                                        <div class="product-info">
+                                            <!-- product-title start -->
+                                            <div class="product-title">
+                                                <h2>{{ $product->name }}</h2>
+                                            </div>
+                                            <!-- product-title end -->
+                                        </div>
+                                        <div class="product-info">
+                                            <!-- product-rating start -->
+                                            <div class="product-ratting">
+                                                <span class="pro-ratting">
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star-half-alt"></i>
+                                                </span>
+                                                <span class="spr-badge-caption">Sin reseñas</span>
+                                            </div>
+                                            <!-- product-rating end -->
+                                        </div>
+                                        <div class="product-info">
+                                            <div class="pro-prlb pro-sale">
+                                                <div class="price-box">
+                                                    <span class="new-price">${{ number_format($product->price, 2) }} </span>
+                                                    @if ($product->sale_price && $product->sale_price < $product->price)
+                                                        <span class="old-price">${{ number_format($product->sale_price, 2) }} </span>
+                                                        @php
+                                                            $discountPercentage = (($product->price - $product->sale_price) / $product->price) * 100;
+                                                        @endphp
+                                                        <span class="percent-count">{{ round($discountPercentage) }}%</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="product-info">
+                                            <div class="product-inventory">
+                                                @if ($product->stock > 0)
+                                                    <div class="stock-inventory stock-more">
+                                                        <p class="text-success">¡Date prisa! ¡Solo quedan
+                                                            <span class="available-stock bg-success">{{ $product->stock }}</span>
+                                                            productos en stock!
+                                                        </p>
+                                                    </div>
+                                                    <div class="product-variant">
+                                                        <h6>Disponibilidad:</h6>
+                                                        <span class="stock-qty in-stock text-success">
+                                                            <span>En stock<i class="bi bi-check2"></i></span>
+                                                        </span>
+                                                    </div>
+                                                @else
+                                                    <div class="stock-inventory stock-zero">
+                                                        <p class="text-danger">¡Desafortunadamente, el producto está
+                                                            <span class="available-stock bg-danger">Agotado</span>!
+                                                        </p>
+                                                    </div>
+                                                    <div class="product-variant">
+                                                        <h6>Disponibilidad:</h6>
+                                                        <span class="stock-qty out-stock text-danger">
+                                                            <span>Agotado</span>
+                                                        </span>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <div class="product-info">
+                                            <div class="pro-detail-action">
+                                                <form method="get" class="cart">
+                                                    <div class="product-variant-option">
+                                                        <div class="swatch-variant">
+                                                                                                                        @if ($product->colors)
+                                                                                                                        <div class="swatch clearfix Color">
+                                                                                                                            <div class="header">
+                                                                                                                                <h6>
+                                                                                                                                <span>Color:</span>
+                                                                                                                                <span class="data-value">{{ $product->colors[0] ?? '' }}</span>
+                                                                                                                                </h6>
+                                                                                                                            </div>
+                                                                                                                            <div class="variant-wrap">
+                                                                                                                                <div class="variant-property">
+                                                                                                                                    @foreach ($product->colors as $color)
+                                                                                                                                    <div class="swatch-element color {{ ucfirst($color) }}">
+                                                                                                                                        <input type="radio" name="option-0" value="{{ $color }}" {{ $loop->first ? 'checked' : '' }}>
+                                                                                                                                        <label>{{ ucfirst($color) }}</label>
+                                                                                                                                    </div>
+                                                                                                                                    @endforeach
+                                                                                                                                </div>
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                        @endif                                                            </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        <div class="product-info">
+                                            <form method="post" class="cart">
+                                                <div class="pro-detail-button">
+                                                    <div class="product-quantity-button">
+                                                        <div class="product-quantity-action">
+                                                            <h6>Cantidad:</h6>
+                                                            <div class="product-quantity">
+                                                                <div class="cart-plus-minus">
+                                                                    <button class="dec qtybutton minus"><i class="feather-minus"></i></button>
+                                                                    <input type="text" name="quantity" value="1">
+                                                                    <button class="inc qtybutton plus"><i class="feather-plus"></i></button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <button type="button" onclick="location.href='{{ route('cart.index') }}'" class="btn add-to-cart ajax-spin-cart">
+                                                        <span class="cart-title">Añadir al carrito</span>
+                                                        </button>
+                                                    </div>
+                                                    <a href="{{ route('cart.empty') }}" class="btn btn-cart btn-theme">
+                                                        <span>Comprar ahora</span>
+                                                    </a>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        <div class="product-info">
+                                            <div class="product-actions">
+                                                <!-- pro-deatail wishlist start -->
+                                                <div class="pro-aff-che">
+                                                    <a href="{{ route('wishlist.index') }}" class="wishlist">
+                                                        <span class="wishlist-icon action-wishlist tile-actions--btn wishlist-btn">
+                                                            <span class="add-wishlist"><i class="bi bi-heart"></i></span>
+                                                        </span>
+                                                        <span class="wishlist-text">Lista de deseos</span>
+                                                    </a>
+                                                </div>
+                                                <!-- pro-deatail wishlist end -->
+                                            </div>
+                                        </div>
+                                        <div class="product-info">
+                                            <div class="form-group">
+                                                <a href="#deliver-modal" data-bs-toggle="modal">Entrega y devolución</a>
+                                                <a href="#que-modal" data-bs-toggle="modal">Hacer una pregunta</a>
+                                            </div>
+                                        </div>
+                                        <div class="modal fade deliver-modal" id="deliver-modal" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <div class="modal-body">
+                                                        <button type="button" class="pop-close" data-bs-dismiss="modal" aria-label="Close"><i class="feather-x"></i></button>
+                                                        <div class="delivery-block">
+                                                            <div class="space-block">
+                                                                <h4>Entrega</h4>
+                                                                <p>Todos los pedidos se envían con UPS Express.</p>
+                                                                <p>Envío siempre gratuito para pedidos superiores a 250 USD.</p>
+                                                                <p>Todos los pedidos se envían con un número de seguimiento de UPS.</p>
+                                                            </div>
+                                                            <div class="space-block">
+                                                                <h4>Devoluciones</h4>
+                                                                <p>Los artículos devueltos dentro de los 14 días posteriores a su fecha de envío original en las mismas condiciones que nuevos serán elegibles para un reembolso completo o crédito de la tienda.</p>
+                                                                <p>Los reembolsos se cargarán a la forma de pago original utilizada para la compra.</p>
+                                                                <p>El cliente es responsable de los gastos de envío al realizar devoluciones y los gastos de envío/manipulación de la compra original no son reembolsables.</p>
+                                                                <p>Todos los artículos en oferta son compras finales.</p>
+                                                            </div>
+                                                            <div class="space-block">
+                                                                <h4>Ayuda</h4>
+                                                                <p>Contáctanos si tienes alguna otra pregunta y/o inquietud.</p>
+                                                                <p>Correo electrónico:<a href="mailto:contact@domain.com">demo@gmail.com</a></p>
+                                                                <p>Teléfono:<a href="tel:+1(23)456789">+1 (23) 456 789</a></p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal fade que-modal" id="que-modal" aria-modal="true" tabindex="-1" role="dialog">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <div class="modal-body">
+                                                        <button type="button" class="pop-close" data-bs-dismiss="modal" aria-label="Close"><i
+                                                        class="feather-x"></i></button>
+                                                        <div class="product-form-list">
+                                                            <div class="single-product-wrap">
+                                                                <div class="product-image">
+                                                                    <a class="pro-img" href="{{ route('collection.index') }}">
+                                                                        <img class="img-fluid img1 resp-img1" src="{{ asset('img/product/home1-pro-5.jpg') }}"
+                                                                        alt="p-1">
+                                                                        <img class="img-fluid img2 resp-img2" src="{{ asset('img/product/home1-pro-6.jpg') }}"
+                                                                        alt="p-2">
+                                                                    </a>
+                                                                </div>
+                                                                <div class="product-content">
+                                                                    <div class="pro-title-price">
+                                                                        <h6><a href="{{ route('product.show', ['slug' => 'air-conditioner']) }}">Air conditioner</a></h6>
+                                                                        <div class="product-price">
+                                                                            <div class="price-box">
+                                                                                <span class="new-price">$61.00</span>
+                                                                                <span class="old-price">$54.00</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="ask-form">
+                                                            <h6>Hacer una pregunta</h6>
+                                                            <form method="post" class="contact-form">
+                                                                <input type="hidden" name="contact[product url]" value="">
+                                                                <div class="form-grp">
+                                                                    <input type="text" name="contact[name]" required="" placeholder="Tu nombre*">
+                                                                    <input type="text" name="contact[phone]" placeholder="Tu número de teléfono">
+                                                                    <input type="email" name="contact[email]" required="" placeholder="Tu correo electrónico*">
+                                                                    <textarea name="contact[question]" rows="4" required=""
+                                                                    placeholder="Tu mensaje*"></textarea>
+                                                                    <p>* Campos obligatorios</p>
+                                                                    <button type="submit" class="btn-style2">Enviar ahora</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="product-info">
+                                            <p><span>🚚</span> {{ $product->delivery_date_message ?? 'El artículo será entregado el o antes del' }} <span id="ten-days-ahead">{{ now()->addDays(10)->format('M j Y') }}</span></p>
+                                        </div>
+                                        <div class="product-info">
+                                            <div class="product-sku">
+                                                <h6>SKU:</h6>
+                                                <span class="variant-sku">{{ $product->sku }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="product-info">
+                                            <div class="share-icons">
+                                                <h6>Compartir:</h6>
+                                                <div class="pro-social">
+                                                    <ul class="social-icon">
+                                                        <li class="facebook">
+                                                            <a href="https://facebook.com"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path d="M80 299.3V512H196V299.3h86.5l18-97.8H196V166.9c0-51.7 20.3-71.5 72.7-71.5c16.3 0 29.4 .4 37 1.2V7.9C291.4 4 256.4 0 236.2 0C129.3 0 80 50.5 80 159.4v42.1H14v97.8H80z"></path></svg></a>
+                                                        </li>
+                                                        <li class="twitter">
+                                                            <a href="https://twitter.com"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z"></path></svg></a>
+                                                        </li>
+                                                        <li class="pinterest">
+                                                            <a href="https://pinterest.com"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M204 6.5C101.4 6.5 0 74.9 0 185.6 0 256 39.6 296 63.6 296c9.9 0 15.6-27.6 15.6-35.4 0-9.3-23.7-29.1-23.7-67.8 0-80.4 61.2-137.4 140.4-137.4 68.1 0 118.5 38.7 118.5 109.8 0 53.1-21.3 152.7-90.3 152.7-24.9 0-46.2-18-46.2-43.8 0-37.8 26.4-74.4 26.4-113.4 0-66.2-93.9-54.2-93.9 25.8 0 16.8 2.1 35.4 9.6 50.7-13.8 59.4-42 147.9-42 209.1 0 18.9 2.7 37.5 4.5 56.4 3.4 3.8 1.7 3.4 6.9 1.5 50.4-69 48.6-82.5 71.4-172.8 12.3 23.4 44.1 36 69.3 36 106.2 0 153.9-103.5 153.9-196.8C384 71.3 298.2 6.5 204 6.5z"></path></svg></a>
+                                                        </li>
+                                                        <li class="instagram">
+                                                            <a href="https://instagram.com"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"></path></svg></a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="product-info">
+                                            <div class="product-payment-image">
+                                                <ul class="payment-icon">
+                                                    <li>
+                                                        <a href="{{ route('home') }}"><svg viewBox="0 0 38 24" xmlns="http://www.w3.org/2000/svg" role="img" width="38" height="24"><title id="visa">Visa</title><path opacity=".07" d="M35 0H3C1.3 0 0 1.3 0 3v18c0 1.7 1.4 3 3 3h32c1.7 0 3-1.3 3-3V3c0-1.7-1.4-3-3-3z"></path><path fill="#fff" d="M35 1c1.1 0 2 .9 2 2v18c0 1.1-.9 2-2 2H3c-1.1 0-2-.9-2-2V3c0-1.1.9-2 2-2h32"></path><path d="M28.3 10.1H28c-.4 1-.7 1.5-1 3h1.9c-.3-1.5-.3-2.2-.6-3zm2.9 5.9h-1.7c-.1 0-.1 0-.2-.1l-.2-.9-.1-.2h-2.4c-.1 0-.2 0-.2.2l-.3.9c0 .1-.1.1-.1.1h-2.1l.2-.5L27 8.7c0-.5.3-.7.8-.7h1.5c.1 0 .2 0 .2.2l1.4 6.5c.1.4.2.7.2 1.1.1.1.1.1.1.2zm-13.4-.3l.4-1.8c.1 0 .2.1.2.1.7.3 1.4.5 2.1.4.2 0 .5-.1.7-.2.5-.2.5-.7.1-1.1-.2-.2-.5-.3-.8-.5-.4-.2-.8-.4-1.1-.7-1.2-1-.8-2.4-.1-3.1.6-.4.9-.8 1.7-.8 1.2 0 2.5 0 3.1.2h.1c-.1.6-.2 1.1-.4 1.7-.5-.2-1-.4-1.5-.4-.3 0-.6 0-.9.1-.2 0-.3.1-.4.2-.2.2-.2.5 0 .7l.5.4c.4.2.8.4 1.1.6.5.3 1 .8 1.1 1.4.2.9-.1 1.7-.9 2.3-.5.4-.7.6-1.4.6-1.4 0-2.5.1-3.4-.2-.1.2-.1.2-.2.1zm-3.5.3c.1-.7.1-.7.2-1 .5-2.2 1-4.5 1.4-6.7.1-.2.1-.3.3-.3H18c-.2 1.2-.4 2.1-.7 3.2-.3 1.5-.6 3-1 4.5 0 .2-.1.2-.3.2M5 8.2c0-.1.2-.2.3-.2h3.4c.5 0 .9.3 1 .8l.9 4.4c0 .1 0 .1.1.2 0-.1.1-.1.1-.1l2.1-5.1c-.1-.1 0-.2.1-.2h2.1c0 .1 0 .1-.1.2l-3.1 7.3c-.1.2-.1.3-.2.4-.1.1-.3 0-.5 0H9.7c-.1 0-.2 0-.2-.2L7.9 9.5c-.2-.2-.5-.5-.9-.6-.6-.3-1.7-.5-1.9-.5L5 8.2z" fill="#142688"></path></svg></a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="{{ route('home') }}"><svg viewBox="0 0 38 24" xmlns="http://www.w3.org/2000/svg" role="img" width="38" height="24"><title id="master">Mastercard</title><path opacity=".07" d="M35 0H3C1.3 0 0 1.3 0 3v18c0 1.7 1.4 3 3 3h32c1.7 0 3-1.3 3-3V3c0-1.7-1.4-3-3-3z"></path><path fill="#fff" d="M35 1c1.1 0 2 .9 2 2v18c0 1.1-.9 2-2 2H3c-1.1 0-2-.9-2-2V3c0-1.1.9-2 2-2h32"></path><circle fill="#EB001B" cx="15" cy="12" r="7"></circle><circle fill="#F79E1B" cx="23" cy="12" r="7"></circle><path fill="#FF5F00" d="M22 12c0-2.4-1.2-4.5-3-5.7-1.8 1.3-3 3.4-3 5.7s1.2 4.5 3 5.7c1.8-1.2 3-3.3 3-5.7z"></path></svg></a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="{{ route('home') }}"><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 38 24" width="38" height="24"><title id="american-express">American Express</title><path fill="#000" d="M35 0H3C1.3 0 0 1.3 0 3v18c0 1.7 1.4 3 3 3h32c1.7 0 3-1.3 3-3V3c0-1.7-1.4-3-3-3Z" opacity=".07"></path><path fill="#006FCF" d="M35 1c1.1 0 2 .9 2 2v18c0 1.1-.9 2-2 2H3c-1.1 0-2-.9-2-2V3c0-1.1.9-2 2-2h32Z"></path><path fill="#FFF" d="M22.012 19.936v-8.421L37 11.528v2.326l-1.732 1.852L37 17.573v2.375h-2.766l-1.47-1.622-1.46 1.628-9.292-.02Z"></path><path fill="#006FCF" d="M23.013 19.012v-6.57h5.572v1.513h-3.768v1.028h3.678v1.488h-3.678v1.01h3.768v1.531h-5.572Z"></path><path fill="#006FCF" d="m28.557 19.012 3.083-3.289-3.083-3.282h2.386l1.884 2.083 1.89-2.082H37v.051l-3.017 3.23L37 18.92v.093h-2.307l-1.917-2.103-1.898 2.104h-2.321Z"></path><path fill="#FFF" d="M22.71 4.04h3.614l1.269 2.881V4.04h4.46l.77 2.159.771-2.159H37v8.421H19l3.71-8.421Z"></path><path fill="#006FCF" d="m23.395 4.955-2.916 6.566h2l.55-1.315h2.98l.55 1.315h2.05l-2.904-6.566h-2.31Zm.25 3.777.875-2.09.873 2.09h-1.748Z"></path><path fill="#006FCF" d="M28.581 11.52V4.953l2.811.01L32.84 9l1.456-4.046H37v6.565l-1.74.016v-4.51l-1.644 4.494h-1.59L30.35 7.01v4.51h-1.768Z"></path></svg></a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="{{ route('home') }}"><svg viewBox="0 0 38 24" xmlns="http://www.w3.org/2000/svg" width="38" height="24" role="img"><title id="paypal">PayPal</title><path opacity=".07" d="M35 0H3C1.3 0 0 1.3 0 3v18c0 1.7 1.4 3 3 3h32c1.7 0 3-1.3 3-3V3c0-1.7-1.4-3-3-3z"></path><path fill="#fff" d="M35 1c1.1 0 2 .9 2 2v18c0 1.1-.9 2-2 2H3c-1.1 0-2-.9-2-2V3c0-1.1.9-2 2-2h32"></path><path fill="#003087" d="M23.9 8.3c.2-1 0-1.7-.6-2.3-.6-.7-1.7-1-3.1-1h-4.1c-.3 0-.5.2-.6.5L14 15.6c0 .2.1.4.3.4H17l.4-3.4 1.8-2.2 4.7-2.1z"></path><path fill="#3086C8" d="M23.9 8.3l-.2.2c-.5 2.8-2.2 3.8-4.6 3.8H18c-.3 0-.5.2-.6.5l-.6 3.9-.2 1c0 .2.1.4.3.4H19c.3 0 .5-.2.5-.4v-.1l.4-2.4v-.1c0-.2.3-.4.5-.4h.3c2.1 0 3.7-.8 4.1-3.2.2-1 .1-1.8-.4-2.4-.1-.5-.3-.7-.5-.8z"></path><path fill="#012169" d="M23.3 8.1c-.1-.1-.2-.1-.3-.1-.1 0-.2 0-.3-.1-.3-.1-.7-.1-1.1-.1h-3c-.1 0-.2 0-.2.1-.2.1-.3.2-.3.4l-.7 4.4v.1c0-.3.3-.5.6-.5h1.3c2.5 0 4.1-1 4.6-3.8v-.2c-.1-.1-.3-.2-.5-.2h-.1z"></path></svg></a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <section class="product-description-tab">
+                                    <div class="product-tab" id="collapse-tab">
+                                        <div class="tab">
+                                            <a href="#collapse-description" class="tab-title collapsed" data-bs-toggle="collapse" aria-expanded="true" >
+                                                <h6 class="tab-name">Descripción</h6>
+                                                <span class="tab-icon"><i class="bi bi-plus"></i></span>
+                                            </a>
+                                            <div class="collapse show" id="collapse-description" data-bs-parent="#collapse-tab">
+                                                <div class="product-description">
+                                                    {!! $product->description !!}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tab">
+                                            <a href="#collapse-additional-info" class="tab-title collapsed" data-bs-toggle="collapse">
+                                                <h6 class="tab-name">Información adicional</h6>
+                                                <span class="tab-icon"><i class="bi bi-plus"></i></span>
+                                            </a>
+                                            <div class="collapse" id="collapse-additional-info" data-bs-parent="#collapse-tab">
+                                                <div class="product-additional-info">
+                                                    <table>
+                                                        <tbody>
+                                                            <tr class="product-info">
+                                                                <th>Vendedor</th>
+                                                                <td>{{ $product->vendor }}</td>
+                                                            </tr>
+                                                            <tr class="product-info">
+                                                                <th>Tipo</th>
+                                                                <td>{{ $product->type }}</td>
+                                                            </tr>
+                                                            @if ($product->additional_info)
+                                                                @foreach ($product->additional_info as $key => $value)
+                                                                    <tr class="product-info">
+                                                                        <th>{{ $key }}</th>
+                                                                        <td>{{ $value }}</td>
+                                                                    </tr>
+                                                                @endforeach
+                                                            @endif
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tab">
+                                            <a href="#collapse-other-content" class="tab-title collapsed" data-bs-toggle="collapse">
+                                                <h6 class="tab-name">Otro contenido</h6>
+                                                <span class="tab-icon"><i class="bi bi-plus"></i></span>
+                                            </a>
+                                            <div class="collapse" id="collapse-other-content" data-bs-parent="#collapse-tab">
+                                                <div class="product-custom-content">
+                                                    {!! $product->other_content !!}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tab">
+                                            <a href="#collapse-reviews" class="tab-title collapsed" data-bs-toggle="collapse">
+                                                <h6 class="tab-name">Reseñas</h6>
+                                                <span class="tab-icon"><i class="bi bi-plus"></i></span>
+                                            </a>
+                                            <div class="collapse" id="collapse-reviews" data-bs-parent="#collapse-tab">
+                                                <div id="product-reviews">
+                                                    <div class="spr-container">
+                                                        <div class="spr-header">
+                                                            <h2 class="spr-header-title">Opiniones de clientes</h2>
+                                                            <div class="spr-summary rte">
+                                                                <span class="spr-summary-caption">
+                                                                    <span class="spr-summary-caption">Aún no hay reseñas</span>
+                                                                </span>
+                                                                <span class="spr-summary-actions">
+                                                                    <a href="#add-review" data-bs-toggle="collapse" class="spr-summary-actions-newreview">Escribir una reseña</a>
+                                                                </span>
+                                                            </div>
+                                                            <!-- product-rating end -->
+                                                        </div>
+                                                        <div class="spr-content">
+                                                            <!-- spar-from start -->
+                                                            <div class="spr-form collapse" id="add-review">
+                                                                <form method="post" class="new-review-form">
+                                                                    <h3 class="spr-form-title">Escribir una reseña</h3>
+                                                                    <fieldset class="spr-form-contact">
+                                                                        <div class="spr-form-contact-name">
+                                                                            <label class="spr-form-label">Nombre</label>
+                                                                            <input type="text" name="q" class="spr-form-input spr-form-input-text " placeholder="Enter your name">
+                                                                        </div>
+                                                                        <div class="spr-form-contact-email">
+                                                                            <label class="spr-form-label">Dirección de correo electrónico</label>
+                                                                            <input type="email" name="q" class="spr-form-input spr-form-input-email" placeholder="john.smith@example.com">
+                                                                        </div>
+                                                                    </fieldset>
+                                                                    <fieldset class="spr-form-review">
+                                                                        <div class="spr-form-review-rating">
+                                                                            <label class="spr-form-label">Calificación</label>
+                                                                            <div class="product-ratting">
+                                                                                <span class="pro-ratting">
+                                                                                    <i class="fas fa-star"></i>
+                                                                                    <i class="fas fa-star"></i>
+                                                                                    <i class="fas fa-star"></i>
+                                                                                    <i class="fas fa-star"></i>
+                                                                                    <i class="fas fa-star-half-alt"></i>
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="spr-form-review-title">
+                                                                            <label class="spr-form-label">Título de la reseña</label>
+                                                                            <input type="text" name="q" class="spr-form-input spr-form-input-text " placeholder="Dale un título a tu reseña">
+                                                                        </div>
+                                                                        <div class="spr-form-review-body">
+                                                                            <label class="spr-form-label">Cuerpo de la reseña
+                                                                                <span>
+                                                                                    <span class="spr-form-review-body-charactersremaining">(1500)</span>
+                                                                                </span>
+                                                                            </label>
+                                                                            <div class="spr-form-input">
+                                                                                <textarea class="spr-form-input spr-form-input-textarea" placeholder="Escribe tus comentarios aquí" rows="10"></textarea>
+                                                                            </div>
+                                                                        </div>
+                                                                    </fieldset>
+                                                                    <fieldset class="spr-form-actions">
+                                                                        <input type="submit" name="q" class="spr-button spr-button-primary button button-primary btn btn-primary" value="Enviar reseña">
+                                                                    </fieldset>
+                                                                </form>
+                                                            </div>
+                                                            <!-- spar-from end -->
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                            <!-- peoduct detail end -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="col">
+                        <div class="video section-pt">
+                            <div class="video-wrapper">
+                                @if ($product->video_url)
+                                <iframe src="{{ $product->video_url }}" allowfullscreen></iframe>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- pro-detail-page-tab end -->
+        <!-- product-tranding start -->
+        <section class="Trending-product bg-color section-ptb">
+            <div class="collection-category">
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <div class="section-capture">
+                                <div class="section-title">
+                                    <span class="sub-title" data-animate="animate__fadeInUp">Explorar colección</span>
+                                    <h2><span data-animate="animate__fadeInUp">Producto de tendencia</span></h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <div class="collection-wrap">
+                                <div class="collection-slider swiper" id="Trending-product">
+                                    <div class="swiper-wrapper">
+                                        <div class="swiper-slide" data-animate="animate__fadeInUp">
+                                            <div class="single-product-wrap">
+                                                <div class="product-image">
+                                                    <a href="{{ route('product.show', ['slug' => 'auriculares-inalambricos']) }}" class="pro-img">
+                                                        <img src="{{ asset('img/product/home1-pro-1.jpg') }}" class="img-fluid img1 mobile-img1" alt="p1">
+                                                        <img src="{{ asset('img/product/home1-pro-2.jpg') }}" class="img-fluid img2 mobile-img2" alt="p2">
+                                                    </a>
+                                                    <div class="product-action">
+                                                        <a href="#quickview" class="quickview" data-bs-toggle="modal" data-bs-target="#quickview">
+                                                            <span class="tooltip-text">Vista rápida</span>
+                                                            <span class="pro-action-icon"><i class="feather-eye"></i></span>
+                                                        </a>
+                                                        <a href="#add-to-cart" class="add-to-cart" data-bs-toggle="modal" data-bs-target="#add-to-cart">
+                                                            <span class="tooltip-text">Añadir al carrito</span>
+                                                            <span class="pro-action-icon"><i class="feather-shopping-bag"></i></span>
+                                                        </a>
+                                                        <a href="{{ route('wishlist.index') }}" class="wishlist">
+                                                            <span class="tooltip-text">Lista de deseos</span>
+                                                            <span class="pro-action-icon"><i class="feather-heart"></i></span>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                <div class="product-content">
+                                                    <div class="product-sub-title">
+                                                        <span>Dispositivo inalámbrico</span>
+                                                    </div>
+                                                    <div class="product-title">
+                                                        <h6><a href="{{ route('product.show', ['slug' => 'auriculares-inalambricos']) }}">Auriculares inalámbricos</a></h6>
+                                                    </div>
+                                                    <div class="product-price">
+                                                        <div class="pro-price-box">
+                                                            <span class="new-price">$21.00</span>
+                                                            <span class="old-price">$25.00</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="product-description">
+                                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</p>
+                                                    </div>
+                                                    <div class="product-action">
+                                                        <a href="#quickview" class="quickview" data-bs-toggle="modal" data-bs-target="#quickview">
+                                                            <span class="tooltip-text">Vista rápida</span>
+                                                            <span class="pro-action-icon"><i class="feather-eye"></i></span>
+                                                        </a>
+                                                        <a href="#add-to-cart" class="add-to-cart" data-bs-toggle="modal" data-bs-target="#add-to-cart">
+                                                            <span class="tooltip-text">Añadir al carrito</span>
+                                                            <span class="pro-action-icon"><i class="feather-shopping-bag"></i></span>
+                                                        </a>
+                                                        <a href="{{ route('wishlist.index') }}" class="wishlist">
+                                                            <span class="tooltip-text">Lista de deseos</span>
+                                                            <span class="pro-action-icon"><i class="feather-heart"></i></span>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                <div class="pro-label-retting">
+                                                    <div class="product-ratting">
+                                                        <span class="pro-ratting">
+                                                            <i class="fa-solid fa-star"></i>
+                                                            <i class="fa-solid fa-star"></i>
+                                                            <i class="fa-solid fa-star"></i>
+                                                            <i class="fa-solid fa-star"></i>
+                                                            <i class="fa-solid fa-star"></i>
+                                                        </span>
+                                                    </div>
+                                                    <div class="product-label pro-new-sale">
+                                                        <span class="product-label-title">Sale<span>20%</span></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="collection-button">
+                                        <a href="{{ route('collection.index') }}" class="btn btn-style2" data-animate="animate__fadeInUp">Ver todos los artículos</a>
+                                    </div>
+                                </div>
+                                <div class="swiper-buttons">
+                                    <div class="swiper-buttons-wrap">
+                                        <button class="swiper-prev swiper-prev-Trending"><span><i class="feather-arrow-left"></i></span></button>
+                                        <button class="swiper-next swiper-next-Trending"><span><i class="feather-arrow-right"></i></span></button>
+                                    </div>
+                                </div>
+                                <div class="swiper-dots">
+                                    <div class="swiper-pagination swiper-pagination-Trending"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- product-tranding end -->
+    </main>
+    <!-- main section end-->
+</x-app-layout>
