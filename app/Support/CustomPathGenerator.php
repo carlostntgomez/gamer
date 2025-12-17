@@ -10,19 +10,27 @@ class CustomPathGenerator implements PathGenerator
 {
     public function getPath(Media $media): string
     {
-        $modelType = Str::plural(Str::lower(class_basename($media->model_type)));
-        return $modelType . '/' . $media->getKey() . '/';
+        return $this->getBasePath($media) . '/';
     }
 
     public function getPathForConversions(Media $media): string
     {
-        $modelType = Str::plural(Str::lower(class_basename($media->model_type)));
-        return $modelType . '/' . $media->getKey() . '/conversions/';
+        return $this->getBasePath($media) . '/conversions/';
     }
 
     public function getPathForResponsiveImages(Media $media): string
     {
-        $modelType = Str::plural(Str::lower(class_basename($media->model_type)));
-        return $modelType . '/' . $media->getKey() . '/responsive-images/';
+        return $this->getBasePath($media) . '/responsive-images/';
+    }
+
+    protected function getBasePath(Media $media): string
+    {
+        $modelType = Str::kebab(class_basename($media->model_type));
+
+        // Usar el ID del modelo para robustez, y el nombre para legibilidad.
+        // Esto evita errores si el nombre no está disponible durante el ciclo de vida de Livewire.
+        $modelIdentifier = $media->model->id . '-' . Str::kebab($media->model->name);
+
+        return "{$modelType}/{$modelIdentifier}";
     }
 }

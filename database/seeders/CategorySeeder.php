@@ -12,7 +12,7 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $this->command->info('Limpiando y recreando el directorio de imágenes de categorías...');
-        $this->clearDirectory(storage_path('app/public/category'));
+        $this->clearDirectory(storage_path('app/public/categories'));
 
         $sampleImagesPath = public_path('imagenes de muestra');
         $sampleImages = File::files($sampleImagesPath);
@@ -82,7 +82,7 @@ class CategorySeeder extends Seeder
             $category->addMedia($imagePath)
                 ->preservingOriginal()
                 ->usingFileName($fileName)
-                ->toMediaCollection('category-image');
+                ->toMediaCollection('categories');
             
             $this->command->line("  - Imagen '{$fileName}' asignada a la categoría '{$category->name}'.");
 

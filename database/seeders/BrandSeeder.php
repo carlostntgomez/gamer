@@ -11,7 +11,7 @@ class BrandSeeder extends Seeder
     public function run(): void
     {
         $this->command->info('Limpiando y recreando el directorio de imágenes de marcas (logos)...');
-        $this->clearDirectory(storage_path('app/public/brand'));
+        $this->clearDirectory(storage_path('app/public/brands'));
 
         // Intentar buscar logos en una carpeta específica, si no, usar la general
         $logoPath = public_path('imagenes de muestra/brands');
@@ -54,7 +54,7 @@ class BrandSeeder extends Seeder
             $brand->addMedia($imagePath)
                   ->preservingOriginal()
                   ->usingFileName($fileName)
-                  ->toMediaCollection('brand-logo');
+                  ->toMediaCollection('brands');
 
             $this->command->line("  - Logo '{$fileName}' asignado a la marca '{$brand->name}'.");
 

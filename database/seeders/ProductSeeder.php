@@ -44,7 +44,7 @@ class ProductSeeder extends Seeder
         // Procesar la imagen principal
         $mainImagePath = array_shift($randomImages);
         if ($mainImagePath) {
-            $this->addImage($product, $mainImagePath, 'main_image');
+            $this->addImage($product, $mainImagePath, 'main_image', 0);
         }
 
         // Procesar las imágenes de la galería
@@ -58,25 +58,25 @@ class ProductSeeder extends Seeder
     private function addImage(Product $product, string $imagePath, string $collectionName, int $index = 0)
     {
         $extension = pathinfo($imagePath, PATHINFO_EXTENSION);
-        $fileName = $this->generateFileName($product, $collectionName, $extension, $index);
+        $fileName = $this->generateFileName($product, $extension, $index);
 
         try {
             $product->addMedia($imagePath)
                 ->preservingOriginal()
                 ->usingFileName($fileName)
-                ->toMediaCollection($collectionName);
+                ->toMediaCollection('products'); // Corregido: Siempre usar la colección 'products'
 
-            $this->command->info("  - Imagen agregada a '{$collectionName}': {$fileName}");
+            $this->command->info("  - Imagen agregada a 'products': {$fileName}");
         } catch (\Exception $e) {
             $this->command->error("  - No se pudo agregar la imagen {$imagePath}: " . $e->getMessage());
         }
     }
 
-    private function generateFileName(Product $product, string $collectionName, string $extension, int $index): string
+    private function generateFileName(Product $product, string $extension, int $index): string
     {
         $slug = Str::slug($product->name);
 
-        if ($collectionName === 'main_image') {
+        if ($index === 0) { // La imagen principal es el índice 0
             return "{$slug}-main.{$extension}";
         }
 
@@ -85,7 +85,7 @@ class ProductSeeder extends Seeder
 
     private function clearProductsDirectory()
     {
-        $directory = storage_path('app/public/product');
+        $directory = storage_path('app/public/products');
 
         if (File::isDirectory($directory)) {
             File::deleteDirectory($directory);

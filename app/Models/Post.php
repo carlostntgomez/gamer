@@ -54,7 +54,7 @@ class Post extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('featured_image')
+        $this->addMediaCollection('posts')
             ->singleFile();
     }
 
@@ -63,11 +63,19 @@ class Post extends Model implements HasMedia
         $this->addMediaConversion('thumb')
             ->width(368)
             ->height(232)
-            ->sharpen(10);
+            ->sharpen(10)
+            ->format('webp');
 
-        $this->addMediaConversion('full')
+        $this->addMediaConversion('medium')
+            ->width(800)
+            ->height(450)
+            ->sharpen(10)
+            ->format('webp');
+
+        $this->addMediaConversion('large')
             ->width(1200)
             ->height(630)
-            ->sharpen(10);
+            ->sharpen(10)
+            ->format('webp');
     }
 }

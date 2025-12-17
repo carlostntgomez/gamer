@@ -4,8 +4,9 @@ namespace App\Enums;
 
 use Filament\Support\Contracts\HasLabel;
 use Filament\Support\Contracts\HasColor;
+use Livewire\Wireable;
 
-enum ProductType: string implements HasLabel, HasColor
+enum ProductType: string implements HasLabel, HasColor, Wireable
 {
     case Gadget = 'gadget';
     case Videogame = 'videojuego';
@@ -27,5 +28,15 @@ enum ProductType: string implements HasLabel, HasColor
             self::Videogame => 'success',
             self::Accessory => 'warning',
         };
+    }
+
+    public function toLivewire()
+    {
+        return $this->value;
+    }
+
+    public static function fromLivewire($value)
+    {
+        return static::from($value);
     }
 }

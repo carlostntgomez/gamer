@@ -29,7 +29,7 @@ return [
     /*
      * By default all conversions will be performed on a queue.
      */
-    'queue_conversions_by_default' => env('QUEUE_CONVERSIONS_BY_DEFAULT', true),
+    'queue_conversions_by_default' => env('QUEUE_CONVERSIONS_BY_DEFAULT', false),
 
     /*
      * Should database transactions be run after database commits?
@@ -81,7 +81,7 @@ return [
     /*
      * The class that contains the strategy for determining a media file's path.
      */
-    'path_generator' => App\Support\MediaLibrary\CustomPathGenerator::class,
+    'path_generator' => App\Support\CustomPathGenerator::class,
 
     /*
      * The class that contains the strategy for determining how to remove files.
@@ -107,7 +107,7 @@ return [
      * Moves media on updating to keep path consistent. Enable it only with a custom
      * PathGenerator that uses, for example, the media UUID.
      */
-    'moves_media_on_update' => false,
+    'moves_media_on_update' => true,
 
     /*
      * Whether to activate versioning when urls to files get generated.
@@ -122,41 +122,41 @@ return [
      */
     'image_optimizers' => [
         Spatie\ImageOptimizer\Optimizers\Jpegoptim::class => [
-            '-m85', // set maximum quality to 85%
-            '--force', // ensure that progressive generation is always done also if a little bigger
-            '--strip-all', // this strips out all text information such as comments and EXIF data
-            '--all-progressive', // this will make sure the resulting image is a progressive one
+            '-m85',
+            '--force',
+            '--strip-all',
+            '--all-progressive',
         ],
         Spatie\ImageOptimizer\Optimizers\Pngquant::class => [
-            '--force', // required parameter for this package
+            '--force',
         ],
         Spatie\ImageOptimizer\Optimizers\Optipng::class => [
-            '-i0', // this will result in a non-interlaced, progressive scanned image
-            '-o2', // this set the optimization level to two (multiple IDAT compression trials)
-            '-quiet', // required parameter for this package
+            '-i0',
+            '-o2',
+            '-quiet',
         ],
         Spatie\ImageOptimizer\Optimizers\Svgo::class => [
-            '--disable=cleanupIDs', // disabling because it is known to cause troubles
+            '--disable=cleanupIDs',
         ],
         Spatie\ImageOptimizer\Optimizers\Gifsicle::class => [
-            '-b', // required parameter for this package
-            '-O3', // this produces the slowest but best results
+            '-b',
+            '-O3',
         ],
         Spatie\ImageOptimizer\Optimizers\Cwebp::class => [
-            '-m 6', // for the slowest compression method in order to get the best compression.
-            '-pass 10', // for maximizing the amount of analysis pass.
-            '-mt', // multithreading for some speed improvements.
-            '-q 90', // quality factor that brings the least noticeable changes.
+            '-m 6',
+            '-pass 10',
+            '-mt',
+            '-q 90',
         ],
         Spatie\ImageOptimizer\Optimizers\Avifenc::class => [
-            '-a cq-level=23', // constant quality level, lower values mean better quality and greater file size (0-63).
-            '-j all', // number of jobs (worker threads, "all" uses all available cores).
-            '--min 0', // min quantizer for color (0-63).
-            '--max 63', // max quantizer for color (0-63).
-            '--minalpha 0', // min quantizer for alpha (0-63).
-            '--maxalpha 63', // max quantizer for alpha (0-63).
-            '-a end-usage=q', // rate control mode set to Constant Quality mode.
-            '-a tune=ssim', // SSIM as tune the encoder for distortion metric.
+            '-a cq-level=23',
+            '-j all',
+            '--min 0',
+            '--max 63',
+            '--minalpha 0',
+            '--maxalpha 63',
+            '-a end-usage=q',
+            '-a tune=ssim',
         ],
     ],
 

@@ -12,7 +12,7 @@ class PostSeeder extends Seeder
     public function run(): void
     {
         $this->command->info('Limpiando y recreando el directorio de imágenes de posts...');
-        $this->clearDirectory(storage_path('app/public/post'));
+        $this->clearDirectory(storage_path('app/public/posts'));
 
         $this->command->info('Creando etiquetas para los posts...');
         Tag::factory()->count(10)->create();
@@ -50,7 +50,7 @@ class PostSeeder extends Seeder
             $post->addMedia($imagePath)
                  ->preservingOriginal()
                  ->usingFileName($fileName)
-                 ->toMediaCollection('featured_image');
+                 ->toMediaCollection('posts');
 
             $this->command->line("   - Imagen '{$fileName}' asignada como destacada.");
 

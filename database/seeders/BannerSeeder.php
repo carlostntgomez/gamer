@@ -6,6 +6,7 @@ use App\Models\Banner;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class BannerSeeder extends Seeder
 {
@@ -14,7 +15,7 @@ class BannerSeeder extends Seeder
     public function run(): void
     {
         $this->command->info('Limpiando y recreando el directorio de imágenes de banners...');
-        $this->clearDirectory(storage_path('app/public/banner'));
+        $this->clearDirectory(storage_path('app/public/banners'));
 
         $sampleImagesPath = public_path('imagenes de muestra');
         $sampleImages = File::files($sampleImagesPath);
@@ -26,29 +27,26 @@ class BannerSeeder extends Seeder
 
         $this->command->info('Creando 5 banners y asignando imágenes...');
 
-        for ($i = 1; $i <= 5; $i++) {
-            $banner = Banner::factory()->create([
-                'order' => $i, // Asignar un orden secuencial
-            ]);
-
+        Banner::factory()->count(5)->create()->each(function (Banner $banner) use ($sampleImages) {
             $randomImage = $sampleImages[array_rand($sampleImages)];
-            $this->addImageToBanner($banner, $randomImage->getRealPath(), $i);
-        }
+            $this->addImageToBanner($banner, $randomImage->getRealPath());
+        });
 
         $this->command->info('Banners creados exitosamente.');
     }
 
-    private function addImageToBanner(Banner $banner, string $imagePath, int $index): void
+    private function addImageToBanner(Banner $banner, string $imagePath): void
     {
         $extension = pathinfo($imagePath, PATHINFO_EXTENSION);
-        // Usar un nombre de archivo secuencial y descriptivo
-        $fileName = 'banner-' . $index . '.' . $extension;
+        // Crear un slug a partir del nombre del banner para el nombre del archivo
+        $slug = Str::slug($banner->name);
+        $fileName = $slug . '.' . $extension;
 
         try {
             $banner->addMedia($imagePath)
                    ->preservingOriginal()
                    ->usingFileName($fileName)
-                   ->toMediaCollection('banner_image');
+                   ->toMediaCollection('banners');
 
             $this->command->line("  - Imagen '{$fileName}' asignada al banner '{$banner->name}'.");
 

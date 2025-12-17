@@ -4,8 +4,9 @@ namespace App\Enums;
 
 use Filament\Support\Contracts\HasLabel;
 use Filament\Support\Contracts\HasColor;
+use Livewire\Wireable;
 
-enum ProductCondition: string implements HasLabel, HasColor
+enum ProductCondition: string implements HasLabel, HasColor, Wireable
 {
     case New = 'nuevo';
     case Used = 'usado';
@@ -26,4 +27,13 @@ enum ProductCondition: string implements HasLabel, HasColor
         };
     }
 
+    public function toLivewire()
+    {
+        return $this->value;
+    }
+
+    public static function fromLivewire($value)
+    {
+        return static::from($value);
+    }
 }

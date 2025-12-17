@@ -35,7 +35,7 @@ class Brand extends Model implements HasMedia
      */
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('brand-logo')
+        $this->addMediaCollection('brands')
             ->singleFile();
     }
 
@@ -44,10 +44,17 @@ class Brand extends Model implements HasMedia
         $this->addMediaConversion('thumb')
               ->width(100)
               ->height(100)
-              ->sharpen(10);
+              ->sharpen(10)
+              ->format('webp');
 
         $this->addMediaConversion('medium')
               ->width(250)
-              ->height(250);
+              ->height(250)
+              ->format('webp');
+        
+        $this->addMediaConversion('large')
+                ->width(500)
+                ->height(500)
+                ->format('webp');
     }
 }

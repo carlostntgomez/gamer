@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\ProductCondition;
 use App\Enums\ProductType;
 use App\Filament\Resources\ProductResource\Pages;
+use App\Filament\Resources\ProductResource\RelationManagers;
 use App\Models\Product;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -12,28 +13,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Group;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\MarkdownEditor;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Forms\Components\TagsInput;
-use Filament\Forms\Components\KeyValue;
-use Filament\Forms\Set;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
-use Filament\Tables\Actions\DeleteAction;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-
 
 class ProductResource extends Resource
 {
@@ -44,120 +23,117 @@ class ProductResource extends Resource
     protected static ?string $modelLabel = 'Producto';
     protected static ?string $pluralModelLabel = 'Productos';
     protected static ?string $navigationLabel = 'Productos';
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Grid::make(3)->schema([
-                    Group::make()->schema([
-                        Section::make('Información del Producto')->schema([
-                            TextInput::make('name')
-                                ->label('Nombre')
-                                ->required()
-                                ->live(onBlur: true)
-                                ->afterStateUpdated(fn(Set $set, ?string $state) => $set('slug', Str::slug($state))),
-                            TextInput::make('slug')
-                                ->required()
-                                ->unique(Product::class, 'slug', ignoreRecord: true),
-                            MarkdownEditor::make('description')
-                                ->label('Descripción')
-                                ->columnSpanFull(),
-                        ]),
-                        Section::make('Imágenes')->schema([
-                            SpatieMediaLibraryFileUpload::make('media_main')
-                                ->collection('main_image')
-                                ->label('Imagen Principal')
-                                ->image()
-                                ->nullable()
-                                ->getUploadedFileNameForStorageUsing(function (?TemporaryUploadedFile $file, ?Model $record): string {
-                                    if (!$file) {
-                                        return '';
-                                    }
-                                    $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                                    $recordName = $record?->name ?? $fileName;
-                                    return (string) str('product-' . str_replace('-', '', Str::slug($recordName)))->slug() . '.' . $file->getClientOriginalExtension();
-                                }),
-                            SpatieMediaLibraryFileUpload::make('media_gallery')
-                                ->collection('gallery_images')
-                                ->label('Galería de Imágenes')
-                                ->multiple()
-                                ->maxFiles(5)
-                                ->image()
-                                ->nullable()
-                                ->reorderable()
-                                ->getUploadedFileNameForStorageUsing(function (?TemporaryUploadedFile $file, ?Model $record): string {
-                                    if (!$file) {
-                                        return '';
-                                    }
-                                    $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                                    $recordName = $record?->name ?? $fileName;
-                                    return (string) str('product-gallery-' . str_replace('-', '', Str::slug($recordName)) . '-' . uniqid())->slug() . '.' . $file->getClientOriginalExtension();
-                                }),
-                        ]),
-                        Section::make('Precios')->schema([
-                            TextInput::make('price')->label('Precio')->required()->numeric()->prefix('USD'),
-                            TextInput::make('sale_price')->label('Precio de Oferta')->numeric()->prefix('USD'),
-                            TextInput::make('sku')->label('SKU (Stock Keeping Unit)'),
-                        ])->columns(3),
-                        Section::make('Inventario')->schema([
-                            TextInput::make('stock')->required()->numeric()->default(0),
-                        ]),
-                    ])->columnSpan(2),
+                Forms\Components\Group::make()
+                    ->schema([
+                        Forms\Components\Section::make('Información del Producto')
+                            ->schema([
+                                Forms\Components\TextInput::make('name')
+                                    ->label('Nombre')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state))),
 
-                    Group::make()->schema([
-                        Section::make('Estado')->schema([
-                            Toggle::make('is_featured')->label('Producto Destacado'),
-                        ]),
-                        Section::make('Organización')->schema([
-                            Select::make('brand_id')->label('Marca')->relationship('brand', 'name')->searchable()->required(),
-                            Select::make('categories')->label('Categorías')->relationship('categories', 'name')->multiple()->searchable()->required(),
-                        ]),
-                        Section::make('Atributos')->schema([
-                            Select::make('type')->label('Tipo')->options(ProductType::class)->required(),
-                            Select::make('condition')->label('Condición')->options(ProductCondition::class)->required(),
-                            TagsInput::make('colors')->label('Colores'),
-                        ]),
-                        Section::make('Contenido Adicional')->schema([
-                            TextInput::make('video_url')->label('URL de Video (YouTube, Vimeo, etc.)'),
-                            KeyValue::make('other_content')->label('Otro Contenido (JSON)'),
-                            Textarea::make('additional_info')->label('Información Adicional'),
-                            TextInput::make('delivery_date_message')->label('Mensaje de Fecha de Entrega'),
-                        ]),
-                        Section::make('SEO')->schema([
-                            TextInput::make('seo_title')->label('Título SEO'),
-                            Textarea::make('seo_description')->label('Descripción SEO'),
-                            TagsInput::make('seo_keywords')->label('Keywords SEO'),
-                        ]),
-                    ])->columnSpan(1),
-                ]),
-            ]);
+                                Forms\Components\TextInput::make('slug')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->unique(Product::class, 'slug', ignoreRecord: true),
+
+                                Forms\Components\MarkdownEditor::make('description')
+                                    ->label('Descripción')
+                                    ->columnSpanFull(),
+                            ])->columns(2),
+
+                        Forms\Components\Section::make('Imágenes')
+                            ->schema([
+                                Forms\Components\SpatieMediaLibraryFileUpload::make('media')
+                                    ->collection('product-images')
+                                    ->multiple()
+                                    ->maxFiles(5)
+                                    ->reorderable()
+                                    ->image()
+                                    ->label('Galería de Imágenes'),
+                            ]),
+
+                        Forms\Components\Section::make('Precios')
+                            ->schema([
+                                Forms\Components\TextInput::make('price')->label('Precio')->required()->numeric()->prefix('USD'),
+                                Forms\Components\TextInput::make('sale_price')->label('Precio de Oferta')->numeric()->prefix('USD'),
+                                Forms\Components\TextInput::make('sku')->label('SKU (Stock Keeping Unit)')->unique(Product::class, 'sku', ignoreRecord: true),
+                            ])->columns(3),
+                        
+                        Forms\Components\Section::make('Inventario')
+                            ->schema([
+                                Forms\Components\TextInput::make('stock')->required()->numeric()->default(0),
+                            ]),
+
+                    ])->columnSpan(['lg' => 2]),
+
+                Forms\Components\Group::make()
+                    ->schema([
+                        Forms\Components\Section::make('Estado')
+                            ->schema([
+                                Forms\Components\Toggle::make('is_featured')->label('Producto Destacado'),
+                            ]),
+
+                        Forms\Components\Section::make('Organización')
+                            ->schema([
+                                Forms\Components\Select::make('brand_id')
+                                    ->relationship('brand', 'name')
+                                    ->searchable()
+                                    ->required()
+                                    ->label('Marca'),
+
+                                Forms\Components\Select::make('categories')
+                                    ->relationship('categories', 'name')
+                                    ->multiple()
+                                    ->searchable()
+                                    ->required()
+                                    ->label('Categorías'),
+                            ]),
+
+                        Forms\Components\Section::make('Atributos')
+                            ->schema([
+                                Forms\Components\Select::make('type')->options(ProductType::class)->required()->label('Tipo'),
+                                Forms\Components\Select::make('condition')->options(ProductCondition::class)->required()->label('Condición'),
+                                Forms\Components\TagsInput::make('colors')->label('Colores'),
+                            ]),
+                    ])->columnSpan(['lg' => 1]),
+            ])->columns(3);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                ImageColumn::make('imageUrl')->label('Imagen'),
-                TextColumn::make('name')->label('Nombre')->searchable()->sortable(),
-                TextColumn::make('brand.name')->label('Marca')->sortable(),
-                TextColumn::make('price')->label('Precio')->money('usd')->sortable(),
-                TextColumn::make('stock')->label('Stock')->numeric()->sortable(),
-                IconColumn::make('is_featured')->label('Destacado')->boolean(),
-                TextColumn::make('type')->label('Tipo')->searchable()->sortable(),
-                TextColumn::make('created_at')
-                    ->label('Creado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->label('Actualizado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\SpatieMediaLibraryImageColumn::make('media')
+                    ->collection('product-images')
+                    ->label('Imagen'),
+                Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('brand.name')->label('Marca')->sortable(),
+                Tables\Columns\TextColumn::make('price')->label('Precio')->money('usd')->sortable(),
+                Tables\Columns\TextColumn::make('stock')->label('Stock')->numeric()->sortable(),
+                Tables\Columns\IconColumn::make('is_featured')->label('Destacado')->boolean(),
+                Tables\Columns\TextColumn::make('type')->label('Tipo')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Creado')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')->label('Actualizado')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('brand')
+                    ->relationship('brand', 'name')
+                    ->label('Marca'),
+                Tables\Filters\SelectFilter::make('categories')
+                    ->relationship('categories', 'name')
+                    ->label('Categoría'),
+                Tables\Filters\Filter::make('is_featured')
+                    ->query(fn ($query) => $query->where('is_featured', true))
+                    ->label('Solo Destacados'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()->iconButton()->color('info'),
@@ -175,7 +151,7 @@ class ProductResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\ReviewsRelationManager::class,
         ];
     }
 
@@ -183,8 +159,6 @@ class ProductResource extends Resource
     {
         return [
             'index' => Pages\ListProducts::route('/'),
-            'create' => Pages\CreateProduct::route('/create'),
-            'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
     }
 }

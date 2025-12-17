@@ -30,7 +30,7 @@ class Banner extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('banner_image')
+        $this->addMediaCollection('banners')
             ->singleFile();
     }
 
@@ -39,6 +39,19 @@ class Banner extends Model implements HasMedia
         $this->addMediaConversion('thumb')
             ->width(300)
             ->height(150)
-            ->sharpen(10);
+            ->sharpen(10)
+            ->format('webp');
+
+        $this->addMediaConversion('medium')
+            ->width(800)
+            ->height(400)
+            ->sharpen(10)
+            ->format('webp');
+        
+        $this->addMediaConversion('large')
+            ->width(1200)
+            ->height(600)
+            ->sharpen(10)
+            ->format('webp');
     }
 }

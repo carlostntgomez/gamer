@@ -33,11 +33,11 @@ class BannerResource extends Resource
                             ->label('Nombre del Banner')
                             ->required()
                             ->maxLength(255),
-                        SpatieMediaLibraryFileUpload::make('banner_image')
-                            ->collection('banner_image')
+                        SpatieMediaLibraryFileUpload::make('banners') // <-- CORRECCIÓN FINAL
+                            ->label('Imagen del Banner')
+                            ->collection('banners')
                             ->image()
                             ->disk('public')
-                            ->directory('banners')
                             ->visibility('public')
                             ->maxFiles(1)
                             ->imageEditor()
@@ -70,9 +70,9 @@ class BannerResource extends Resource
     {
         return $table
             ->columns([
-                SpatieMediaLibraryImageColumn::make('banner_image')
+                SpatieMediaLibraryImageColumn::make('banners') // <-- CORRECCIÓN FINAL
                     ->label('Imagen')
-                    ->collection('banner_image')
+                    ->collection('banners')
                     ->conversion('thumb')
                     ->circular(),
                 Tables\Columns\TextColumn::make('name')
