@@ -60,7 +60,8 @@ class ProductSeeder extends Seeder
             $productData = [
                 'name' => ucfirst($name),
                 'slug' => $slug,
-                'description' => fake()->paragraphs(5, true),
+                'short_description' => fake()->sentence(25),
+                'long_description' => '<p>' . implode('</p><p>', fake()->paragraphs(5)) . '</p>',
                 'price' => $basePrice,
                 'sale_price' => $salePrice,
                 'sku' => strtoupper(substr(str_replace(' ', '-', $name), 0, 8)) . '-' . fake()->unique()->numberBetween(1000, 9999),

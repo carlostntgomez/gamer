@@ -18,6 +18,7 @@ class Category extends Model
         'slug',
         'parent_id',
         'image_path',
+        'banner_path',
         'seo_title',
         'seo_description',
         'seo_keywords',
@@ -29,6 +30,7 @@ class Category extends Model
 
     protected $appends = [
         'image_url',
+        'banner_url',
     ];
 
     public function getSlugOptions() : SlugOptions
@@ -57,6 +59,13 @@ class Category extends Model
     {
         return Attribute::make(
             get: fn () => $this->image_path ? Storage::url($this->image_path) : null,
+        );
+    }
+
+    protected function bannerUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->banner_path ? Storage::url($this->banner_path) : null,
         );
     }
 

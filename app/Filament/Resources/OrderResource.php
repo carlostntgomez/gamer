@@ -4,16 +4,15 @@ namespace App\Filament\Resources;
 
 use App\Enums\OrderStatus;
 use App\Filament\Resources\OrderResource\Pages;
-use App\Filament\Resources\OrderResource\RelationManagers;
-use App\Models\Order;
 use App\Models\Address;
+use App\Models\Order;
 use App\Models\Product;
+use Closure;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class OrderResource extends Resource
 {
@@ -29,86 +28,66 @@ class OrderResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Group::make()
-                ->schema([
-                    Forms\Components\Section::make('Cliente y Direcciones')
-                        ->description('Información del cliente y direcciones de envío/facturación.')
+            Forms\Components\Group::make()->schema([
+                Forms\Components\Tabs::make('OrderTabs')->tabs([
+                    Forms\Components\Tabs\Tab::make('Pedido y Cliente')
+                        ->icon('heroicon-o-user-circle')
                         ->schema([
-                            Forms\Components\Select::make('user_id')
-                                ->label('Cliente')
-                                ->relationship('user', 'name')
-                                ->searchable()
-                                ->preload()
-                                ->live()
-                                ->helperText('Selecciona un cliente o déjalo en blanco para un invitado.'),
+                            Forms\Components\Section::make('Información del Cliente')
+                                ->schema([
+                                    Forms\Components\Select::make('user_id')
+                                        ->relationship('user', 'name')->label('Cliente')->searchable()->preload()->live()
+                                        ->helperText('Selecciona el cliente para ver sus direcciones.'),
+                                    Forms\Components\Select::make('shipping_address_id')
+                                        ->label('Dirección de Envío')
+                                        ->options(fn (Forms\Get $get) => Address::where('user_id', $get('user_id'))->pluck('full_address', 'id'))
+                                        ->searchable()->preload()->required(),
+                                    Forms\Components\Select::make('billing_address_id')
+                                        ->label('Dirección de Facturación')
+                                        ->options(fn (Forms\Get $get) => Address::where('user_id', $get('user_id'))->pluck('full_address', 'id'))
+                                        ->searchable()->preload()->required(),
+                                ])->columns(2),
+                        ]),
 
-                            Forms\Components\Select::make('shipping_address_id')
-                                ->label('Dirección de Envío')
-                                ->options(fn (Forms\Get $get) => Address::where('user_id', $get('user_id'))->pluck('full_address', 'id'))
-                                ->searchable()
-                                ->preload(),
-
-                            Forms\Components\Select::make('billing_address_id')
-                                ->label('Dirección de Facturación')
-                                ->options(fn (Forms\Get $get) => Address::where('user_id', $get('user_id'))->pluck('full_address', 'id'))
-                                ->searchable()
-                                ->preload(),
-                        ])->columns(2),
-
-                    Forms\Components\Section::make('Items del Pedido')
-                        ->headerActions([
-                            Forms\Components\Actions\Action::make('reset')
-                                ->label('Reiniciar Items')
-                                ->requiresConfirmation()
-                                ->color('danger')
-                                ->action(fn (Forms\Set $set) => $set('orderItems', [])),
-                        ])
+                    Forms\Components\Tabs\Tab::make('Artículos del Pedido')
+                        ->icon('heroicon-o-cube')
                         ->schema([
                             Forms\Components\Repeater::make('orderItems')
                                 ->relationship()
                                 ->schema([
-                                    Forms\Components\Select::make('product_id')
-                                        ->label('Producto')
+                                    Forms\Components\Select::make('product_id')->label('Producto')
                                         ->relationship('product', 'name')
-                                        ->searchable()
-                                        ->preload()
-                                        ->required()
-                                        ->distinct()
-                                        ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                                        ->columnSpan(4)
-                                        ->reactive()
+                                        ->searchable()->preload()->required()->distinct()->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                                        ->live()
                                         ->afterStateUpdated(function ($state, Forms\Set $set) {
                                             $product = Product::find($state);
                                             if ($product) {
                                                 $set('unit_price', $product->price);
                                             }
                                         }),
-                                    Forms\Components\TextInput::make('quantity')->label('Cantidad')->numeric()->required()->default(1)->minValue(1)->columnSpan(2),
-                                    Forms\Components\TextInput::make('unit_price')->label('Precio Unitario')->numeric()->required()->prefix('COP')->columnSpan(2),
+                                    Forms\Components\TextInput::make('quantity')->label('Cantidad')->numeric()->required()->default(1)->minValue(1),
+                                    Forms\Components\TextInput::make('unit_price')->label('Precio Unitario')->numeric()->required()->prefix('COP'),
                                 ])
-                                ->columns(8)
-                                ->live()
-                                ->afterStateUpdated(self::updateTotal())
-                                ->reorderable(false)
-                                ->defaultItems(0),
+                                ->reorderable(false)->defaultItems(1)->columns(3)->live()
+                                ->afterStateUpdated(self::updateTotal()),
                         ]),
+                ]),
+            ])->columnSpan(['lg' => 2]),
 
-                ])->columnSpan(['lg' => 2]),
-
-            Forms\Components\Group::make()
-                ->schema([
-                    Forms\Components\Section::make('Resumen del Pedido')
-                        ->schema([
-                            Forms\Components\Placeholder::make('uuid')->label('UUID')->content(fn ($record) => $record?->uuid ?? '-'),
-                            Forms\Components\Select::make('status')->label('Estado del Pedido')->options(OrderStatus::class)->required(),
-                            Forms\Components\TextInput::make('total')->label('Total del Pedido')->numeric()->prefix('COP')->readOnly(),
-                        ]),
-                    
-                    Forms\Components\Section::make('Notas Internas')
-                        ->schema([
-                            Forms\Components\Textarea::make('notes')->label('Notas del Pedido')->rows(4)->helperText('Notas internas, no visibles para el cliente.'),
-                        ]),
-                ])->columnSpan(['lg' => 1]),
+            Forms\Components\Group::make()->schema([
+                Forms\Components\Section::make('Estado y Resumen')
+                    ->schema([
+                        Forms\Components\Select::make('status')->label('Estado')->options(OrderStatus::class)->required()->default(OrderStatus::PENDING),
+                        Forms\Components\TextInput::make('total')->label('Total del Pedido')->numeric()->prefix('COP')->readOnly(),
+                        Forms\Components\Textarea::make('notes')->label('Notas Internas')->rows(3)->helperText('No visibles para el cliente.'),
+                    ]),
+                Forms\Components\Section::make('Metadatos')
+                    ->schema([
+                        Forms\Components\Placeholder::make('uuid')->label('UUID')->content(fn ($record) => $record?->uuid ?? '-')->disabled(),
+                        Forms\Components\Placeholder::make('created_at')->label('Creado')->content(fn ($record) => $record?->created_at?->diffForHumans() ?? '-')->disabled(),
+                        Forms\Components\Placeholder::make('updated_at')->label('Actualizado')->content(fn ($record) => $record?->updated_at?->diffForHumans() ?? '-')->disabled(),
+                    ]),
+            ])->columnSpan(['lg' => 1]),
         ])->columns(3);
     }
 
@@ -120,21 +99,18 @@ class OrderResource extends Resource
                 Tables\Columns\TextColumn::make('user.name')->label('Cliente')->searchable()->sortable()->default('Invitado'),
                 Tables\Columns\TextColumn::make('status')->label('Estado')->badge()->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('total')->label('Total')->money('cop')->sortable(),
-                Tables\Columns\TextColumn::make('created_at')->label('Fecha del Pedido')->dateTime()->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Fecha Pedido')->dateTime('d/m/Y H:i')->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->label('Estado')->options(OrderStatus::class),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('info')->modal(),
-                Tables\Actions\EditAction::make()->iconButton()->color('primary')->modal(),
-                Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([ Tables\Actions\DeleteBulkAction::make() ]),
-            ])
-            ->headerActions([
-                // Se elimina CreateAction ya que los pedidos deben generarse desde el frontend
+                Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()]),
             ])
             ->defaultSort('created_at', 'desc');
     }
@@ -143,18 +119,19 @@ class OrderResource extends Resource
     { return []; }
 
     public static function getPages(): array
-    { return [ 'index' => Pages\ListOrders::route('/') ]; }
+    {
+        return [
+            'index' => Pages\ListOrders::route('/'),
+        ];
+    }
 
-    private static function updateTotal(): callable
+    private static function updateTotal(): Closure
     {
         return function (Forms\Get $get, Forms\Set $set) {
             $items = $get('orderItems');
-            $total = 0;
-            foreach ($items as $item) {
-                if (is_numeric($item['quantity']) && is_numeric($item['unit_price'])) {
-                    $total += $item['quantity'] * $item['unit_price'];
-                }
-            }
+            $total = collect($items)->reduce(function ($carry, $item) {
+                return $carry + ($item['quantity'] * $item['unit_price']);
+            }, 0);
             $set('total', number_format($total, 2, '.', ''));
         };
     }

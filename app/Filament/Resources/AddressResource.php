@@ -24,136 +24,76 @@ class AddressResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('Detalles de la Dirección')
-                    ->schema([
-                        Forms\Components\Select::make('user_id')
-                            ->label('Usuario')
-                            ->relationship('user', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->nullable()
-                            ->helperText('Dejar en blanco para direcciones de invitados.'),
-                        Forms\Components\Select::make('type')
-                            ->label('Tipo de Dirección')
-                            ->options(AddressType::class)
-                            ->required(),
-                        Forms\Components\TextInput::make('first_name')
-                            ->label('Nombre')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('last_name')
-                            ->label('Apellido')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('phone')
-                            ->label('Teléfono')
-                            ->tel()
-                            ->maxLength(255)
-                            ->nullable(),
-                        Forms\Components\TextInput::make('address_line_1')
-                            ->label('Dirección Línea 1')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('address_line_2')
-                            ->label('Dirección Línea 2')
-                            ->maxLength(255)
-                            ->nullable(),
-                        Forms\Components\TextInput::make('city')
-                            ->label('Ciudad')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('state')
-                            ->label('Estado/Provincia')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('zip_code')
-                            ->label('Código Postal')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('country')
-                            ->label('País')
-                            ->required()
-                            ->maxLength(255),
-                    ])->columns(2)
-            ]);
+        return $form->schema([
+            Forms\Components\Group::make()
+                ->schema([
+                    Forms\Components\Section::make('Información del Destinatario')
+                        ->schema([
+                            Forms\Components\Select::make('user_id')
+                                ->relationship('user', 'name')->label('Cliente')->searchable()->preload()
+                                ->helperText('Opcional. Asociar esta dirección a un cliente existente.'),
+                            Forms\Components\TextInput::make('first_name')->label('Nombre')->required(),
+                            Forms\Components\TextInput::make('last_name')->label('Apellidos')->required(),
+                            Forms\Components\TextInput::make('phone')->label('Teléfono')->tel(),
+                        ])->columns(2),
+
+                    Forms\Components\Section::make('Detalles de la Dirección Postal')
+                        ->schema([
+                            Forms\Components\TextInput::make('address_line_1')->label('Línea de Dirección 1')->required(),
+                            Forms\Components\TextInput::make('address_line_2')->label('Línea de Dirección 2'),
+                            Forms\Components\TextInput::make('city')->label('Ciudad')->required(),
+                            Forms\Components\TextInput::make('state')->label('Estado / Provincia')->required(),
+                            Forms\Components\TextInput::make('zip_code')->label('Código Postal')->required(),
+                            Forms\Components\TextInput::make('country')->label('País')->required(),
+                        ])->columns(2),
+                ])
+                ->columnSpan(['lg' => 2]),
+
+            Forms\Components\Group::make()
+                ->schema([
+                    Forms\Components\Section::make('Estado y Metadatos')
+                        ->schema([
+                            Forms\Components\Select::make('type')
+                                ->label('Tipo de Dirección')
+                                ->options(AddressType::class)
+                                ->required(),
+                            Forms\Components\Placeholder::make('created_at')
+                                ->label('Fecha de Creación')
+                                ->content(fn(?Address $record): string => $record?->created_at?->translatedFormat('d M Y, H:i') ?? '-'),
+                            Forms\Components\Placeholder::make('updated_at')
+                                ->label('Última Actualización')
+                                ->content(fn(?Address $record): string => $record?->updated_at?->translatedFormat('d M Y, H:i') ?? '-'),
+                        ]),
+                ])
+                ->columnSpan(['lg' => 1]),
+        ])->columns(3);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('ID')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label('Usuario')
-                    ->sortable()
-                    ->searchable()
-                    ->default('Invitado'),
-                Tables\Columns\TextColumn::make('type')
-                    ->label('Tipo')
-                    ->badge()
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('first_name')
-                    ->label('Nombre')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('last_name')
-                    ->label('Apellido')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('address_line_1')
-                    ->label('Dirección')
-                    ->limit(30)
-                    ->tooltip(fn (Address $record): string => $record->address_line_1 . ', ' . $record->address_line_2),
-                Tables\Columns\TextColumn::make('city')
-                    ->label('Ciudad')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('state')
-                    ->label('Estado')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('zip_code')
-                    ->label('Cód. Postal')
-                    ->sortable()
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('country')
-                    ->label('País')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Creado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Actualizado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('user.name')->label('Cliente')->default('Invitado')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('full_name')->label('Nombre Completo')->searchable(query: function ($query, $search) {
+                    $query->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"]);
+                }),
+                Tables\Columns\TextColumn::make('type')->badge()->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('full_address')->label('Dirección Completa')->searchable(query: function ($query, $search) {
+                    $query->whereRaw("CONCAT(address_line_1, ', ', city, ', ', state) LIKE ?", ["%{$search}%"]);
+                }),
+                Tables\Columns\TextColumn::make('country')->label('País')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Creado el')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('user_id')
-                    ->relationship('user', 'name')
-                    ->label('Filtrar por Usuario')
-                    ->searchable()
-                    ->preload(),
-                Tables\Filters\SelectFilter::make('type')
-                    ->label('Tipo de Dirección')
-                    ->options(AddressType::class),
+                Tables\Filters\SelectFilter::make('user')->relationship('user', 'name')->searchable()->preload(),
+                Tables\Filters\SelectFilter::make('type')->options(AddressType::class),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()]),
             ])
             ->defaultSort('created_at', 'desc');
     }

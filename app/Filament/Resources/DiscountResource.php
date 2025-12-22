@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Get;
+use Filament\Forms\Components\Tabs;
 
 class DiscountResource extends Resource
 {
@@ -29,154 +30,101 @@ class DiscountResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Group::make()
-                    ->schema([
-                        Forms\Components\Section::make('Detalles del Descuento')
-                            ->schema([
-                                Forms\Components\TextInput::make('code')
-                                    ->label('Código')
-                                    ->required()
-                                    ->unique(ignoreRecord: true)
-                                    ->maxLength(255),
-                                Forms\Components\Select::make('type')
-                                    ->label('Tipo de Descuento')
-                                    ->options(DiscountType::class)
-                                    ->required()
-                                    ->live(),
-                                Forms\Components\TextInput::make('value')
-                                    ->label('Valor')
-                                    ->numeric()
-                                    ->required()
-                                    ->suffix(fn (Get $get): string => $get('type') === 'percentage' ? '%' : 'USD'),
-                                Forms\Components\TextInput::make('min_amount')
-                                    ->label('Cantidad Mínima de Compra')
-                                    ->numeric()
-                                    ->nullable()
-                                    ->prefix('USD'),
-                                Forms\Components\TextInput::make('max_uses')
-                                    ->label('Usos Máximos')
-                                    ->numeric()
-                                    ->nullable(),
-                                Forms\Components\Toggle::make('is_active')
-                                    ->label('Activo')
-                                    ->default(true),
-                            ])->columns(2),
+                Tabs::make('DiscountTabs')->tabs([
+                    Tabs\Tab::make('Detalles del Descuento')
+                        ->icon('heroicon-o-ticket')
+                        ->schema([
+                            Forms\Components\TextInput::make('code')
+                                ->label('Código del Descuento')
+                                ->required()
+                                ->unique(ignoreRecord: true)
+                                ->maxLength(255)
+                                ->helperText('El código que los clientes usarán en el checkout.'),
+                            Forms\Components\Select::make('type')
+                                ->label('Tipo de Descuento')
+                                ->options(DiscountType::class)
+                                ->required()
+                                ->live(),
+                            Forms\Components\TextInput::make('value')
+                                ->label('Valor del Descuento')
+                                ->numeric()
+                                ->required()
+                                ->suffix(fn (Get $get): string => $get('type') === 'percentage' ? '%' : 'USD')
+                                ->helperText('El valor fijo o el porcentaje a descontar.'),
+                            Forms\Components\Toggle::make('is_active')
+                                ->label('Activar Descuento')
+                                ->default(true)
+                                ->helperText('Solo los descuentos activos pueden ser utilizados.'),
+                        ])->columns(2),
 
-                        Forms\Components\Section::make('Fechas de Validez')
-                            ->schema([
-                                Forms\Components\DateTimePicker::make('starts_at')
-                                    ->label('Fecha de Inicio')
-                                    ->native(false)
-                                    ->nullable(),
-                                Forms\Components\DateTimePicker::make('expires_at')
-                                    ->label('Fecha de Caducidad')
-                                    ->native(false)
-                                    ->nullable(),
-                            ])->columns(2),
-                    ])->columnSpan(2),
+                    Tabs\Tab::make('Condiciones y Límites')
+                        ->icon('heroicon-o-cog')
+                        ->schema([
+                            Forms\Components\TextInput::make('min_amount')
+                                ->label('Cantidad Mínima de Compra')
+                                ->numeric()
+                                ->nullable()
+                                ->prefix('USD')
+                                ->helperText('El carrito debe alcanzar este monto para que el descuento aplique.'),
+                            Forms\Components\TextInput::make('max_uses')
+                                ->label('Límite de Usos Totales')
+                                ->numeric()
+                                ->nullable()
+                                ->helperText('El número máximo de veces que este descuento puede ser usado en total.'),
+                            Forms\Components\DateTimePicker::make('starts_at')
+                                ->label('Fecha de Inicio')
+                                ->native(false)
+                                ->nullable(),
+                            Forms\Components\DateTimePicker::make('expires_at')
+                                ->label('Fecha de Caducidad')
+                                ->native(false)
+                                ->nullable(),
+                        ])->columns(2),
 
-                Forms\Components\Group::make()
-                    ->schema([
-                        Forms\Components\Section::make('Aplicabilidad')
-                            ->schema([
-                                Forms\Components\Select::make('applies_to')
-                                    ->label('Aplica a')
-                                    ->options(DiscountAppliesTo::class)
-                                    ->required()
-                                    ->live(),
-                                Forms\Components\Select::make('product_ids')
-                                    ->label('Productos')
-                                    ->multiple()
-                                    ->searchable()
-                                    ->preload()
-                                    ->options(Product::pluck('name', 'id'))
-                                    ->visible(fn (Get $get): bool => $get('applies_to') === 'products'),
-                                Forms\Components\Select::make('category_ids')
-                                    ->label('Categorías')
-                                    ->multiple()
-                                    ->searchable()
-                                    ->preload()
-                                    ->options(Category::pluck('name', 'id'))
-                                    ->visible(fn (Get $get): bool => $get('applies_to') === 'categories'),
-                            ]),
-                    ])->columnSpan(1),
-            ])->columns(3);
+                    Tabs\Tab::make('Aplicabilidad')
+                        ->icon('heroicon-o-adjustments-horizontal')
+                        ->schema([
+                            Forms\Components\Select::make('applies_to')
+                                ->label('Aplica a')
+                                ->options(DiscountAppliesTo::class)
+                                ->required()
+                                ->live()
+                                ->helperText('Define si el descuento es para todo el pedido, productos o categorías específicas.'),
+                            Forms\Components\Select::make('product_ids')
+                                ->label('Productos Específicos')
+                                ->multiple()
+                                ->searchable()
+                                ->preload()
+                                ->options(Product::pluck('name', 'id'))
+                                ->visible(fn (Get $get): bool => $get('applies_to') === 'products'),
+                            Forms\Components\Select::make('category_ids')
+                                ->label('Categorías Específicas')
+                                ->multiple()
+                                ->searchable()
+                                ->preload()
+                                ->options(Category::pluck('name', 'id'))
+                                ->visible(fn (Get $get): bool => $get('applies_to') === 'categories'),
+                        ])->columns(1),
+                ])->columnSpanFull(),
+            ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('code')
-                    ->label('Código')
-                    ->searchable()
-                    ->sortable()
-                    ->copyable(),
-                Tables\Columns\TextColumn::make('type')
-                    ->label('Tipo')
-                    ->badge()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('value')
-                    ->label('Valor')
-                    ->numeric()
-                    ->sortable()
-                    ->formatStateUsing(fn ($state, Discount $record) => $record->type === DiscountType::Percentage ? "{$state}%" : "{$state} USD"),
-                Tables\Columns\TextColumn::make('min_amount')
-                    ->label('Mín. Compra')
-                    ->money('usd')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('uses')
-                    ->label('Usos')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('max_uses')
-                    ->label('Máx. Usos')
-                    ->numeric()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('is_active')
-                    ->label('Estado')
-                    ->badge()
-                    ->formatStateUsing(fn (bool $state): string => $state ? 'Activo' : 'Inactivo')
-                    ->color(fn (bool $state): string => $state ? 'success' : 'danger')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('starts_at')
-                    ->label('Inicia')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('expires_at')
-                    ->label('Expira')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('applies_to')
-                    ->label('Aplica a')
-                    ->badge()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Creado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Actualizado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('code')->label('Código')->searchable()->sortable()->copyable(),
+                Tables\Columns\TextColumn::make('type')->label('Tipo')->badge()->sortable(),
+                Tables\Columns\TextColumn::make('value')->label('Valor')->sortable()->formatStateUsing(fn ($state, Discount $record) => $record->type === DiscountType::Percentage ? "{$state}%" : "{$state} USD"),
+                Tables\Columns\TextColumn::make('uses')->label('Usos')->numeric()->sortable(),
+                Tables\Columns\TextColumn::make('is_active')->label('Estado')->badge()->formatStateUsing(fn (bool $state): string => $state ? 'Activo' : 'Inactivo')->color(fn (bool $state): string => $state ? 'success' : 'danger')->sortable(),
+                Tables\Columns\TextColumn::make('starts_at')->label('Inicia')->dateTime('d/m/Y')->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('expires_at')->label('Expira')->dateTime('d/m/Y')->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('type')
-                    ->label('Tipo de Descuento')
-                    ->options(DiscountType::class),
-                Tables\Filters\SelectFilter::make('applies_to')
-                    ->label('Aplica a')
-                    ->options(DiscountAppliesTo::class),
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('Estado')
-                    ->trueLabel('Activo')
-                    ->falseLabel('Inactivo')
-                    ->placeholder('Todos'),
+                Tables\Filters\SelectFilter::make('type')->label('Tipo de Descuento')->options(DiscountType::class),
+                Tables\Filters\SelectFilter::make('applies_to')->label('Aplica a')->options(DiscountAppliesTo::class),
+                Tables\Filters\TernaryFilter::make('is_active')->label('Estado')->trueLabel('Activo')->falseLabel('Inactivo'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()->iconButton()->color('info')->modal(),
@@ -184,9 +132,7 @@ class DiscountResource extends Resource
                 Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Tables\Actions\BulkActionGroup::make([ Tables\Actions\DeleteBulkAction::make() ]),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()->modal(),
@@ -196,9 +142,7 @@ class DiscountResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

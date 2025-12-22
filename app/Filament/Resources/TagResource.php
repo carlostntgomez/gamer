@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
+use Filament\Forms\Components\Tabs;
 
 class TagResource extends Resource
 {
@@ -28,20 +29,43 @@ class TagResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Detalles de la Etiqueta')
-                    ->schema([
-                        Forms\Components\TextInput::make('name')
-                            ->label('Nombre')
-                            ->required()
-                            ->maxLength(255)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn (Forms\Set $set, $state) => $set('slug', Str::slug($state))),
-                        Forms\Components\TextInput::make('slug')
-                            ->label('Slug')
-                            ->required()
-                            ->unique(ignoreRecord: true)
-                            ->maxLength(255),
-                    ])->columns(2)
+                Tabs::make('TagTabs')->tabs([
+                    Tabs\Tab::make('Detalles de la Etiqueta')
+                        ->icon('heroicon-o-tag')
+                        ->schema([
+                            Forms\Components\TextInput::make('name')
+                                ->label('Nombre de la Etiqueta')
+                                ->required()
+                                ->maxLength(255)
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(function (Forms\Set $set, ?string $state) {
+                                    $set('slug', Str::slug($state));
+                                    $set('seo_title', $state);
+                                }),
+                            Forms\Components\TextInput::make('slug')
+                                ->label('Slug')
+                                ->required()
+                                ->unique(ignoreRecord: true)
+                                ->disabled(fn (string $operation): bool => $operation === 'edit')
+                                ->helperText('URL amigable generada automáticamente a partir del nombre.'),
+                        ]),
+                    Tabs\Tab::make('SEO')
+                        ->icon('heroicon-o-magnifying-glass')
+                        ->schema([
+                            Forms\Components\TextInput::make('seo_title')
+                                ->label('Título SEO')
+                                ->maxLength(60)
+                                ->helperText('Recomendado: Máximo 60 caracteres. Se autocompleta con el nombre de la etiqueta.'),
+                            Forms\Components\Textarea::make('seo_description')
+                                ->label('Descripción SEO')
+                                ->maxLength(160)
+                                ->rows(3)
+                                ->helperText('Recomendado: Máximo 160 caracteres. Un resumen para Google.'),
+                            Forms\Components\TagsInput::make('seo_keywords')
+                                ->label('Palabras Clave SEO')
+                                ->placeholder('Añadir palabra clave'),
+                        ]),
+                ])->columnSpanFull(),
             ]);
     }
 
@@ -49,30 +73,9 @@ class TagResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->label('Nombre')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('slug')
-                    ->label('Slug')
-                    ->searchable()
-                    ->copyable()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('posts_count')
-                    ->label('Número de Posts')
-                    ->counts('posts')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Creado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Actualizado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('posts_count')->label('Nº Posts')->counts('posts')->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Creado')->dateTime('d/m/Y')->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
@@ -80,20 +83,12 @@ class TagResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                Tables\Actions\ForceDeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
-                ]),
+                Tables\Actions\BulkActionGroup::make([ Tables\Actions\DeleteBulkAction::make() ]),
             ])
             ->defaultSort('name', 'asc')
-            ->modifyQueryUsing(fn (Builder $query) => $query->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]));
+            ->modifyQueryUsing(fn (Builder $query) => $query->withoutGlobalScopes([ SoftDeletingScope::class ]));
     }
 
     public static function getPages(): array
@@ -105,9 +100,6 @@ class TagResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+        return parent::getEloquentQuery()->withoutGlobalScopes([ SoftDeletingScope::class ]);
     }
 }

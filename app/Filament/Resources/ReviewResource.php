@@ -9,6 +9,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms\Components\Tabs;
 
 class ReviewResource extends Resource
 {
@@ -24,59 +25,41 @@ class ReviewResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Group::make()
-                ->schema([
-                    Forms\Components\Section::make('Contenido de la Reseña')
-                        ->description('Detalles de la opinión dejada por el cliente.')
-                        ->schema([
-                            Forms\Components\Select::make('user_id')
-                                ->relationship('user', 'name')
-                                ->label('Cliente')
-                                ->required()
-                                ->searchable()
-                                ->preload(),
+            Tabs::make('ReviewTabs')->tabs([
+                Tabs\Tab::make('Contenido de la Reseña')
+                    ->icon('heroicon-o-chat-bubble-bottom-center-text')
+                    ->schema([
+                        Forms\Components\Select::make('user_id')
+                            ->relationship('user', 'name')->label('Cliente')->searchable()->preload()->required(),
+                        Forms\Components\Select::make('product_id')
+                            ->relationship('product', 'name')->label('Producto')->searchable()->preload()->required(),
+                        Forms\Components\Select::make('rating')
+                            ->label('Calificación')
+                            ->options(array_combine(range(1, 5), array_map(fn($i) => "$i Estrellas", range(1, 5))))
+                            ->required()
+                            ->helperText('La puntuación que el cliente le dio al producto.'),
+                        Forms\Components\RichEditor::make('content')
+                            ->label('Comentario del Cliente')
+                            ->required()
+                            ->columnSpanFull(),
+                    ])->columns(2),
 
-                            Forms\Components\Select::make('product_id')
-                                ->relationship('product', 'name')
-                                ->label('Producto')
-                                ->required()
-                                ->searchable()
-                                ->preload(),
-
-                            Forms\Components\Select::make('rating')
-                                ->label('Calificación')
-                                ->options(array_combine(range(1, 5), array_map(fn($i) => "$i Estrellas", range(1, 5))))
-                                ->required()
-                                ->helperText('La puntuación que el cliente le dio al producto.'),
-
-                            Forms\Components\RichEditor::make('content')
-                                ->label('Comentario del Cliente')
-                                ->required()
-                                ->columnSpanFull(),
-                        ])->columns(2),
-                ])->columnSpan(['lg' => 2]),
-
-            Forms\Components\Group::make()
-                ->schema([
-                    Forms\Components\Section::make('Moderación')
-                        ->description('Controla la visibilidad de esta reseña en la tienda.')
-                        ->schema([
-                            Forms\Components\Toggle::make('is_approved')
-                                ->label('Aprobado para su publicación')
-                                ->default(true)
-                                ->helperText('Solo las reseñas aprobadas serán visibles para los clientes.'),
-                        ]),
-                    Forms\Components\Section::make('Metadatos')
-                        ->schema([
-                            Forms\Components\Placeholder::make('created_at')
-                                ->label('Fecha de Creación')
-                                ->content(fn (?Review $record): string => $record?->created_at?->translatedFormat('d M Y, H:i') ?? '-'),
-                            Forms\Components\Placeholder::make('updated_at')
-                                ->label('Última Actualización')
-                                ->content(fn (?Review $record): string => $record?->updated_at?->translatedFormat('d M Y, H:i') ?? '-'),
-                        ]),
-                ])->columnSpan(['lg' => 1]),
-        ])->columns(3);
+                Tabs\Tab::make('Moderación y Estado')
+                    ->icon('heroicon-o-check-circle')
+                    ->schema([
+                        Forms\Components\Toggle::make('is_approved')
+                            ->label('Aprobado para su publicación')
+                            ->default(true)
+                            ->helperText('Solo las reseñas aprobadas serán visibles para los clientes.'),
+                        Forms\Components\Placeholder::make('created_at')
+                            ->label('Fecha de Creación')
+                            ->content(fn (?Review $record): string => $record?->created_at?->translatedFormat('d M Y, H:i') ?? '-'),
+                        Forms\Components\Placeholder::make('updated_at')
+                            ->label('Última Actualización')
+                            ->content(fn (?Review $record): string => $record?->updated_at?->translatedFormat('d M Y, H:i') ?? '-'),
+                    ])->columns(1),
+            ])->columnSpanFull(),
+        ]);
     }
 
     public static function table(Table $table): Table

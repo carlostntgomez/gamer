@@ -3,15 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\WishlistResource\Pages;
-use App\Filament\Resources\WishlistResource\RelationManagers;
 use App\Models\Wishlist;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Eloquent\Model;
 
 class WishlistResource extends Resource
@@ -31,90 +28,64 @@ class WishlistResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('Detalles de la Lista de Deseos')
-                    ->schema([
-                        Forms\Components\Select::make('user_id')
-                            ->label('Usuario')
-                            ->relationship('user', 'name')
-                            ->required()
-                            ->searchable()
-                            ->preload(),
-                        Forms\Components\Select::make('product_id')
-                            ->label('Producto')
-                            ->relationship('product', 'name')
-                            ->required()
-                            ->searchable()
-                            ->preload(),
-                    ])->columns(2)
-            ]);
+        return $form->schema([
+            Forms\Components\Group::make()
+                ->schema([
+                    Forms\Components\Section::make('Detalles del Elemento')
+                        ->description('Selecciona el cliente y el producto para crear un nuevo elemento en la lista de deseos.')
+                        ->schema([
+                            Forms\Components\Select::make('user_id')
+                                ->relationship('user', 'name')->label('Cliente')->searchable()->preload()->required(),
+                            Forms\Components\Select::make('product_id')
+                                ->relationship('product', 'name')->label('Producto')->searchable()->preload()->required(),
+                        ])->columns(2),
+                ])->columnSpan(['lg' => 2]),
+
+            Forms\Components\Group::make()
+                ->schema([
+                    Forms\Components\Section::make('Metadatos')
+                        ->schema([
+                            Forms\Components\Placeholder::make('created_at')
+                                ->label('Fecha de Creación')
+                                ->content(fn(?Wishlist $record): string => $record?->created_at?->translatedFormat('d M Y, H:i') ?? '-'),
+                            Forms\Components\Placeholder::make('updated_at')
+                                ->label('Última Actualización')
+                                ->content(fn(?Wishlist $record): string => $record?->updated_at?->translatedFormat('d M Y, H:i') ?? '-'),
+                        ]),
+                ])->columnSpan(['lg' => 1]),
+        ])->columns(3);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label('Usuario')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('product.name')
-                    ->label('Producto')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Agregado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Actualizado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('user.name')->label('Usuario')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('product.name')->label('Producto')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Agregado el')->dateTime()->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('user_id')
-                    ->relationship('user', 'name')
-                    ->label('Filtrar por Usuario')
-                    ->searchable()
-                    ->preload(),
-                Tables\Filters\SelectFilter::make('product_id')
-                    ->relationship('product', 'name')
-                    ->label('Filtrar por Producto')
-                    ->searchable()
-                    ->preload(),
+                Tables\Filters\SelectFilter::make('user_id')->relationship('user', 'name')->label('Usuario')->searchable()->preload(),
+                Tables\Filters\SelectFilter::make('product_id')->relationship('product', 'name')->label('Producto')->searchable()->preload(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('info')->modal(),
-                Tables\Actions\EditAction::make()->iconButton()->color('primary')->modal(),
-                Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make()->modal(),
+                Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()]),
             ])
             ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
+    { return []; }
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListWishlists::route('/'),
-            'create' => Pages\CreateWishlist::route('/create'),
-            'edit' => Pages\EditWishlist::route('/{record}/edit'),
         ];
     }
 }

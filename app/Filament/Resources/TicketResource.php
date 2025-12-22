@@ -14,6 +14,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\Tabs;
 
 class TicketResource extends Resource
 {
@@ -30,37 +31,44 @@ class TicketResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Detalles del Ticket')
-                    ->schema([
-                        Forms\Components\Select::make('user_id')
-                            ->label('Usuario')
-                            ->relationship('user', 'name')
-                            ->required()
-                            ->searchable()
-                            ->preload(),
-                        Forms\Components\TextInput::make('subject')
-                            ->label('Asunto')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\RichEditor::make('message')
-                            ->label('Mensaje')
-                            ->required()
-                            ->maxLength(65535)
-                            ->fileAttachmentsDirectory('ticket-attachments')
-                            ->columnSpanFull(),
-                        Forms\Components\Select::make('status')
-                            ->label('Estado')
-                            ->options(TicketStatus::class)
-                            ->required()
-                            ->native(false)
-                            ->default(TicketStatus::OPEN),
-                        Forms\Components\Select::make('priority')
-                            ->label('Prioridad')
-                            ->options(TicketPriority::class)
-                            ->required()
-                            ->native(false)
-                            ->default(TicketPriority::MEDIUM),
-                    ])->columns(2)
+                Tabs::make('TicketTabs')->tabs([
+                    Tabs\Tab::make('Contenido del Ticket')
+                        ->icon('heroicon-o-document-text')
+                        ->schema([
+                            Forms\Components\TextInput::make('subject')
+                                ->label('Asunto')
+                                ->required()
+                                ->maxLength(255)
+                                ->columnSpanFull(),
+                            Forms\Components\RichEditor::make('message')
+                                ->label('Mensaje del Cliente')
+                                ->required()
+                                ->maxLength(65535)
+                                ->fileAttachmentsDirectory('ticket-attachments')
+                                ->columnSpanFull(),
+                        ]),
+                    Tabs\Tab::make('Gestión y Estado')
+                        ->icon('heroicon-o-cog')
+                        ->schema([
+                            Forms\Components\Select::make('user_id')
+                                ->relationship('user', 'name')->label('Cliente')->searchable()->preload()->required(),
+                            Forms\Components\Select::make('assigned_to_id')
+                                ->relationship('assignedTo', 'name')
+                                ->label('Agente Asignado')
+                                ->searchable()
+                                ->preload(),
+                            Forms\Components\Select::make('status')
+                                ->label('Estado')
+                                ->options(TicketStatus::class)
+                                ->native(false)
+                                ->required(),
+                            Forms\Components\Select::make('priority')
+                                ->label('Prioridad')
+                                ->options(TicketPriority::class)
+                                ->native(false)
+                                ->required(),
+                        ])->columns(2),
+                ])->columnSpanFull(),
             ]);
     }
 
@@ -68,64 +76,26 @@ class TicketResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('ID')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label('Usuario')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('subject')
-                    ->label('Asunto')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('status')
-                    ->label('Estado')
-                    ->badge()
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('priority')
-                    ->label('Prioridad')
-                    ->badge()
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Creado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Actualizado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('id')->label('ID')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('user.name')->label('Cliente')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('subject')->label('Asunto')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('assignedTo.name')->label('Agente')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('status')->label('Estado')->badge()->sortable(),
+                Tables\Columns\TextColumn::make('priority')->label('Prioridad')->badge()->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Creado')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('user_id')
-                    ->relationship('user', 'name')
-                    ->label('Filtrar por Usuario')
-                    ->searchable()
-                    ->preload(),
-                Tables\Filters\SelectFilter::make('status')
-                    ->label('Estado')
-                    ->options(TicketStatus::class),
-                Tables\Filters\SelectFilter::make('priority')
-                    ->label('Prioridad')
-                    ->options(TicketPriority::class),
+                Tables\Filters\SelectFilter::make('user_id')->relationship('user', 'name')->label('Cliente')->searchable()->preload(),
+                Tables\Filters\SelectFilter::make('assigned_to_id')->relationship('assignedTo', 'name')->label('Agente')->searchable()->preload(),
+                Tables\Filters\SelectFilter::make('status')->options(TicketStatus::class)->label('Estado'),
+                Tables\Filters\SelectFilter::make('priority')->options(TicketPriority::class)->label('Prioridad'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('info'),
-                Tables\Actions\EditAction::make()->iconButton()->color('primary')->modal(),
-                Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make()->modal(),
+                Tables\Actions\BulkActionGroup::make([ Tables\Actions\DeleteBulkAction::make() ]),
             ])
             ->defaultSort('created_at', 'desc');
     }

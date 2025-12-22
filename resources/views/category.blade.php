@@ -13,7 +13,7 @@
                                     <a class="breadcrumb-link" href="index.html">Home</a>
                                 </li>
                                 <li class="breadcrumb-li">
-                                    <span class="breadcrumb-text">Collection</span>
+                                    <span class="breadcrumb-text">{{ $category->name }}</span>
                                 </li>
                             </ul>
                             <!-- breadcrumb-list end -->
@@ -30,11 +30,15 @@
                     <div class="col">
                         <div class="pro-grli-wrap product-grid">
                             <div class="collection-img-wrap">
-                                <h6 class="st-title" data-animate="animate__fadeInUp">Collection ({{ $products->total() }})</h6>
+                                <h6 class="st-title" data-animate="animate__fadeInUp">{{ $category->name }} ({{ $products->total() }})</h6>
                                 <!-- collection info start -->
                                 <div class="collection-info">
                                     <div class="collection-image" data-animate="animate__fadeInUp">
-                                        <img src="{{ asset('img/banner/sall-banner.jpg') }}" class="img-fluid" alt="sall-banner">
+                                        @if($category->banner_url)
+                                            <img src="{{ $category->banner_url }}" class="img-fluid" alt="{{ $category->name }} banner">
+                                        @else
+                                            <img src="{{ asset('img/banner/sall-banner.jpg') }}" class="img-fluid" alt="sall-banner">
+                                        @endif
                                     </div>
                                 </div>
                                 <!-- collection info end -->
@@ -169,11 +173,6 @@
                                                                                 <i class="fa-solid fa-star"></i>
                                                                             </span>
                                                                         </div>
-                                                                        @if($product->sale_price && $product->sale_price < $product->price)
-                                                                            <div class="product-label pro-new-sale">
-                                                                                <span class="product-label-title">Sale<span>{{ $product->salePercent }}%</span></span>
-                                                                            </div>
-                                                                        @endif
                                                                     </div>
                                                                 </div>    
                                                             </div>

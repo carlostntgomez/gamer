@@ -21,12 +21,15 @@ class CategorySeeder extends Seeder
         $this->clearImageDirectory();
         $this->truncateCategories();
 
-        $sampleImages = $this->getSampleImages();
-        if (empty($sampleImages)) {
+        $mainImages = $this->getSampleImages('main');
+        $bannerImages = $this->getSampleImages('banner');
+
+        if (empty($mainImages)) {
+            $this->command->error('Main images not found, seeder cannot continue.');
             return;
         }
 
-        $this->seedCategories($sampleImages);
+        $this->seedCategories($mainImages, $bannerImages);
 
         $this->command->info('Category seeder finished successfully.');
     }
@@ -58,33 +61,34 @@ class CategorySeeder extends Seeder
     /**
      * Get the sample images from the public directory.
      *
+     * @param string $type 'main' or 'banner'
      * @return array
      */
-    private function getSampleImages(): array
+    private function getSampleImages(string $type): array
     {
-        $sampleImagesPath = public_path('imagenes de muestra/categories');
+        $sampleImagesPath = public_path('imagenes de muestra/categories/' . $type);
 
         if (!File::exists($sampleImagesPath) || count(File::files($sampleImagesPath)) === 0) {
-            $this->command->error('No sample images found in: ' . $sampleImagesPath);
-            $this->command->error('Seeder cannot continue without images. Please add images to that path.');
+            $this->command->error('No sample ' . $type . ' images found in: ' . $sampleImagesPath);
             return [];
         }
 
-        $this->command->info(count(File::files($sampleImagesPath)) . ' sample images found.');
+        $this->command->info(count(File::files($sampleImagesPath)) . ' sample ' . $type . ' images found.');
         return File::files($sampleImagesPath);
     }
 
     /**
      * Seed the categories into the database.
      *
-     * @param array $sampleImages
+     * @param array $mainImages
+     * @param array $bannerImages
      */
-    private function seedCategories(array $sampleImages): void
+    private function seedCategories(array $mainImages, array $bannerImages): void
     {
-        $this->command->info('Creating categories and assigning images...');
+        $this->command->info('Creating categories, assigning images, and generating SEO content...');
         $categories = $this->getCategoryData();
-        $this->createCategoryHierarchy($categories, null, $sampleImages);
-        $this->command->info('Categories and associated images created successfully.');
+        $this->createCategoryHierarchy($categories, null, $mainImages, $bannerImages);
+        $this->command->info('Categories and associated data created successfully.');
     }
 
     /**
@@ -126,24 +130,90 @@ class CategorySeeder extends Seeder
      *
      * @param array $categories
      * @param int|null $parentId
-     * @param array $sampleImages
+     * @param array $mainImages
+     * @param array $bannerImages
+     * @param array $parentNames
      */
-    private function createCategoryHierarchy(array $categories, ?int $parentId, array $sampleImages): void
+    private function createCategoryHierarchy(array $categories, ?int $parentId, array $mainImages, array $bannerImages, array $parentNames = []): void
     {
         foreach ($categories as $categoryData) {
-            $imagePath = $this->processAndStoreImage($categoryData['name'], $sampleImages);
+            $categoryName = $categoryData['name'];
+
+            $imagePath = $this->processAndStoreImage($categoryName, $mainImages, 'main');
+            $bannerPath = $this->processAndStoreImage($categoryName . ' banner', $bannerImages, 'banner');
+
+            // Generate SEO Content
+            $seoTitle = $this->generateSeoTitle($categoryName, $parentNames);
+            $seoDescription = $this->generateSeoDescription($categoryName, $parentNames);
+            $seoKeywords = $this->generateSeoKeywords($categoryName, $parentNames);
 
             $category = Category::create([
-                'name' => $categoryData['name'],
-                'slug' => Str::slug($categoryData['name']),
+                'name' => $categoryName,
+                'slug' => Str::slug($categoryName),
                 'parent_id' => $parentId,
                 'image_path' => $imagePath,
+                'banner_path' => $bannerPath,
+                'seo_title' => $seoTitle,
+                'seo_description' => $seoDescription,
+                'seo_keywords' => $seoKeywords,
             ]);
 
+            $this->command->line("  - SEO content generated for category '{$categoryName}'.");
+
             if (!empty($categoryData['children'])) {
-                $this->createCategoryHierarchy($categoryData['children'], $category->id, $sampleImages);
+                $newParentNames = array_merge($parentNames, [$categoryName]);
+                $this->createCategoryHierarchy($categoryData['children'], $category->id, $mainImages, $bannerImages, $newParentNames);
             }
         }
+    }
+
+    /**
+     * Generate an optimized SEO title.
+     *
+     * @param string $categoryName
+     * @param array $parentNames
+     * @return string
+     */
+    private function generateSeoTitle(string $categoryName, array $parentNames): string
+    {
+        $storeName = config('app.name', 'Tu Tienda Online');
+        if (!empty($parentNames)) {
+            $parentChain = implode(' > ', $parentNames);
+            return "Compra {$categoryName} en {$parentChain} | {$storeName}";
+        }
+        return "Compra lo mejor en {$categoryName} | {$storeName}";
+    }
+
+    /**
+     * Generate an attractive SEO description.
+     *
+     * @param string $categoryName
+     * @param array $parentNames
+     * @return string
+     */
+    private function generateSeoDescription(string $categoryName, array $parentNames): string
+    {
+        $storeName = config('app.name', 'Tu Tienda Online');
+        if (!empty($parentNames)) {
+            $lastParent = end($parentNames);
+            return "Descubre nuestra amplia gama de {$categoryName} dentro de la sección de {$lastParent}. Las mejores ofertas y envíos rápidos solo en {$storeName}.";
+        }
+        return "Encuentra la mejor selección de {$categoryName} en {$storeName}. Calidad, variedad y precios increíbles. ¡Compra ahora y aprovecha nuestras ofertas!";
+    }
+
+    /**
+     * Generate relevant SEO keywords.
+     *
+     * @param string $categoryName
+     * @param array $parentNames
+     * @return array
+     */
+    private function generateSeoKeywords(string $categoryName, array $parentNames): array
+    {
+        $keywords = array_merge([$categoryName], $parentNames);
+        $keywords = array_map('strtolower', $keywords);
+        $additionalKeywords = ['comprar', 'ofertas', 'online', 'tienda', 'mejores precios'];
+        return array_values(array_unique(array_merge($keywords, $additionalKeywords)));
     }
 
     /**
@@ -151,11 +221,14 @@ class CategorySeeder extends Seeder
      *
      * @param string $categoryName
      * @param array $sampleImages
+     * @param string $type
      * @return string|null
      */
-    private function processAndStoreImage(string $categoryName, array $sampleImages): ?string
+    private function processAndStoreImage(string $categoryName, array $sampleImages, string $type): ?string
     {
         if (empty($sampleImages)) {
+            if ($type === 'banner') return null; // Banners are optional
+            $this->command->error('No images available for processing for type: ' . $type);
             return null;
         }
 
@@ -167,10 +240,10 @@ class CategorySeeder extends Seeder
 
         try {
             $this->convertImageToWebp($sourcePath, $destinationPath);
-            $this->command->line("  - Image '{$newFileName}' assigned to category '{$categoryName}'.");
+            $this->command->line("  - " . ucfirst($type) . " image '{$newFileName}' assigned to category '{$categoryName}'.");
             return 'categories/' . $newFileName;
         } catch (\Exception $e) {
-            $this->command->error("  - Failed to process image for category '{$categoryName}': " . $e->getMessage());
+            $this->command->error("  - Failed to process " . $type . " image for category '{$categoryName}': " . $e->getMessage());
             return null;
         }
     }

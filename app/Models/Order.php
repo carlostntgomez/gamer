@@ -15,6 +15,7 @@ class Order extends Model
         'uuid',
         'user_id',
         'status',
+        'subtotal',
         'total',
         'shipping_address_id',
         'billing_address_id',
@@ -22,6 +23,7 @@ class Order extends Model
     ];
 
     protected $casts = [
+        'subtotal' => 'decimal:2',
         'total' => 'decimal:2',
         'status' => OrderStatus::class,
     ];

@@ -11,6 +11,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
+use Filament\Forms\Components\Tabs;
 
 class UserResource extends Resource
 {
@@ -28,43 +29,43 @@ class UserResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Información de la Cuenta')
-                    ->schema([
-                        Forms\Components\TextInput::make('name')
-                            ->label('Nombre')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('email')
-                            ->label('Correo Electrónico')
-                            ->email()
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(ignoreRecord: true),
-                        Forms\Components\TextInput::make('password')
-                            ->label('Contraseña')
-                            ->password()
-                            ->dehydrateStateUsing(fn ($state) => Hash::make($state))
-                            ->dehydrated(fn ($state) => filled($state))
-                            ->required(fn (string $context): bool => $context === 'create')
-                            ->helperText('Dejar en blanco para no cambiar la contraseña.'),
-                    ])->columns(2),
+                Tabs::make('UserTabs')->tabs([
+                    Tabs\Tab::make('Información de la Cuenta')
+                        ->icon('heroicon-o-user-circle')
+                        ->schema([
+                            Forms\Components\TextInput::make('name')
+                                ->label('Nombre')
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\TextInput::make('email')
+                                ->label('Correo Electrónico')
+                                ->email()
+                                ->required()
+                                ->maxLength(255)
+                                ->unique(ignoreRecord: true),
+                            Forms\Components\TextInput::make('password')
+                                ->label('Contraseña')
+                                ->password()
+                                ->dehydrateStateUsing(fn ($state) => Hash::make($state))
+                                ->dehydrated(fn ($state) => filled($state))
+                                ->required(fn (string $context): bool => $context === 'create')
+                                ->helperText('Dejar en blanco para no cambiar la contraseña.'),
+                        ])->columns(2),
 
-                Forms\Components\Section::make('Detalles de Contacto')
-                    ->schema([
-                        Forms\Components\TextInput::make('phone')
-                            ->label('Teléfono')
-                            ->tel(),
-                    ]),
-
-                Forms\Components\Section::make('Notas y Preferencias')
-                    ->schema([
-                        Forms\Components\Toggle::make('marketing_opt_in')
-                            ->label('Suscrito a Marketing')
-                            ->helperText('El cliente acepta recibir correos de marketing.'),
-                        Forms\Components\RichEditor::make('customer_notes')
-                            ->label('Notas Internas del Cliente')
-                            ->columnSpanFull(),
-                    ]),
+                    Tabs\Tab::make('Detalles Adicionales')
+                        ->icon('heroicon-o-information-circle')
+                        ->schema([
+                            Forms\Components\TextInput::make('phone')
+                                ->label('Teléfono')
+                                ->tel(),
+                            Forms\Components\Toggle::make('marketing_opt_in')
+                                ->label('Suscrito a Marketing')
+                                ->helperText('El cliente acepta recibir correos de marketing.'),
+                            Forms\Components\RichEditor::make('customer_notes')
+                                ->label('Notas Internas del Cliente')
+                                ->columnSpanFull(),
+                        ])->columns(1),
+                ])->columnSpanFull(),
             ]);
     }
 
@@ -92,12 +93,7 @@ class UserResource extends Resource
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Fecha de Registro')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Actualizado')
-                    ->dateTime()
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

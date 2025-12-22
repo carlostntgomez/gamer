@@ -16,6 +16,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Filament\Forms\Components\Tabs;
 
 class TestimonialResource extends Resource
 {
@@ -33,55 +34,51 @@ class TestimonialResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Group::make()
-                    ->schema([
-                        Forms\Components\Section::make('Detalles del Testimonio')
-                            ->schema([
-                                Forms\Components\TextInput::make('author_name')
-                                    ->label('Nombre del Autor')
-                                    ->required()
-                                    ->maxLength(255),
-                                Forms\Components\TextInput::make('author_title')
-                                    ->label('Cargo/Título del Autor')
-                                    ->maxLength(255)
-                                    ->nullable(),
-                                FileUpload::make('image_path')
-                                    ->label('Foto del Autor')
-                                    ->directory('testimonials')
-                                    ->disk('public')
-                                    ->image()
-                                    ->imageEditor()
-                                    ->columnSpanFull()
-                                    ->preserveFilenames()
-                                    ->getUploadedFileNameForStorageUsing(
-                                        fn (TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
-                                            ->beforeLast('.')
-                                            ->slug()
-                                            ->append('-' . uniqid() . '.webp')
-                                    ),
-                                RichEditor::make('content')
-                                    ->label('Contenido del Testimonio')
-                                    ->required()
-                                    ->maxLength(65535)
-                                    ->columnSpanFull(),
-                                Select::make('rating')
-                                    ->label('Calificación')
-                                    ->options([
-                                        1 => '1 Estrella',
-                                        2 => '2 Estrellas',
-                                        3 => '3 Estrellas',
-                                        4 => '4 Estrellas',
-                                        5 => '5 Estrellas',
-                                    ])
-                                    ->numeric()
-                                    ->nullable()
-                                    ->columnSpan(1),
-                                Toggle::make('is_published')
-                                    ->label('Publicado')
-                                    ->default(false)
-                                    ->columnSpan(1),
-                            ])->columns(2),
-                    ])->columnSpanFull(),
+                Tabs::make('TestimonialTabs')->tabs([
+                    Tabs\Tab::make('Contenido del Testimonio')
+                        ->icon('heroicon-o-chat-bubble-left-right')
+                        ->schema([
+                            Forms\Components\TextInput::make('author_name')
+                                ->label('Nombre del Autor')
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\TextInput::make('author_title')
+                                ->label('Cargo/Título del Autor')
+                                ->maxLength(255)
+                                ->helperText('Ej: Cliente Satisfecho, CEO de Empresa, etc. Opcional.')
+                                ->nullable(),
+                            RichEditor::make('content')
+                                ->label('Contenido del Testimonio')
+                                ->required()
+                                ->maxLength(65535)
+                                ->columnSpanFull(),
+                        ])->columns(2),
+
+                    Tabs\Tab::make('Detalles y Visibilidad')
+                        ->icon('heroicon-o-eye')
+                        ->schema([
+                            FileUpload::make('image_path')
+                                ->label('Foto del Autor')
+                                ->directory('testimonials')->disk('public')->image()->imageEditor()
+                                ->getUploadedFileNameForStorageUsing(
+                                    fn (TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
+                                        ->beforeLast('.')
+                                        ->slug()
+                                        ->append('-' . uniqid() . '.webp')
+                                )
+                                ->helperText('Opcional. La foto se mostrará junto al testimonio.')
+                                ->columnSpanFull(),
+                            Select::make('rating')
+                                ->label('Calificación')
+                                ->options([ 1 => '1 Estrella', 2 => '2 Estrellas', 3 => '3 Estrellas', 4 => '4 Estrellas', 5 => '5 Estrellas' ])
+                                ->numeric()
+                                ->nullable(),
+                            Toggle::make('is_published')
+                                ->label('Publicado')
+                                ->default(false)
+                                ->helperText('Controla si el testimonio es visible públicamente en el sitio.'),
+                        ])->columns(2),
+                ])->columnSpanFull(),
             ]);
     }
 
@@ -89,67 +86,22 @@ class TestimonialResource extends Resource
     {
         return $table
             ->columns([
-                ImageColumn::make('image_path')
-                    ->label('Foto')
-                    ->disk('public')
-                    ->circular()
-                    ->defaultImageUrl(url('/images/placeholder.png')),
-                Tables\Columns\TextColumn::make('author_name')
-                    ->label('Autor')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('author_title')
-                    ->label('Cargo')
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('content')
-                    ->label('Contenido')
-                    ->limit(50)
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('rating')
-                    ->label('Calificación')
-                    ->numeric()
-                    ->sortable()
-                    ->formatStateUsing(fn (?int $state): string => $state ? str_repeat('⭐', $state) : 'N/A'),
-                IconColumn::make('is_published')
-                    ->label('Publicado')
-                    ->boolean(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Creado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Actualizado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                ImageColumn::make('image_path')->label('Foto')->disk('public')->circular()->defaultImageUrl(url('/images/placeholder.png')),
+                Tables\Columns\TextColumn::make('author_name')->label('Autor')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('rating')->label('Calificación')->numeric()->sortable()->formatStateUsing(fn (?int $state): string => $state ? str_repeat('⭐', $state) : 'N/A'),
+                IconColumn::make('is_published')->label('Publicado')->boolean(),
+                Tables\Columns\TextColumn::make('created_at')->label('Creado')->dateTime('d/m/Y')->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('rating')
-                    ->label('Calificación')
-                    ->options([
-                        1 => '1 Estrella',
-                        2 => '2 Estrellas',
-                        3 => '3 Estrellas',
-                        4 => '4 Estrellas',
-                        5 => '5 Estrellas',
-                    ]),
-                Tables\Filters\TernaryFilter::make('is_published')
-                    ->label('Estado de Publicación')
-                    ->trueLabel('Publicado')
-                    ->falseLabel('Borrador')
-                    ->placeholder('Todos'),
+                Tables\Filters\SelectFilter::make('rating')->label('Calificación')->options([ 1 => '1 Estrella', 2 => '2 Estrellas', 3 => '3 Estrellas', 4 => '4 Estrellas', 5 => '5 Estrellas' ]),
+                Tables\Filters\TernaryFilter::make('is_published')->label('Estado')->trueLabel('Publicado')->falseLabel('Borrador'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Tables\Actions\BulkActionGroup::make([ Tables\Actions\DeleteBulkAction::make() ]),
             ]);
     }
 

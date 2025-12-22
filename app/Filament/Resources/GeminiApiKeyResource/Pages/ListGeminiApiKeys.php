@@ -3,27 +3,19 @@
 namespace App\Filament\Resources\GeminiApiKeyResource\Pages;
 
 use App\Filament\Resources\GeminiApiKeyResource;
-use Filament\Actions;
+use App\Models\GeminiApiKey;
 use Filament\Resources\Pages\ListRecords;
-use Illuminate\Database\Eloquent\Builder;
 
 class ListGeminiApiKeys extends ListRecords
 {
     protected static string $resource = GeminiApiKeyResource::class;
 
-    /**
-     * Ensure we always query the single record.
-     */
-    protected function getTableQuery(): Builder
+    public function mount(): void
     {
-        return GeminiApiKeyResource::getSingleRecord()->newQuery();
-    }
+        // Buscamos el primer (y único) registro, o lo creamos si no existe.
+        $record = GeminiApiKey::firstOrCreate([]);
 
-    /**
-     * Disable the create action since we only manage a single record.
-     */
-    protected function getHeaderActions(): array
-    {
-        return [];
+        // Redirigimos inmediatamente a la página de edición de ese registro.
+        redirect($this->getResource()::getUrl('edit', ['record' => $record]));
     }
 }

@@ -15,6 +15,13 @@ class Tag extends Model
     protected $fillable = [
         'name',
         'slug',
+        'seo_title',
+        'seo_description',
+        'seo_keywords',
+    ];
+
+    protected $casts = [
+        'seo_keywords' => 'array',
     ];
 
     /**
