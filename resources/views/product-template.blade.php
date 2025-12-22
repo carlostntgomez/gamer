@@ -128,8 +128,7 @@
                                                     <div class="product-variant">
                                                         <h6>Disponibilidad:</h6>
                                                         <span class="stock-qty out-stock text-danger">
-                                                            <span>Agotado</span>@if ($product->stock_quantity > 0)
-
+                                                            <span>Agotado</span>
                                                         </span>
                                                     </div>
                                                 @endif

@@ -25,6 +25,7 @@ class Product extends Model
         'gallery_image_paths' => 'array',
         'colors' => 'array',
         'seo_keywords' => 'array',
+        'additional_info' => 'array',
         'type' => ProductType::class,
         'condition' => ProductCondition::class,
     ];
