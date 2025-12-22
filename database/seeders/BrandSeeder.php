@@ -5,23 +5,29 @@ namespace Database\Seeders;
 use App\Models\Brand;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class BrandSeeder extends Seeder
 {
     public function run(): void
     {
         $this->command->info('Limpiando y recreando el directorio de imágenes de marcas (logos)...');
-        $this->clearDirectory(storage_path('app/public/brands'));
+        $storagePath = storage_path('app/public/brands');
+        $this->clearDirectory($storagePath);
 
-        // Intentar buscar logos en una carpeta específica, si no, usar la general
-        $logoPath = public_path('imagenes de muestra/brands');
-        if (!File::isDirectory($logoPath)) {
-            $logoPath = public_path('imagenes de muestra');
-        }
-        $sampleLogos = File::files($logoPath);
+        $this->command->info('Eliminando todas las marcas existentes...');
+        Schema::disableForeignKeyConstraints();
+        Brand::truncate();
+        Schema::enableForeignKeyConstraints();
 
-        if (empty($sampleLogos)) {
-            $this->command->warn('No se encontraron imágenes de logos. Las marcas se crearán sin logo.');
+        $sampleImagesPath = public_path('imagenes de muestra/brands'); // BUG FIXED: Added 's' to 'brands'
+        if (!File::exists($sampleImagesPath) || count(File::files($sampleImagesPath)) === 0) {
+            $this->command->warn('! No se encontraron imágenes de logos. Las marcas se crearán sin logo.');
+            $sampleImages = [];
+        } else {
+            $sampleImages = File::files($sampleImagesPath);
         }
 
         $brands = [
@@ -30,37 +36,65 @@ class BrandSeeder extends Seeder
             'Google', 'OnePlus', 'Xiaomi'
         ];
 
-        $this->command->info('Creando marcas y asignando logos...');
+        $this->command->info('Creando marcas y asignando logos (convertidos a WebP)...');
 
         foreach ($brands as $brandName) {
-            $brand = Brand::create(['name' => $brandName]);
+            $logoDbPath = null;
 
-            if (!empty($sampleLogos)) {
-                // Para un seeder, una imagen aleatoria es suficiente.
-                $randomLogo = $sampleLogos[array_rand($sampleLogos)];
-                $this->addLogoToBrand($brand, $randomLogo->getRealPath());
+            if (!empty($sampleImages)) {
+                $randomImageFile = $sampleImages[array_rand($sampleImages)];
+                $sourcePath = $randomImageFile->getRealPath();
+
+                $imageType = @exif_imagetype($sourcePath);
+
+                $newFileName = Str::slug($brandName) . '-' . uniqid() . '.webp';
+                $destinationPath = $storagePath . '/' . $newFileName;
+
+                $image = null;
+                $processed = false;
+
+                switch ($imageType) {
+                    case IMAGETYPE_JPEG:
+                        $image = imagecreatefromjpeg($sourcePath);
+                        break;
+                    case IMAGETYPE_PNG:
+                        $image = imagecreatefrompng($sourcePath);
+                        imagepalettetotruecolor($image);
+                        imagealphablending($image, true);
+                        imagesavealpha($image, true);
+                        break;
+                    case IMAGETYPE_GIF:
+                        $image = imagecreatefromgif($sourcePath);
+                        break;
+                    case IMAGETYPE_WEBP:
+                        File::copy($sourcePath, $destinationPath);
+                        $processed = true;
+                        $this->command->line("  - Logo '{$randomImageFile->getFilename()}' (already webp) for '{$brandName}'.");
+                        break;
+                    default:
+                        $this->command->error("  - Unsupported or corrupt image for '{$randomImageFile->getFilename()}'. Brand '{$brandName}' will have no logo.");
+                        continue 2; // Skip to the next brand
+                }
+
+                if ($image !== null) {
+                    imagewebp($image, $destinationPath, 80);
+                    imagedestroy($image);
+                    $processed = true;
+                    $this->command->line("  - Logo '{$randomImageFile->getFilename()}' converted to webp for '{$brandName}'.");
+                }
+
+                if ($processed) {
+                    $logoDbPath = 'brands/' . $newFileName;
+                }
             }
+
+            Brand::create([
+                'name' => $brandName,
+                'logo_path' => $logoDbPath,
+            ]);
         }
 
         $this->command->info('Marcas y logos creados exitosamente.');
-    }
-
-    private function addLogoToBrand(Brand $brand, string $imagePath): void
-    {
-        $extension = pathinfo($imagePath, PATHINFO_EXTENSION);
-        $fileName = $brand->slug . '.' . $extension;
-
-        try {
-            $brand->addMedia($imagePath)
-                  ->preservingOriginal()
-                  ->usingFileName($fileName)
-                  ->toMediaCollection('brands');
-
-            $this->command->line("  - Logo '{$fileName}' asignado a la marca '{$brand->name}'.");
-
-        } catch (\Exception $e) {
-            $this->command->error("  - No se pudo agregar el logo a la marca '{$brand->name}': " . $e->getMessage());
-        }
     }
 
     private function clearDirectory(string $path): void

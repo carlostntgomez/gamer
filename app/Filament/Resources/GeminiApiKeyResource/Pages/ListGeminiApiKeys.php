@@ -5,21 +5,25 @@ namespace App\Filament\Resources\GeminiApiKeyResource\Pages;
 use App\Filament\Resources\GeminiApiKeyResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
-use Illuminate\Database\Eloquent\Model; // Import Model
+use Illuminate\Database\Eloquent\Builder;
 
 class ListGeminiApiKeys extends ListRecords
 {
     protected static string $resource = GeminiApiKeyResource::class;
 
-    public function mount(): void
+    /**
+     * Ensure we always query the single record.
+     */
+    protected function getTableQuery(): Builder
     {
-        $this->redirect(GeminiApiKeyResource::getUrl('edit', ['record' => GeminiApiKeyResource::getSingleRecord()]));
+        return GeminiApiKeyResource::getSingleRecord()->newQuery();
     }
 
+    /**
+     * Disable the create action since we only manage a single record.
+     */
     protected function getHeaderActions(): array
     {
-        return [
-            // No create action, as only one settings record should exist
-        ];
+        return [];
     }
 }

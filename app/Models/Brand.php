@@ -2,27 +2,28 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Brand extends Model implements HasMedia
+class Brand extends Model
 {
-    use HasFactory, HasSlug, InteractsWithMedia;
+    use HasFactory, HasSlug;
 
     protected $fillable = [
         'name',
         'slug',
+        'logo_path',
         'description',
     ];
 
-    /**
-     * Get the options for generating the slug.
-     */
+    protected $appends = [
+        'logo_url',
+    ];
+
     public function getSlugOptions() : SlugOptions
     {
         return SlugOptions::create()
@@ -30,31 +31,10 @@ class Brand extends Model implements HasMedia
             ->saveSlugsTo('slug');
     }
 
-    /**
-     * Define media collections and conversions.
-     */
-    public function registerMediaCollections(): void
+    protected function logoUrl(): Attribute
     {
-        $this->addMediaCollection('brands')
-            ->singleFile();
-    }
-
-    public function registerMediaConversions(Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-              ->width(100)
-              ->height(100)
-              ->sharpen(10)
-              ->format('webp');
-
-        $this->addMediaConversion('medium')
-              ->width(250)
-              ->height(250)
-              ->format('webp');
-        
-        $this->addMediaConversion('large')
-                ->width(500)
-                ->height(500)
-                ->format('webp');
+        return Attribute::make(
+            get: fn () => $this->logo_path ? Storage::url($this->logo_path) : null,
+        );
     }
 }

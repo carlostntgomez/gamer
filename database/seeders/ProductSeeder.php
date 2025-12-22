@@ -3,94 +3,155 @@
 namespace Database\Seeders;
 
 use App\Models\Product;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Brand;
+use App\Models\Category;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use App\Enums\ProductType;
+use App\Enums\ProductCondition;
 
 class ProductSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     public function run(): void
     {
-        $this->command->info('Limpiando el directorio de imágenes de productos...');
-        $this->clearProductsDirectory();
+        $this->command->info('Iniciando el seeder de productos...');
 
-        $this->command->info('Creando 5 productos...');
-        Product::factory()->count(5)
-            ->sequence(fn ($sequence) => ['name' => $name = fake()->words(3, true), 'slug' => Str::slug($name)])
-            ->create()->each(function ($product) {
-            $this->command->info("Procesando producto: {$product->name}");
-            $this->addImagesToProduct($product);
-        });
+        // 1. Preparar el entorno
+        $this->command->info('Limpiando tablas y directorios relacionados con productos...');
+        Schema::disableForeignKeyConstraints();
+        Product::truncate();
+        DB::table('category_product')->truncate();
+        Schema::enableForeignKeyConstraints();
+        
+        $storagePath = storage_path('app/public/products');
+        $this->clearDirectory($storagePath);
 
-        $this->command->info('Productos creados y con imágenes asociadas.');
-    }
+        // 2. Verificar dependencias (Imágenes, Marcas, Categorías)
+        $sampleImages = $this->getSampleImages();
+        if (empty($sampleImages)) return;
 
-    private function addImagesToProduct(Product $product)
-    {
-        $sampleImagesPath = public_path('imagenes de muestra');
-        $imageFiles = glob($sampleImagesPath . '/*.{jpg,png,jpeg,webp}', GLOB_BRACE);
-
-        if (empty($imageFiles)) {
-            $this->command->warn("No se encontraron imágenes de muestra en: {$sampleImagesPath}");
+        $brands = Brand::all();
+        $categories = Category::all();
+        if ($brands->isEmpty() || $categories->isEmpty()) {
+            $this->command->error('No se encontraron marcas o categorías. Ejecute los seeders de Brand y Category primero.');
             return;
         }
 
-        $numberOfImages = rand(3, 6);
-        $randomImages = (array) array_rand(array_flip($imageFiles), $numberOfImages);
+        $this->command->info('Creando 40 productos de prueba completos...');
 
-        // Procesar la imagen principal
-        $mainImagePath = array_shift($randomImages);
-        if ($mainImagePath) {
-            $this->addImage($product, $mainImagePath, 'main_image', 0);
+        // 3. Crear productos en un bucle
+        for ($i = 0; $i < 40; $i++) {
+            $name = fake()->unique()->words(rand(2, 4), true);
+            $slug = Str::slug($name);
+            $brand = $brands->random();
+            $category = $categories->random();
+
+            // --- Precios Realistas (COP) ---
+            $basePrice = round(fake()->numberBetween(50000, 5000000) / 1000) * 1000;
+            $salePrice = fake()->boolean(40) ? $this->calculateSalePrice($basePrice) : null;
+
+            // --- Atributos y SEO ---
+            $isVisible = fake()->boolean(95);
+            $availableColors = ['Rojo', 'Azul', 'Verde', 'Negro', 'Blanco', 'Gris', 'Plata', 'Dorado'];
+
+            $productData = [
+                'name' => ucfirst($name),
+                'slug' => $slug,
+                'description' => fake()->paragraphs(5, true),
+                'price' => $basePrice,
+                'sale_price' => $salePrice,
+                'sku' => strtoupper(substr(str_replace(' ', '-', $name), 0, 8)) . '-' . fake()->unique()->numberBetween(1000, 9999),
+                'stock_quantity' => fake()->numberBetween(0, 150),
+                'is_visible' => $isVisible,
+                'is_featured' => $isVisible ? fake()->boolean(25) : false, // Un producto no puede ser destacado si no es visible
+                'is_new' => fake()->boolean(30),
+                'brand_id' => $brand->id,
+                'type' => fake()->randomElement(ProductType::cases())->value,
+                'condition' => fake()->randomElement(ProductCondition::cases())->value,
+                'colors' => fake()->randomElements($availableColors, rand(1, 4)),
+                'seo_title' => ucfirst($name) . ' | ' . $brand->name,
+                'seo_description' => fake()->sentence(20),
+                'seo_keywords' => array_values(array_unique([$brand->name, $category->name, ...fake()->words(rand(2, 4))])),
+            ];
+
+            // 4. Crear Producto y Asociar Imágenes/Categorías
+            $product = Product::create($productData);
+            $product->categories()->attach($category->id);
+            $this->addImagesToProduct($product, $sampleImages, $storagePath);
+
+            $this->command->line("  - Producto '{$product->name}' creado.");
         }
 
-        // Procesar las imágenes de la galería
-        $galleryIndex = 1;
-        foreach ($randomImages as $galleryImagePath) {
-            $this->addImage($product, $galleryImagePath, 'gallery_images', $galleryIndex);
-            $galleryIndex++;
-        }
+        $this->command->info('Seeder de productos finalizado con éxito.');
     }
 
-    private function addImage(Product $product, string $imagePath, string $collectionName, int $index = 0)
+    private function calculateSalePrice(int $basePrice): int
     {
-        $extension = pathinfo($imagePath, PATHINFO_EXTENSION);
-        $fileName = $this->generateFileName($product, $extension, $index);
-
-        try {
-            $product->addMedia($imagePath)
-                ->preservingOriginal()
-                ->usingFileName($fileName)
-                ->toMediaCollection('products'); // Corregido: Siempre usar la colección 'products'
-
-            $this->command->info("  - Imagen agregada a 'products': {$fileName}");
-        } catch (\Exception $e) {
-            $this->command->error("  - No se pudo agregar la imagen {$imagePath}: " . $e->getMessage());
-        }
+        $discount = fake()->numberBetween(10, 40) / 100;
+        $salePrice = $basePrice * (1 - $discount);
+        return round($salePrice / 1000) * 1000;
     }
 
-    private function generateFileName(Product $product, string $extension, int $index): string
+    private function getSampleImages(): array
     {
-        $slug = Str::slug($product->name);
-
-        if ($index === 0) { // La imagen principal es el índice 0
-            return "{$slug}-main.{$extension}";
+        $sampleImagesPath = public_path('imagenes de muestra/products');
+        if (!File::exists($sampleImagesPath) || count(File::files($sampleImagesPath)) === 0) {
+            $this->command->error("La carpeta de imágenes de muestra está vacía o no existe: {$sampleImagesPath}");
+            $this->command->error("El seeder no puede continuar. Añada imágenes a esa ruta para generar los productos.");
+            return [];
         }
-
-        return "{$slug}-gallery-{$index}.{$extension}";
+        $this->command->info('Imágenes de muestra encontradas. Continuando...');
+        return File::files($sampleImagesPath);
     }
 
-    private function clearProductsDirectory()
+    private function addImagesToProduct(Product $product, array $sampleImages, string $storagePath): void
     {
-        $directory = storage_path('app/public/products');
+        $numImages = rand(3, 6);
+        $selectedImageKeys = array_rand($sampleImages, $numImages);
+        $selectedImages = array_map(fn($key) => $sampleImages[$key], (array)$selectedImageKeys);
 
-        if (File::isDirectory($directory)) {
-            File::deleteDirectory($directory);
+        $mainImageDbPath = null;
+        $galleryImageDbPaths = [];
+
+        foreach ($selectedImages as $index => $imageFile) {
+            $sourcePath = $imageFile->getRealPath();
+            $newFileName = Str::slug($product->name) . '-' . uniqid() . '.webp';
+            $destinationPath = $storagePath . '/' . $newFileName;
+
+            try {
+                $image = imagecreatefromstring(File::get($sourcePath));
+                if ($image !== false) {
+                    imagepalettetotruecolor($image);
+                    imagealphablending($image, true);
+                    imagesavealpha($image, true);
+                    imagewebp($image, $destinationPath, 80);
+                    imagedestroy($image);
+                    
+                    $dbPath = 'products/' . $newFileName;
+                    if ($index === 0) {
+                        $mainImageDbPath = $dbPath;
+                    } else {
+                        $galleryImageDbPaths[] = $dbPath;
+                    }
+                }
+            } catch (\Exception $e) {
+                $this->command->warn("No se pudo procesar la imagen: {$sourcePath}. Error: " . $e->getMessage());
+            }
         }
-        
-        File::makeDirectory($directory, 0755, true, true);
+
+        $product->main_image_path = $mainImageDbPath;
+        $product->gallery_image_paths = $galleryImageDbPaths;
+        $product->save();
+    }
+
+    private function clearDirectory(string $path): void
+    {
+        if (File::isDirectory($path)) {
+            File::deleteDirectory($path);
+        }
+        File::makeDirectory($path, 0755, true, true);
     }
 }

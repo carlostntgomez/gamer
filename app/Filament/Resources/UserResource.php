@@ -106,14 +106,17 @@ class UserResource extends Resource
                     ->label('Suscrito a Marketing'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('info'),
-                Tables\Actions\EditAction::make()->iconButton()->color('primary'),
+                Tables\Actions\ViewAction::make()->iconButton()->color('info')->modal(),
+                Tables\Actions\EditAction::make()->iconButton()->color('primary')->modal(),
                 Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ])
+            ->headerActions([
+                Tables\Actions\CreateAction::make()->modal(),
             ])
             ->defaultSort('created_at', 'desc');
     }
@@ -130,8 +133,6 @@ class UserResource extends Resource
     {
         return [
             'index' => Pages\ListUsers::route('/'),
-            'create' => Pages\CreateUser::route('/create'),
-            'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
 }

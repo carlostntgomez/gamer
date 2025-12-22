@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('gemini_api_keys', function (Blueprint $table) {
             $table->id();
-            $table->text('api_key');
+            $table->text('api_key')->nullable(); // Allow null values for initial creation
             $table->timestamps();
         });
     }

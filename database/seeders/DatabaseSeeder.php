@@ -16,11 +16,14 @@ class DatabaseSeeder extends Seeder
         // Reducir a 5 usuarios de prueba
         User::factory(5)->create();
 
-        User::factory()->create([
-            'name' => 'Admin',
-            'email' => 'admin@tecnnygames.com',
-            'password' => Hash::make('password'),
-        ]);
+        // Solo crear el usuario administrador si no existe
+        if (!User::where('email', 'admin@tecnnygames.com')->exists()) {
+            User::factory()->create([
+                'name' => 'Admin',
+                'email' => 'admin@tecnnygames.com',
+                'password' => Hash::make('password'),
+            ]);
+        }
 
         $this->call([
             CategorySeeder::class,
@@ -28,13 +31,13 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             PostSeeder::class,
             OrderSeeder::class,
-            PageSeeder::class,
             TicketSeeder::class,
             DiscountSeeder::class,
             BannerSeeder::class,
             WishlistSeeder::class,
             TestimonialSeeder::class,
             ReviewSeeder::class,
+            GeminiApiKeySeeder::class, // <-- Seeder de la clave API añadido
         ]);
     }
 }

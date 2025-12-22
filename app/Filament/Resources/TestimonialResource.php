@@ -9,11 +9,13 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class TestimonialResource extends Resource
 {
@@ -43,6 +45,20 @@ class TestimonialResource extends Resource
                                     ->label('Cargo/Título del Autor')
                                     ->maxLength(255)
                                     ->nullable(),
+                                FileUpload::make('image_path')
+                                    ->label('Foto del Autor')
+                                    ->directory('testimonials')
+                                    ->disk('public')
+                                    ->image()
+                                    ->imageEditor()
+                                    ->columnSpanFull()
+                                    ->preserveFilenames()
+                                    ->getUploadedFileNameForStorageUsing(
+                                        fn (TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
+                                            ->beforeLast('.')
+                                            ->slug()
+                                            ->append('-' . uniqid() . '.webp')
+                                    ),
                                 RichEditor::make('content')
                                     ->label('Contenido del Testimonio')
                                     ->required()
@@ -73,6 +89,11 @@ class TestimonialResource extends Resource
     {
         return $table
             ->columns([
+                ImageColumn::make('image_path')
+                    ->label('Foto')
+                    ->disk('public')
+                    ->circular()
+                    ->defaultImageUrl(url('/images/placeholder.png')),
                 Tables\Columns\TextColumn::make('author_name')
                     ->label('Autor')
                     ->searchable()
@@ -122,9 +143,8 @@ class TestimonialResource extends Resource
                     ->placeholder('Todos'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('info'),
-                Tables\Actions\EditAction::make()->iconButton()->color('primary'),
-                Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -133,19 +153,10 @@ class TestimonialResource extends Resource
             ]);
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
-
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTestimonials::route('/'),
-            'create' => Pages\CreateTestimonial::route('/create'),
-            'edit' => Pages\EditTestimonial::route('/{record}/edit'),
+            'index' => Pages\ManageTestimonials::route('/'),
         ];
     }
 }

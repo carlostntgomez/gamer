@@ -2,22 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Category extends Model implements HasMedia
+class Category extends Model
 {
-    use HasFactory, HasSlug, InteractsWithMedia;
+    use HasFactory, HasSlug;
 
     protected $fillable = [
         'name',
         'slug',
         'parent_id',
+        'image_path',
         'seo_title',
         'seo_description',
         'seo_keywords',
@@ -27,36 +27,15 @@ class Category extends Model implements HasMedia
         'seo_keywords' => 'array',
     ];
 
+    protected $appends = [
+        'image_url',
+    ];
+
     public function getSlugOptions() : SlugOptions
     {
         return SlugOptions::create()
             ->generateSlugsFrom('name')
             ->saveSlugsTo('slug');
-    }
-
-    public function registerMediaCollections(): void
-    {
-        $this->addMediaCollection('categories')
-            ->singleFile();
-    }
-
-    public function registerMediaConversions(Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-              ->width(150)
-              ->height(150)
-              ->sharpen(10)
-              ->format('webp');
-
-        $this->addMediaConversion('medium')
-              ->width(400)
-              ->height(400)
-              ->format('webp');
-        
-        $this->addMediaConversion('large')
-              ->width(800)
-              ->height(800)
-              ->format('webp');
     }
 
     public function parent()
@@ -72,6 +51,13 @@ class Category extends Model implements HasMedia
     public function products()
     {
         return $this->belongsToMany(Product::class);
+    }
+
+    protected function imageUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->image_path ? Storage::url($this->image_path) : null,
+        );
     }
 
     protected static function boot()

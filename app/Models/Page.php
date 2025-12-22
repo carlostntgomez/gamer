@@ -2,20 +2,21 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Page extends Model implements HasMedia
+class Page extends Model
 {
-    use HasFactory, HasSlug, InteractsWithMedia;
+    use HasFactory, HasSlug;
 
     protected $fillable = [
         'title',
         'slug',
+        'image_path',
         'content',
         'seo_title',
         'seo_description',
@@ -25,6 +26,10 @@ class Page extends Model implements HasMedia
     protected $casts = [
         'is_published' => 'boolean',
         'content' => 'array', // Cast content to array for JSON storage
+    ];
+
+    protected $appends = [
+        'image_url',
     ];
 
     /**
@@ -37,17 +42,10 @@ class Page extends Model implements HasMedia
             ->saveSlugsTo('slug');
     }
 
-    public function registerMediaCollections(): void
+    protected function imageUrl(): Attribute
     {
-        $this->addMediaCollection('main_banner_image')
-            ->singleFile();
-    }
-
-    public function registerMediaConversions(\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-            ->width(300)
-            ->height(150)
-            ->sharpen(10);
+        return Attribute::make(
+            get: fn () => $this->image_path ? Storage::url($this->image_path) : null,
+        );
     }
 }

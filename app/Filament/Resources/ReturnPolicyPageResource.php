@@ -170,9 +170,6 @@ class ReturnPolicyPageResource extends Resource
     {
         return [
             'index' => Pages\ListReturnPolicyPages::route('/'),
-            'create' => Pages\CreateReturnPolicyPage::route('/create'),
-            'view' => Pages\ViewReturnPolicyPage::route('/{record}'),
-            'edit' => Pages\EditReturnPolicyPage::route('/{record}/edit'),
         ];
     }
 }

@@ -231,9 +231,6 @@ class TermsConditionPageResource extends Resource
     {
         return [
             'index' => Pages\ListTermsConditionPages::route('/'),
-            'create' => Pages\CreateTermsConditionPage::route('/create'),
-            'view' => Pages\ViewTermsConditionPage::route('/{record}'),
-            'edit' => Pages\EditTermsConditionPage::route('/{record}/edit'),
         ];
     }
 }

@@ -74,6 +74,7 @@ Route::get('/collection-list-right', [PageController::class, 'collectionListRigh
 
 // Generic Blog route
 Route::get('/blog', [PageController::class, 'blogIndex'])->name('blog.index');
+Route::get('/blog/{slug}', [PageController::class, 'showPost'])->name('blog.show');
 
 // Checkout variation
 Route::get('/checkout-style1', [PageController::class, 'checkoutStyle1'])->name('checkout.style1');

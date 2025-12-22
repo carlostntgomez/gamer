@@ -2,16 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Support\Facades\Storage;
 
-
-class Banner extends Model implements HasMedia
+class Banner extends Model
 {
-    use HasFactory, InteractsWithMedia;
+    use HasFactory;
 
     protected $fillable = [
         'name',
@@ -20,6 +18,7 @@ class Banner extends Model implements HasMedia
         'is_active',
         'starts_at',
         'expires_at',
+        'image_path',
     ];
 
     protected $casts = [
@@ -28,30 +27,14 @@ class Banner extends Model implements HasMedia
         'expires_at' => 'datetime',
     ];
 
-    public function registerMediaCollections(): void
-    {
-        $this->addMediaCollection('banners')
-            ->singleFile();
-    }
+    protected $appends = [
+        'image_url',
+    ];
 
-    public function registerMediaConversions(Media $media = null): void
+    protected function imageUrl(): Attribute
     {
-        $this->addMediaConversion('thumb')
-            ->width(300)
-            ->height(150)
-            ->sharpen(10)
-            ->format('webp');
-
-        $this->addMediaConversion('medium')
-            ->width(800)
-            ->height(400)
-            ->sharpen(10)
-            ->format('webp');
-        
-        $this->addMediaConversion('large')
-            ->width(1200)
-            ->height(600)
-            ->sharpen(10)
-            ->format('webp');
+        return Attribute::make(
+            get: fn () => $this->image_path ? Storage::url($this->image_path) : null,
+        );
     }
 }

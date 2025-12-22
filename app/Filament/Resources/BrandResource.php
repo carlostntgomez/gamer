@@ -10,10 +10,11 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
+use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Columns\ImageColumn;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Tables\Columns\TextColumn;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class BrandResource extends Resource
 {
@@ -28,58 +29,70 @@ class BrandResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Forms\Components\Group::make()
-                    ->schema([
-                        Forms\Components\Section::make('Detalles de la Marca')
-                            ->schema([
-                                Forms\Components\TextInput::make('name')
-                                    ->label('Nombre')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->live(onBlur: true)
-                                    ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
-                                Forms\Components\TextInput::make('slug')
-                                    ->label('Slug')
-                                    ->required()
-                                    ->unique(ignoreRecord: true)
-                                    ->maxLength(255),
-                                Forms\Components\RichEditor::make('description')
-                                    ->label('Descripción')
-                                    ->maxLength(65535)
-                                    ->nullable()
-                                    ->columnSpanFull(),
-                            ])->columns(2),
-                    ])->columnSpan(2),
+        return $form->schema([
+            Forms\Components\Group::make()
+                ->schema([
+                    Forms\Components\Section::make('Información de la Marca')
+                        ->description('Introduce los detalles principales de la marca.')
+                        ->schema([
+                            Forms\Components\TextInput::make('name')
+                                ->label('Nombre')
+                                ->required()
+                                ->maxLength(255)
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state)))
+                                ->helperText('El nombre de la marca. Se generará un slug automáticamente.'),
 
-                Forms\Components\Group::make()
-                    ->schema([
-                        Forms\Components\Section::make('Logo de la Marca')
-                            ->schema([
-                                SpatieMediaLibraryFileUpload::make('media')
-                                    ->label('Logo')
-                                    ->collection('brand-logo')
-                                    ->image()
-                                    ->maxSize(1024) // 1MB
-                                    ->getUploadedFileNameForStorageUsing(function (\Livewire\Features\SupportFileUploads\TemporaryUploadedFile $file, ?Model $record): string {
-                                        $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                                        $recordName = $record?->name ?? $fileName;
-                                        return (string) str('brand-' . str_replace('-', '', Str::slug($recordName)))->slug() . '.' . $file->getClientOriginalExtension();
-                                    })
-                                    ->conversion('thumb')
-                            ])
-                    ])->columnSpan(1),
-            ])->columns(3);
+                            Forms\Components\TextInput::make('slug')
+                                ->label('Slug')
+                                ->required()
+                                ->unique(Brand::class, 'slug', ignoreRecord: true)
+                                ->disabled(fn (string $operation): bool => $operation === 'edit')
+                                ->helperText('El slug es la URL amigable. Se recomienda no cambiarlo una vez creado.'),
+
+                            Forms\Components\RichEditor::make('description')
+                                ->label('Descripción')
+                                ->nullable()
+                                ->columnSpanFull(),
+                        ])
+                        ->columns(2),
+                ])
+                ->columnSpan(['lg' => 2]),
+
+            Forms\Components\Group::make()
+                ->schema([
+                    Forms\Components\Section::make('Logo')
+                        ->description('Sube el logo representativo de la marca.')
+                        ->schema([
+                            Forms\Components\FileUpload::make('logo_path')
+                                ->label('Logo de la Marca')
+                                ->directory('brands')
+                                ->disk('public')
+                                ->image()
+                                ->imageEditor()
+                                ->imagePreviewHeight('150')
+                                ->preserveFilenames()
+                                ->getUploadedFileNameForStorageUsing(
+                                    fn (TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
+                                        ->beforeLast('.')
+                                        ->slug()
+                                        ->append('-' . uniqid() . '.webp')
+                                )
+                                ->helperText('Se recomienda un archivo de imagen cuadrado (ej: 512x512px).'),
+                        ])
+                        ->collapsible(),
+                ])
+                ->columnSpan(['lg' => 1]),
+        ])->columns(3);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                SpatieMediaLibraryImageColumn::make('media')
+                ImageColumn::make('logo_path')
                     ->label('Logo')
-                    ->collection('brand-logo')
+                    ->disk('public')
                     ->square()
                     ->defaultImageUrl(url('/images/placeholder-brand.png')),
                 TextColumn::make('name')
@@ -119,20 +132,16 @@ class BrandResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
+            ->headerActions([
+                Tables\Actions\CreateAction::make(),
+            ])
             ->defaultSort('name', 'asc');
     }
-
-    public static function getRelations(): array
-    {
-        return [];
-    }
-
+    
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListBrands::route('/'),
-            'create' => Pages\CreateBrand::route('/create'),
-            'edit' => Pages\EditBrand::route('/{record}/edit'),
         ];
     }
 }

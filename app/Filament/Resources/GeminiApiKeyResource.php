@@ -18,7 +18,7 @@ class GeminiApiKeyResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-key';
     protected static ?string $navigationGroup = 'Configuración';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
     protected static ?string $modelLabel = 'Clave API de Gemini';
     protected static ?string $pluralModelLabel = 'Clave API de Gemini';
     protected static ?string $navigationLabel = 'Clave API de Gemini';
@@ -32,7 +32,6 @@ class GeminiApiKeyResource extends Resource
                     ->schema([
                         TextInput::make('api_key')
                             ->label('Clave API')
-                            ->required()
                             ->password()
                             ->dehydrateStateUsing(fn ($state) => trim($state))
                             ->revealable()
@@ -46,9 +45,10 @@ class GeminiApiKeyResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->paginated(false)
             ->columns([
                 Tables\Columns\TextColumn::make('api_key')
-                    ->label('Clave API')
+                    ->label('Estado de la Clave')
                     ->formatStateUsing(fn ($state) => $state ? 'Establecida' : 'No establecida')
                     ->badge()
                     ->color(fn ($state) => $state ? 'success' : 'danger'),
@@ -58,7 +58,7 @@ class GeminiApiKeyResource extends Resource
                     ->sortable(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()->iconButton()->color('primary'),
+                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([]);
     }
@@ -67,7 +67,11 @@ class GeminiApiKeyResource extends Resource
     {
         return [
             'index' => Pages\ListGeminiApiKeys::route('/'),
-            'edit' => Pages\EditGeminiApiKey::route('/{record}/edit'),
         ];
+    }
+
+    public static function getSingleRecord(): Model
+    {
+        return GeminiApiKey::firstOrCreate([], ['api_key' => null]);
     }
 }

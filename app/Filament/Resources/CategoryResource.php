@@ -10,10 +10,10 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
-use Illuminate\Database\Eloquent\Model;
+use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class CategoryResource extends Resource
 {
@@ -27,77 +27,100 @@ class CategoryResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Forms\Components\Group::make()
-                    ->schema([
-                        Forms\Components\Section::make('Información de la Categoría')
-                            ->schema([
-                                Forms\Components\TextInput::make('name')
-                                    ->label('Nombre')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->live(onBlur: true)
-                                    ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
-                                Forms\Components\TextInput::make('slug')
-                                    ->label('Slug')
-                                    ->required()
-                                    ->unique(ignoreRecord: true)
-                                    ->maxLength(255),
-                                Forms\Components\Select::make('parent_id')
-                                    ->label('Categoría Padre')
-                                    ->relationship('parent', 'name')
-                                    ->searchable()
-                                    ->preload()
-                                    ->placeholder('Seleccione una categoría padre'),
-                            ]),
-                        Forms\Components\Section::make('Imágenes')
-                            ->schema([
-                                SpatieMediaLibraryFileUpload::make('media')
-                                    ->label('Imagen de la Categoría')
-                                    ->collection('category-image')
-                                    ->image()
-                                    ->maxSize(5120) // 5MB max
-                                    ->getUploadedFileNameForStorageUsing(function (\Livewire\Features\SupportFileUploads\TemporaryUploadedFile $file, ?Model $record): string {
-                                        $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                                        $recordName = $record?->name ?? $fileName;
-                                        return (string) str('category-' . str_replace('-', '', Str::slug($recordName)))->slug() . '.' . $file->getClientOriginalExtension();
-                                    })
-                                    ->conversion('thumb')
-                            ])
-                    ])->columnSpan(2),
+        return $form->schema([
+            Forms\Components\Group::make()
+                ->schema([
+                    Forms\Components\Section::make('Información de la Categoría')
+                        ->description('Define los detalles principales de esta categoría.')
+                        ->schema([
+                            Forms\Components\TextInput::make('name')
+                                ->label('Nombre')
+                                ->required()
+                                ->maxLength(255)
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state)))
+                                ->helperText('El nombre que se mostrará públicamente.'),
 
-                Forms\Components\Group::make()
-                    ->schema([
-                        Forms\Components\Section::make('SEO')
-                            ->schema([
-                                Forms\Components\TextInput::make('seo_title')
-                                    ->label('Título SEO')
-                                    ->maxLength(60)
-                                    ->nullable()
-                                    ->helperText('Máximo 60 caracteres recomendados'),
-                                Forms\Components\Textarea::make('seo_description')
-                                    ->label('Descripción SEO')
-                                    ->maxLength(160)
-                                    ->rows(3)
-                                    ->nullable()
-                                    ->helperText('Máximo 160 caracteres recomendados'),
-                                Forms\Components\TagsInput::make('seo_keywords')
-                                    ->label('Palabras Clave SEO')
-                                    ->nullable()
-                                    ->placeholder('Presione Enter para agregar'),
-                            ]),
-                    ])->columnSpan(1),
-            ])->columns(3);
+                            Forms\Components\TextInput::make('slug')
+                                ->label('Slug')
+                                ->required()
+                                ->unique(Category::class, 'slug', ignoreRecord: true)
+                                ->disabled(fn (string $operation): bool => $operation === 'edit')
+                                ->helperText('URL amigable. Se recomienda no cambiarla una vez creada.'),
+
+                            Forms\Components\Select::make('parent_id')
+                                ->label('Categoría Padre')
+                                ->relationship('parent', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->placeholder('Opcional: Asigna una categoría padre')
+                                ->helperText('Crea una jerarquía de categorías (ej: Ropa > Camisetas).'),
+
+                            Forms\Components\RichEditor::make('description')
+                                ->label('Descripción de la Categoría')
+                                ->nullable()
+                                ->columnSpanFull(),
+                        ])
+                        ->columns(2),
+                ])
+                ->columnSpan(['lg' => 2]),
+
+            Forms\Components\Group::make()
+                ->schema([
+                    Forms\Components\Section::make('Imagen Destacada')
+                        ->description('La imagen principal que representará a la categoría.')
+                        ->schema([
+                            Forms\Components\FileUpload::make('image_path')
+                                ->label('Imagen')
+                                ->directory('categories')
+                                ->disk('public')
+                                ->image()
+                                ->imageEditor()
+                                ->preserveFilenames()
+                                ->getUploadedFileNameForStorageUsing(
+                                    fn (TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
+                                        ->beforeLast('.')
+                                        ->slug()
+                                        ->append('-' . uniqid() . '.webp')
+                                )
+                                ->helperText('Una imagen clara y representativa.'),
+                        ]),
+
+                    Forms\Components\Section::make('Optimización para Motores de Búsqueda (SEO)')
+                        ->description('Mejora la visibilidad de esta categoría en Google y otros buscadores.')
+                        ->collapsible()
+                        ->schema([
+                            Forms\Components\TextInput::make('seo_title')
+                                ->label('Título SEO')
+                                ->maxLength(60)
+                                ->nullable()
+                                ->helperText('Recomendado: 60 caracteres. Es el título que aparece en Google.'),
+
+                            Forms\Components\Textarea::make('seo_description')
+                                ->label('Descripción SEO')
+                                ->maxLength(160)
+                                ->rows(3)
+                                ->nullable()
+                                ->helperText('Recomendado: 160 caracteres. El resumen que aparece en Google.'),
+
+                            Forms\Components\TagsInput::make('seo_keywords')
+                                ->label('Palabras Clave SEO')
+                                ->nullable()
+                                ->placeholder('Añadir y presionar Enter')
+                                ->helperText('Términos de búsqueda relevantes para esta categoría.'),
+                        ]),
+                ])
+                ->columnSpan(['lg' => 1]),
+        ])->columns(3);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                SpatieMediaLibraryImageColumn::make('media')
+                ImageColumn::make('image_path')
                     ->label('Imagen')
-                    ->collection('category-image')
+                    ->disk('public')
                     ->circular()
                     ->defaultImageUrl(url('/images/placeholder-category.png')),
                 TextColumn::make('name')
@@ -132,8 +155,8 @@ class CategoryResource extends Resource
                     ->placeholder('Todas las categorías'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('info'),
-                Tables\Actions\EditAction::make()->iconButton()->color('primary'),
+                Tables\Actions\ViewAction::make()->iconButton()->color('info')->modal(),
+                Tables\Actions\EditAction::make()->iconButton()->color('primary')->modal(),
                 Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
             ])
             ->bulkActions([
@@ -141,20 +164,16 @@ class CategoryResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
+            ->headerActions([
+                Tables\Actions\CreateAction::make()->modal(),
+            ])
             ->defaultSort('name', 'asc');
-    }
-
-    public static function getRelations(): array
-    {
-        return [];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCategories::route('/'),
-            'create' => Pages\CreateCategory::route('/create'),
-            'edit' => Pages\EditCategory::route('/{record}/edit'),
+            'index' => Pages\ManageCategories::route('/'),
         ];
     }
 }

@@ -9,8 +9,9 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
+use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Columns\ImageColumn;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class BannerResource extends Resource
 {
@@ -33,15 +34,20 @@ class BannerResource extends Resource
                             ->label('Nombre del Banner')
                             ->required()
                             ->maxLength(255),
-                        SpatieMediaLibraryFileUpload::make('banners') // <-- CORRECCIÓN FINAL
+                        FileUpload::make('image_path')
                             ->label('Imagen del Banner')
-                            ->collection('banners')
-                            ->image()
+                            ->directory('banners')
                             ->disk('public')
-                            ->visibility('public')
-                            ->maxFiles(1)
+                            ->image()
                             ->imageEditor()
-                            ->columnSpanFull(),
+                            ->imagePreviewHeight('150')
+                            ->preserveFilenames()
+                            ->getUploadedFileNameForStorageUsing(
+                                fn (TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
+                                    ->beforeLast('.')
+                                    ->slug()
+                                    ->append('-' . uniqid() . '.webp')
+                            ),
                         Forms\Components\TextInput::make('url')
                             ->label('URL (Enlace del Banner)')
                             ->url()
@@ -70,10 +76,9 @@ class BannerResource extends Resource
     {
         return $table
             ->columns([
-                SpatieMediaLibraryImageColumn::make('banners') // <-- CORRECCIÓN FINAL
+                ImageColumn::make('image_path')
                     ->label('Imagen')
-                    ->collection('banners')
-                    ->conversion('thumb')
+                    ->disk('public')
                     ->circular(),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nombre')
@@ -150,8 +155,6 @@ class BannerResource extends Resource
     {
         return [
             'index' => Pages\ListBanners::route('/'),
-            'create' => Pages\CreateBanner::route('/create'),
-            'edit' => Pages\EditBanner::route('/{record}/edit'),
         ];
     }
 }

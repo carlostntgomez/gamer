@@ -3,35 +3,26 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\PaymentPolicyPageResource\Pages;
-use App\Models\Page;
+use App\Models\PaymentPolicyPage as PaymentPolicyPageModel; // Usar el nuevo modelo
+use App\Models\Page; // Se mantiene para referencias
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Repeater;
 
 class PaymentPolicyPageResource extends Resource
 {
-    protected static ?string $model = Page::class;
+    protected static ?string $model = PaymentPolicyPageModel::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
-    protected static ?string $pageSlug = 'payment-policy';
     protected static ?string $navigationLabel = 'Página: Política de Pago';
     protected static ?string $modelLabel = 'Página: Política de Pago';
     protected static ?string $pluralModelLabel = 'Página: Política de Pago';
     protected static ?string $navigationGroup = 'Páginas Estáticas';
 
-    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): ?string
-    {
-        return $record->title;
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()->where('slug', static::$pageSlug);
-    }
+    // Los métodos getEloquentQuery y getRecordTitle ya no son necesarios.
 
     public static function form(Form $form): Form
     {
@@ -67,7 +58,7 @@ class PaymentPolicyPageResource extends Resource
                                     ->maxLength(65535)
                                     ->fileAttachmentsDirectory('page-attachments/payment-policy')
                                     ->columnSpanFull(),
-                                Forms\Components\Repeater::make('policy_items')
+                                Repeater::make('policy_items')
                                     ->label('Preguntas y Respuestas de la Política')
                                     ->schema([
                                         Forms\Components\TextInput::make('question')
@@ -109,28 +100,7 @@ class PaymentPolicyPageResource extends Resource
             ])->columns(3);
     }
 
-    public static function mutateFormDataBeforeFill(array $data): array
-    {
-        if (isset($data['content']) && is_array($data['content'])) {
-            $contentData = $data['content'];
-            $data['main_content'] = $contentData['main_content'] ?? null;
-            $data['policy_items'] = $contentData['policy_items'] ?? [];
-        }
-        return $data;
-    }
-
-    public static function mutateFormDataBeforeSave(array $data): array
-    {
-        $contentData = [
-            'main_content' => $data['main_content'] ?? null,
-            'policy_items' => $data['policy_items'] ?? [],
-        ];
-        $data['content'] = $contentData;
-
-        unset($data['main_content'], $data['policy_items']);
-        
-        return $data;
-    }
+    // Los métodos `mutateFormDataBeforeFill` y `mutateFormDataBeforeSave` han sido eliminados.
 
     public static function table(Table $table): Table
     {
@@ -170,9 +140,6 @@ class PaymentPolicyPageResource extends Resource
     {
         return [
             'index' => Pages\ListPaymentPolicyPages::route('/'),
-            'create' => Pages\CreatePaymentPolicyPage::route('/create'),
-            'view' => Pages\ViewPaymentPolicyPage::route('/{record}'),
-            'edit' => Pages\EditPaymentPolicyPage::route('/{record}/edit'),
         ];
     }
 }

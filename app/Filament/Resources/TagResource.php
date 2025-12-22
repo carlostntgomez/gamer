@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TagResource\Pages;
-use App\Filament\Resources\TagResource\RelationManagers;
 use App\Models\Tag;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -41,8 +40,7 @@ class TagResource extends Resource
                             ->label('Slug')
                             ->required()
                             ->unique(ignoreRecord: true)
-                            ->maxLength(255)
-                            ->readonly(),
+                            ->maxLength(255),
                     ])->columns(2)
             ]);
     }
@@ -80,11 +78,10 @@ class TagResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('info'),
-                Tables\Actions\EditAction::make()->iconButton()->color('primary')->modal(),
-                Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
-                Tables\Actions\ForceDeleteAction::make()->iconButton()->color('danger'),
-                Tables\Actions\RestoreAction::make()->iconButton()->color('success'),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -93,28 +90,16 @@ class TagResource extends Resource
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make()->modal(),
-            ])
             ->defaultSort('name', 'asc')
             ->modifyQueryUsing(fn (Builder $query) => $query->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]));
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
-
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTags::route('/'),
-            'create' => Pages\CreateTag::route('/create'),
-            'edit' => Pages\EditTag::route('/{record}/edit'),
+            'index' => Pages\ManageTags::route('/'),
         ];
     }
 

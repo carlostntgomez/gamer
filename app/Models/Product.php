@@ -2,82 +2,61 @@
 
 namespace App\Models;
 
-use App\Enums\ProductCondition;
-use App\Enums\ProductType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use App\Enums\ProductType;
+use App\Enums\ProductCondition;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
-class Product extends Model implements HasMedia
+class Product extends Model
 {
-    use HasFactory, InteractsWithMedia;
+    use HasFactory;
 
     protected $fillable = [
-        'name',
-        'slug',
-        'description',
-        'price',
-        'sku',
-        'sale_price',
-        'type',
-        'stock_quantity',
-        'is_featured',
-        'shipping_cost',
-        'colors',
-        'other_content',
-        'specifications',
-        'seo_title',
-        'seo_description',
-        'seo_keywords',
-        'condition',
-        'brand_id',
+        'name', 'slug', 'description', 'price', 'sale_price', 'sku', 'stock_quantity',
+        'is_visible', 'is_featured', 'is_new', 'brand_id', 'type', 'condition',
+        'main_image_path', 'gallery_image_paths', 'colors', 'seo_title', 'seo_description', 'seo_keywords'
     ];
 
     protected $casts = [
-        'colors' => 'array',
-        'other_content' => 'array',
+        'is_visible' => 'boolean',
         'is_featured' => 'boolean',
+        'is_new' => 'boolean',
+        'gallery_image_paths' => 'array',
+        'colors' => 'array',
+        'seo_keywords' => 'array',
         'type' => ProductType::class,
         'condition' => ProductCondition::class,
     ];
 
-    public function brand(): BelongsTo
+    public function brand()
     {
         return $this->belongsTo(Brand::class);
     }
 
-    public function categories(): BelongsToMany
+    public function categories()
     {
         return $this->belongsToMany(Category::class);
     }
 
-    public function getImageUrlAttribute(): string
+    public function reviews()
     {
-        return $this->getFirstMediaUrl('main_image') ?? '';
+        return $this->hasMany(Review::class);
     }
 
-    public function registerMediaConversions(Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-            ->width(200)
-            ->height(200)
-            ->sharpen(10)
-            ->format('webp');
-
-        $this->addMediaConversion('medium')
-            ->width(600)
-            ->height(600)
-            ->sharpen(10)
-            ->format('webp');
-        
-        $this->addMediaConversion('large')
-            ->width(1200)
-            ->height(1200)
-            ->sharpen(10)
-            ->format('webp');
+    /**
+     * Get the images attribute.
+     *
+     * @return \Illuminate\Database\Eloquent\Casts\Attribute
+     */
+    protected function images(): Attribute
+    { 
+        return Attribute::make(
+            get: function () {
+                $images = $this->gallery_image_paths ?? [];
+                array_unshift($images, $this->main_image_path);
+                return $images;
+            },
+        );
     }
 }

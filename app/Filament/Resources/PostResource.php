@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\PostResource\Pages;
-use App\Filament\Resources\PostResource\RelationManagers;
 use App\Models\Post;
 use App\Models\User;
 use Filament\Forms;
@@ -13,10 +12,11 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
+use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Columns\ImageColumn;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class PostResource extends Resource
 {
@@ -79,18 +79,20 @@ class PostResource extends Resource
 
                         Forms\Components\Section::make('Imagen Destacada')
                             ->schema([
-                                SpatieMediaLibraryFileUpload::make('featured_image')
-                                    ->collection('featured_image')
+                                FileUpload::make('image_path')
                                     ->label('Imagen Destacada')
+                                    ->directory('posts')
+                                    ->disk('public')
                                     ->image()
-                                    ->maxFiles(1)
                                     ->imageEditor()
-                                    ->getUploadedFileNameForStorageUsing(function (\Livewire\Features\SupportFileUploads\TemporaryUploadedFile $file, ?Model $record): string {
-                                        $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                                        $recordName = $record?->title ?? $fileName;
-                                        return (string) str('post-' . str_replace('-', '', Str::slug($recordName)))->slug() . '.' . $file->getClientOriginalExtension();
-                                    })
-                                    ->columnSpanFull(),
+                                    ->columnSpanFull()
+                                    ->preserveFilenames()
+                                    ->getUploadedFileNameForStorageUsing(
+                                        fn (TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
+                                            ->beforeLast('.')
+                                            ->slug()
+                                            ->append('-' . uniqid() . '.webp')
+                                    ),
                             ]),
                     ])->columnSpan(2),
 
@@ -129,10 +131,9 @@ class PostResource extends Resource
     {
         return $table
             ->columns([
-                SpatieMediaLibraryImageColumn::make('media')
+                ImageColumn::make('image_path')
                     ->label('Imagen Destacada')
-                    ->collection('featured_image')
-                    ->conversion('thumb')
+                    ->disk('public')
                     ->circular()
                     ->defaultImageUrl(url('/images/placeholder.png')),
                 Tables\Columns\TextColumn::make('title')
@@ -187,13 +188,11 @@ class PostResource extends Resource
                     ->placeholder('Todos'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('info'),
-                Tables\Actions\EditAction::make()->iconButton()->color('primary'),
-                Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
-                Tables\Actions\ForceDeleteAction::make()->iconButton()->color('danger'),
-                Tables\Actions\RestoreAction::make()->iconButton()->color('success'),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
                 Tables\Actions\Action::make('view_on_web')
-                    ->iconButton()
                     ->icon('heroicon-o-arrow-top-right-on-square')
                     ->url(fn (Post $record): ?string => $record->slug && $record->published_at ? route('blog.show', $record->slug) : null)
                     ->openUrlInNewTab()
@@ -212,19 +211,10 @@ class PostResource extends Resource
             ]));
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            RelationManagers\TagsRelationManager::class,
-        ];
-    }
-
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPosts::route('/'),
-            'create' => Pages\CreatePost::route('/create'),
-            'edit' => Pages\EditPost::route('/{record}/edit'),
+            'index' => Pages\ManagePosts::route('/'),
         ];
     }
 

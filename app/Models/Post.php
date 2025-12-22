@@ -2,26 +2,27 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Post extends Model implements HasMedia
+class Post extends Model
 {
-    use HasFactory, HasSlug, InteractsWithMedia, SoftDeletes;
+    use HasFactory, HasSlug;
 
     protected $fillable = [
+        'user_id',
         'title',
         'slug',
+        'image_path',
         'content',
         'excerpt',
         'published_at',
-        'user_id',
         'seo_title',
         'seo_description',
         'seo_keywords',
@@ -30,6 +31,10 @@ class Post extends Model implements HasMedia
     protected $casts = [
         'published_at' => 'datetime',
         'seo_keywords' => 'array',
+    ];
+
+    protected $appends = [
+        'image_url',
     ];
 
     /**
@@ -42,40 +47,20 @@ class Post extends Model implements HasMedia
             ->saveSlugsTo('slug');
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function tags()
+    public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class);
     }
 
-    public function registerMediaCollections(): void
+    protected function imageUrl(): Attribute
     {
-        $this->addMediaCollection('posts')
-            ->singleFile();
-    }
-
-    public function registerMediaConversions(Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-            ->width(368)
-            ->height(232)
-            ->sharpen(10)
-            ->format('webp');
-
-        $this->addMediaConversion('medium')
-            ->width(800)
-            ->height(450)
-            ->sharpen(10)
-            ->format('webp');
-
-        $this->addMediaConversion('large')
-            ->width(1200)
-            ->height(630)
-            ->sharpen(10)
-            ->format('webp');
+        return Attribute::make(
+            get: fn () => $this->image_path ? Storage::url($this->image_path) : null,
+        );
     }
 }

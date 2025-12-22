@@ -205,8 +205,6 @@ class DiscountResource extends Resource
     {
         return [
             'index' => Pages\ListDiscounts::route('/'),
-            'create' => Pages\CreateDiscount::route('/create'),
-            'edit' => Pages\EditDiscount::route('/{record}/edit'),
         ];
     }
 }

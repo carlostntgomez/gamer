@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Product; // Added this line
+use App\Models\Post; // Added by Gemini
 
 class PageController extends Controller
 {
@@ -73,6 +74,13 @@ class PageController extends Controller
 
     public function blogIndex() { return view('blog-index'); }
     public function checkoutStyle1() { return view('checkout-style1'); }
+
+    public function showPost($slug)
+    {
+        $post = Post::where('slug', $slug)->whereNotNull('published_at')->firstOrFail();
+        // Assuming you have a view called 'blog.show'
+        return view('blog.show', compact('post'));
+    }
 
     public function show($slug)
     {

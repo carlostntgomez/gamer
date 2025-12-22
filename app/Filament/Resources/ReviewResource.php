@@ -3,15 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReviewResource\Pages;
-use App\Filament\Resources\ReviewResource\RelationManagers;
 use App\Models\Review;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ReviewResource extends Resource
 {
@@ -22,130 +19,88 @@ class ReviewResource extends Resource
     protected static ?string $modelLabel = 'Reseña';
     protected static ?string $pluralModelLabel = 'Reseñas';
     protected static ?string $navigationLabel = 'Reseñas';
-    protected static ?string $recordTitleAttribute = 'id';
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('Detalles de la Reseña')
-                    ->schema([
-                        Forms\Components\Select::make('user_id')
-                            ->relationship('user', 'name')
-                            ->label('Usuario')
-                            ->required()
-                            ->searchable()
-                            ->preload(),
-                        Forms\Components\Select::make('product_id')
-                            ->relationship('product', 'name')
-                            ->label('Producto')
-                            ->required()
-                            ->searchable()
-                            ->preload(),
-                        Forms\Components\Select::make('rating')
-                            ->label('Calificación')
-                            ->options([
-                                1 => '1 Estrella',
-                                2 => '2 Estrellas',
-                                3 => '3 Estrellas',
-                                4 => '4 Estrellas',
-                                5 => '5 Estrellas',
-                            ])
-                            ->required()
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(5),
-                        Forms\Components\Toggle::make('is_approved')
-                            ->label('Aprobado')
-                            ->default(false),
-                        Forms\Components\Textarea::make('content')
-                            ->label('Contenido de la Reseña')
-                            ->required()
-                            ->maxLength(65535)
-                            ->rows(5)
-                            ->columnSpanFull(),
-                    ])->columns(2)
-            ]);
+        return $form->schema([
+            Forms\Components\Group::make()
+                ->schema([
+                    Forms\Components\Section::make('Contenido de la Reseña')
+                        ->description('Detalles de la opinión dejada por el cliente.')
+                        ->schema([
+                            Forms\Components\Select::make('user_id')
+                                ->relationship('user', 'name')
+                                ->label('Cliente')
+                                ->required()
+                                ->searchable()
+                                ->preload(),
+
+                            Forms\Components\Select::make('product_id')
+                                ->relationship('product', 'name')
+                                ->label('Producto')
+                                ->required()
+                                ->searchable()
+                                ->preload(),
+
+                            Forms\Components\Select::make('rating')
+                                ->label('Calificación')
+                                ->options(array_combine(range(1, 5), array_map(fn($i) => "$i Estrellas", range(1, 5))))
+                                ->required()
+                                ->helperText('La puntuación que el cliente le dio al producto.'),
+
+                            Forms\Components\RichEditor::make('content')
+                                ->label('Comentario del Cliente')
+                                ->required()
+                                ->columnSpanFull(),
+                        ])->columns(2),
+                ])->columnSpan(['lg' => 2]),
+
+            Forms\Components\Group::make()
+                ->schema([
+                    Forms\Components\Section::make('Moderación')
+                        ->description('Controla la visibilidad de esta reseña en la tienda.')
+                        ->schema([
+                            Forms\Components\Toggle::make('is_approved')
+                                ->label('Aprobado para su publicación')
+                                ->default(true)
+                                ->helperText('Solo las reseñas aprobadas serán visibles para los clientes.'),
+                        ]),
+                    Forms\Components\Section::make('Metadatos')
+                        ->schema([
+                            Forms\Components\Placeholder::make('created_at')
+                                ->label('Fecha de Creación')
+                                ->content(fn (?Review $record): string => $record?->created_at?->translatedFormat('d M Y, H:i') ?? '-'),
+                            Forms\Components\Placeholder::make('updated_at')
+                                ->label('Última Actualización')
+                                ->content(fn (?Review $record): string => $record?->updated_at?->translatedFormat('d M Y, H:i') ?? '-'),
+                        ]),
+                ])->columnSpan(['lg' => 1]),
+        ])->columns(3);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('ID')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('product.name')
-                    ->label('Producto')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label('Usuario')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('rating')
-                    ->label('Calificación')
-                    ->numeric()
-                    ->sortable()
-                    ->formatStateUsing(fn (int $state): string => str_repeat('⭐', $state)), // Display stars
-                Tables\Columns\IconColumn::make('is_approved')
-                    ->label('Aprobado')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle')
-                    ->trueColor('success')
-                    ->falseColor('danger'),
-                Tables\Columns\TextColumn::make('content')
-                    ->label('Reseña')
-                    ->limit(50)
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Creado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Actualizado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('product.name')->label('Producto')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('user.name')->label('Cliente')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('rating')->label('Calificación')->sortable()->formatStateUsing(fn(int $state) => str_repeat('⭐', $state)),
+                Tables\Columns\IconColumn::make('is_approved')->label('Aprobado')->boolean(),
+                Tables\Columns\TextColumn::make('created_at')->label('Fecha')->dateTime()->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('product_id')
-                    ->relationship('product', 'name')
-                    ->label('Filtrar por Producto')
-                    ->searchable()
-                    ->preload(),
-                Tables\Filters\SelectFilter::make('user_id')
-                    ->relationship('user', 'name')
-                    ->label('Filtrar por Usuario')
-                    ->searchable()
-                    ->preload(),
-                Tables\Filters\SelectFilter::make('rating')
-                    ->label('Filtrar por Calificación')
-                    ->options([
-                        1 => '1 Estrella',
-                        2 => '2 Estrellas',
-                        3 => '3 Estrellas',
-                        4 => '4 Estrellas',
-                        5 => '5 Estrellas',
-                    ]),
-                Tables\Filters\TernaryFilter::make('is_approved')
-                    ->label('Estado de Aprobación')
-                    ->trueLabel('Aprobado')
-                    ->falseLabel('No Aprobado')
-                    ->placeholder('Todos'),
+                Tables\Filters\SelectFilter::make('product')->relationship('product', 'name')->searchable()->preload(),
+                Tables\Filters\SelectFilter::make('rating')->label('Calificación')->options(array_combine(range(1, 5), array_map(fn($i) => "$i Estrellas", range(1, 5)))),
+                Tables\Filters\TernaryFilter::make('is_approved')->label('Estado de Aprobación'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('info'),
+                Tables\Actions\ViewAction::make()->iconButton()->color('info')->modal(),
                 Tables\Actions\EditAction::make()->iconButton()->color('primary')->modal(),
                 Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Tables\Actions\BulkActionGroup::make([ Tables\Actions\DeleteBulkAction::make() ]),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()->modal(),
@@ -154,18 +109,12 @@ class ReviewResource extends Resource
     }
 
     public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
+    { return []; }
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListReviews::route('/'),
-            'create' => Pages\CreateReview::route('/create'),
-            'edit' => Pages\EditReview::route('/{record}/edit'),
         ];
     }
 }
