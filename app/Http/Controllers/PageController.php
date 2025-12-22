@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product; // Added this line
 use App\Models\Post; // Added by Gemini
+use App\Models\Category;
 
 class PageController extends Controller
 {
@@ -53,6 +54,14 @@ class PageController extends Controller
     public function articlePostRight() { return view('article-post-right'); }
     public function articlePostWithout() { return view('article-post-without'); }
     public function articlePost() { return view('article-post'); }
+
+    public function category($slug)
+    {
+        $category = Category::where('slug', $slug)->firstOrFail();
+        $products = $category->products()->where('is_visible', true)->paginate(12); // Using paginate for pagination
+        $categories = Category::withCount('products')->get(); // Getting all categories for the filter sidebar
+        return view('category', compact('category', 'products', 'categories'));
+    }
 
     // New methods for newly defined routes
     public function proJuiceMachine() { return view('pro-juice-machine'); }

@@ -14,6 +14,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Filament\Tables\Actions\Action;
 
 class CategoryResource extends Resource
 {
@@ -155,7 +156,12 @@ class CategoryResource extends Resource
                     ->placeholder('Todas las categorías'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('info')->modal(),
+                Action::make('Ver')
+                    ->url(fn (Category $record) => route('category.show', $record->slug))
+                    ->openUrlInNewTab()
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->iconButton(),
                 Tables\Actions\EditAction::make()->iconButton()->color('primary')->modal(),
                 Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
             ])

@@ -49,6 +49,7 @@ Route::get('/404', [PageController::class, 'notFound'])->name('page.404');
 Route::get('/article-post-right', [PageController::class, 'articlePostRight'])->name('blog.article.right');
 Route::get('/article-post-without', [PageController::class, 'articlePostWithout'])->name('blog.article.without');
 Route::get('/article-post', [PageController::class, 'articlePost'])->name('blog.article.show');
+Route::get('/category/{slug}', [PageController::class, 'category'])->name('category.show');
 
 // New Routes added by Gemini
 
