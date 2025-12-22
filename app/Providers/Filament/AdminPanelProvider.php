@@ -55,7 +55,6 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Resources\SettingResource::class,
                 \App\Filament\Resources\BrandResource::class,
                 \App\Filament\Resources\TestimonialResource::class,
-                \App\Filament\Resources\GeminiApiKeyResource::class, // Add this line
             ])
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
