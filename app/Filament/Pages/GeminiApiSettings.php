@@ -70,7 +70,7 @@ class GeminiApiSettings extends Page implements HasForms
                                                 'contents' => [['parts' => [['text' => 'Hola, ¿estás funcionando?']]]]
                                             ]);
                                         if ($response->successful()) {
-                                            Notification::make()->title('¡Conexión Exitosa!')->body('La clave API es válida.')->success()->send();
+                                            Notification::make()->title('¡Conexión Exitosa!')->body('La clave API es válida y el modelo gemini-2.5-flash está accesible.')->success()->send();
                                         } else {
                                             $errorBody = $response->json();
                                             $errorMessage = $errorBody['error']['message'] ?? 'Error desconocido.';

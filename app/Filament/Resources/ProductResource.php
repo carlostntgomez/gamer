@@ -45,18 +45,12 @@ class ProductResource extends Resource
                     ->label('Generar Contenido con IA')
                     ->icon('heroicon-o-sparkles')
                     ->color('primary')
-                    ->action(function (Forms\Set $set, Forms\Get $get, string $operation) {
+                    ->action(function (Forms\Set $set, Forms\Get $get) {
                         $apiKey = config('gemini.api_key');
-                        $imagePath = $get('main_image_path');
                         $productName = $get('name');
 
                         if (empty($apiKey)) {
                             Notification::make()->title('Error')->body('La clave API de Gemini no está configurada.')->danger()->send();
-                            return;
-                        }
-
-                        if (empty($imagePath)) {
-                            Notification::make()->title('Error')->body('Por favor, sube una imagen principal primero.')->danger()->send();
                             return;
                         }
 
@@ -65,44 +59,37 @@ class ProductResource extends Resource
                             return;
                         }
 
-                        $imageData = null;
-                        $mimeType = null;
-                        $imageFile = $imagePath[0];
+                        $prompt = <<<PROMPT
+Actúa como un Copywriter Senior y Estratega SEO para TecnnyGames, una tienda online líder en el sector gaming.
+Tu objetivo es crear contenido que no solo sea atractivo y persuasivo para nuestro público (gamers, entusiastas de la tecnología y coleccionistas), sino que también esté optimizado para los motores de búsqueda y maximice nuestra visibilidad.
 
-                        if ($operation === 'create') {
-                            if (!$imageFile instanceof TemporaryUploadedFile) {
-                                Notification::make()->title('Error de Imagen')->body('Ocurrió un error con el archivo de imagen. Intenta subirlo de nuevo.')->danger()->send();
-                                return;
-                            }
-                            $imageData = file_get_contents($imageFile->getRealPath());
-                            $mimeType = $imageFile->getMimeType();
-                        } else { // edit
-                            if (!is_string($imageFile) || !Storage::disk('public')->exists($imageFile)) {
-                                Notification::make()->title('Error de Imagen')->body('El archivo de la imagen no se encuentra o la ruta no es válida.')->danger()->send();
-                                return;
-                            }
-                            $imageData = Storage::disk('public')->get($imageFile);
-                            $mimeType = Storage::disk('public')->mimeType($imageFile);
-                        }
+Basándote EXCLUSIVAMENTE en el nombre del producto, genera el siguiente contenido:
+Producto: {$productName}
+PROMPT;
 
-                        $prompt = 'Eres un experto en e-commerce y SEO para una tienda de temática gaming. Basándote en la imagen del producto y su nombre, genera el siguiente contenido en español. El nombre del producto es \'' . $productName . '\'. Quiero una respuesta en formato JSON con las siguientes claves: short_description (máximo 255 caracteres), long_description (descripción detallada en HTML), seo_title (máximo 60 caracteres), seo_description (máximo 160 caracteres), seo_keywords (una lista de 5-7 palabras clave separadas por comas).';
+                        $schema = [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'short_description' => ['type' => 'STRING', 'description' => 'Un párrafo conciso y atractivo (máx 255 chars) que resuma los puntos fuertes del producto. Ideal para listados y vistas previas.'],
+                                'long_description' => ['type' => 'STRING', 'description' => 'Una descripción MUY EXTENSA y detallada en formato HTML. Usa encabezados (<h3>), listas con viñetas (<ul><li>) y negritas (<strong>) para estructurar la información. Debe ser tan completa como sea posible, cubriendo características, beneficios, especificaciones técnicas (si aplica), y por qué es una compra ideal para un gamer. El objetivo es resolver todas las posibles dudas del cliente y persuadirlo a comprar.'],
+                                'seo_title' => ['type' => 'STRING', 'description' => 'Título SEO optimizado, atractivo y que incluya la palabra clave principal. Debe incitar al clic. MUY IMPORTANTE: Límite estricto de 60 caracteres.'],
+                                'seo_description' => ['type' => 'STRING', 'description' => 'Meta descripción SEO persuasiva. Incluye la palabra clave principal y un llamado a la acción. Debe destacar el beneficio principal para el usuario. MUY IMPORTANTE: Límite estricto de 160 caracteres.'],
+                                'seo_keywords' => ['type' => 'STRING', 'description' => 'Una lista de 7 a 10 palabras clave y términos de búsqueda relevantes (long-tail y short-tail), separadas por comas. Piensa en cómo buscaría este producto un cliente.'],
+                            ],
+                            'required' => ['short_description', 'long_description', 'seo_title', 'seo_description', 'seo_keywords']
+                        ];
 
                         try {
                             $response = Http::withHeaders(['Content-Type' => 'application/json'])
-                                ->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $apiKey, [
+                                ->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey, [
                                     'contents' => [
-                                        [
-                                            'parts' => [
-                                                ['text' => $prompt],
-                                                ['inline_data' => [
-                                                    'mime_type' => $mimeType,
-                                                    'data' => base64_encode($imageData)
-                                                ]]
-                                            ]
-                                        ]
+                                        ['parts' => [
+                                            ['text' => $prompt]
+                                        ]]
                                     ],
                                     'generationConfig' => [
                                         'response_mime_type' => 'application/json',
+                                        'response_schema' => $schema,
                                     ]
                                 ]);
 
@@ -114,8 +101,21 @@ class ProductResource extends Resource
                                     $set('short_description', $contentJson['short_description'] ?? null);
                                     $set('long_description', $contentJson['long_description'] ?? null);
                                     $set('seo_title', $contentJson['seo_title'] ?? null);
-                                    $set('seo_description', $contentJson['seo_description'] ?? null);
-                                    $set('seo_keywords', isset($contentJson['seo_keywords']) ? explode(',', trim($contentJson['seo_keywords'])) : []);
+                                    
+                                    $seoDescription = $contentJson['seo_description'] ?? '';
+                                    if (mb_strlen($seoDescription) > 160) {
+                                        $truncated = mb_substr($seoDescription, 0, 157);
+                                        // Find the last space to avoid breaking words
+                                        $lastSpace = mb_strrpos($truncated, ' ');
+                                        if ($lastSpace !== false) {
+                                            $truncated = mb_substr($truncated, 0, $lastSpace);
+                                        }
+                                        $seoDescription = $truncated . '...';
+                                    }
+                                    $set('seo_description', $seoDescription);
+                                    
+                                    $keywords = $contentJson['seo_keywords'] ?? '';
+                                    $set('seo_keywords', !is_array($keywords) ? array_map('trim', explode(',', $keywords)) : $keywords);
 
                                     Notification::make()->title('¡Éxito!')->body('El contenido ha sido generado y los campos han sido actualizados.')->success()->send();
                                 } else {
@@ -140,10 +140,15 @@ class ProductResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(function (Forms\Set $set, ?string $state) {
-                                if ($state) {
+                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, ?string $state, ?string $old) {
+                                if (!$state) { return; }
+                                $set('seo_title', $state);
+                                
+                                $currentSlug = $get('slug');
+                                $expectedOldSlug = Str::slug($old ?? '');
+
+                                if (empty($currentSlug) || $currentSlug === $expectedOldSlug) {
                                     $set('slug', Str::slug($state));
-                                    $set('seo_title', $state);
                                 }
                             }),
 
@@ -151,8 +156,9 @@ class ProductResource extends Resource
                             ->label('Slug')
                             ->required()
                             ->unique(Product::class, 'slug', ignoreRecord: true)
-                            ->disabled(fn (string $operation): bool => $operation === 'edit')
-                            ->helperText('URL amigable (no cambiar una vez creada).'),
+                            ->live()
+                            ->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))
+                            ->helperText('URL amigable. Se genera del nombre, pero puedes editarla manualmente.'),
 
                         Forms\Components\Select::make('brand_id')
                             ->relationship('brand', 'name')
@@ -267,6 +273,18 @@ class ProductResource extends Resource
                             ->label('Descripción SEO')
                             ->maxLength(160)
                             ->rows(3)
+                            ->live(onBlur: true) // Added live(onBlur: true)
+                            ->afterStateUpdated(function (Forms\Set $set, ?string $state) { // Added afterStateUpdated
+                                if ($state && mb_strlen($state) > 160) {
+                                    $truncated = mb_substr($state, 0, 157);
+                                    // Find the last space to avoid breaking words
+                                    $lastSpace = mb_strrpos($truncated, ' ');
+                                    if ($lastSpace !== false) {
+                                        $truncated = mb_substr($truncated, 0, $lastSpace);
+                                    }
+                                    $set('seo_description', $truncated . '...');
+                                }
+                            })
                             ->helperText('Recomendado: Máximo 160 caracteres. Un resumen para Google.'),
 
                         Forms\Components\TagsInput::make('seo_keywords')

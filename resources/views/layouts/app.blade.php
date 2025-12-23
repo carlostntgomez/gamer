@@ -1,13 +1,18 @@
+
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <meta name="description" content="A best stylish, creative, modern responsive template for different eCommerce business or industries." />
-        <meta name="keywords" content="food template, bakery products, html, eCommerce html template,plants, organic food, restaurant, live tree, responsive, pizza, burger, furniture, mobile, watches, electronics, computers accessories, toys, jewellery, restaurant accessories" />
+        @hasSection('meta_description')<meta name="description" content="@yield('meta_description')" />@endif
+        @hasSection('meta_keywords')<meta name="keywords" content="@yield('meta_keywords')" />@endif
         <meta name="author" content="spacingtech_webify">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <!-- title -->
-        <title>Electon - The Electronics eCommerce Bootstrap Template</title>
+        @hasSection('title')
+            <title>@yield('title') - {{ config('app.name') }}</title>
+        @else
+            <title>{{ config('app.name') }}</title>
+        @endif
         <!-- favicon -->
         <link rel="icon" type="image/x-icon" href="{{ asset('img/favicon/favicon8.png') }}">
         <!-- bootstrap css -->

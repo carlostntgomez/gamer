@@ -194,11 +194,28 @@ class CategorySeeder extends Seeder
     private function generateSeoDescription(string $categoryName, array $parentNames): string
     {
         $storeName = config('app.name', 'Tu Tienda Online');
+        $maxLength = 160;
+        $ellipsis = '...';
+        $truncatedLength = $maxLength - mb_strlen($ellipsis);
+
         if (!empty($parentNames)) {
             $lastParent = end($parentNames);
-            return "Descubre nuestra amplia gama de {$categoryName} dentro de la sección de {$lastParent}. Las mejores ofertas y envíos rápidos solo en {$storeName}.";
+            $description = "Descubre la mejor selección de {$categoryName} en la sección de {$lastParent}. Ofertas exclusivas y envío rápido en {$storeName}. ¡Explora ahora!";
+        } else {
+            $description = "Encuentra la mejor selección de {$categoryName} en {$storeName}. Calidad, variedad y precios increíbles. ¡Compra ahora y no te pierdas nuestras ofertas!";
         }
-        return "Encuentra la mejor selección de {$categoryName} en {$storeName}. Calidad, variedad y precios increíbles. ¡Compra ahora y aprovecha nuestras ofertas!";
+
+        if (mb_strlen($description) > $maxLength) {
+            $description = mb_substr($description, 0, $truncatedLength);
+            // Ensure not to break words
+            $lastSpace = mb_strrpos($description, ' ');
+            if ($lastSpace !== false) {
+                $description = mb_substr($description, 0, $lastSpace);
+            }
+            $description .= $ellipsis;
+        }
+
+        return $description;
     }
 
     /**

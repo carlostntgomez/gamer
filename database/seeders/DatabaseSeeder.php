@@ -37,7 +37,6 @@ class DatabaseSeeder extends Seeder
             WishlistSeeder::class,
             TestimonialSeeder::class,
             ReviewSeeder::class,
-            GeminiApiKeySeeder::class, // <-- Seeder de la clave API añadido
         ]);
     }
 }

@@ -1,3 +1,7 @@
+blade
+@section('title', $product->seo_title)
+@section('meta_description', $product->seo_description)
+@section('meta_keywords', implode(',', (array)$product->seo_keywords))
 <x-app-layout>
     <!-- main section start-->
     <main>
@@ -13,7 +17,7 @@
                                     <a class="breadcrumb-link" href="{{ route('home') }}">Inicio</a>
                                 </li>
                                 <li class="breadcrumb-li">
-                                    <span class="breadcrumb-text">Cámara 360</span>
+                                    <span class="breadcrumb-text">{{ $product->name }}</span>
                                 </li>
                             </ul>
                             <!-- breadcrumb-list end -->
@@ -80,13 +84,29 @@
                                             <!-- product-rating start -->
                                             <div class="product-ratting">
                                                 <span class="pro-ratting">
-                                                    <i class="fas fa-star"></i>
-                                                    <i class="fas fa-star"></i>
-                                                    <i class="fas fa-star"></i>
-                                                    <i class="fas fa-star"></i>
-                                                    <i class="fas fa-star-half-alt"></i>
+                                                    @php
+                                                        $averageRating = $averageRating ?? 0; // Use $averageRating from controller
+                                                        $fullStars = floor($averageRating);
+                                                        $halfStar = ($averageRating - $fullStars) >= 0.5 ? 1 : 0;
+                                                        $emptyStars = 5 - $fullStars - $halfStar;
+                                                    @endphp
+                                                    @for ($i = 0; $i < $fullStars; $i++)
+                                                        <i class="fas fa-star"></i>
+                                                    @endfor
+                                                    @if ($halfStar)
+                                                        <i class="fas fa-star-half-alt"></i>
+                                                    @endif
+                                                    @for ($i = 0; $i < $emptyStars; $i++)
+                                                        <i class="far fa-star"></i> {{-- Assuming far fa-star for empty stars --}}
+                                                    @endfor
                                                 </span>
-                                                <span class="spr-badge-caption">Sin reseñas</span>
+                                                <span class="spr-badge-caption">
+                                                    @if ($reviews->count() > 0)
+                                                        ({{ $reviews->count() }} Reseñas)
+                                                    @else
+                                                        Sin reseñas
+                                                    @endif
+                                                </span>
                                             </div>
                                             <!-- product-rating end -->
                                         </div>
@@ -106,10 +126,10 @@
                                         </div>
                                         <div class="product-info">
                                             <div class="product-inventory">
-                                                @if ($product->stock > 0)
+                                                @if ($product->stock_quantity > 0) {{-- Changed to stock_quantity --}}
                                                     <div class="stock-inventory stock-more">
                                                         <p class="text-success">¡Date prisa! ¡Solo quedan
-                                                            <span class="available-stock bg-success">{{ $product->stock }}</span>
+                                                            <span class="available-stock bg-success">{{ $product->stock_quantity }}</span> {{-- Changed to stock_quantity --}}
                                                             productos en stock!
                                                         </p>
                                                     </div>
@@ -158,7 +178,8 @@
                                                                                                                                 </div>
                                                                                                                             </div>
                                                                                                                         </div>
-                                                                                                                        @endif                                                            </div>
+                                                                                                                        @endif
+                                                        </div>
                                                     </div>
                                                 </form>
                                             </div>
@@ -268,7 +289,7 @@
                                                         </div>
                                                         <div class="ask-form">
                                                             <h6>Hacer una pregunta</h6>
-                                                            <form method="post" class="contact-form">
+                                                            <form method="post" class="new-question-form"> {{-- Changed class to new-question-form --}}
                                                                 <input type="hidden" name="contact[product url]" value="">
                                                                 <div class="form-grp">
                                                                     <input type="text" name="contact[name]" required="" placeholder="Tu nombre*">
@@ -344,7 +365,7 @@
                                             </a>
                                             <div class="collapse show" id="collapse-description" data-bs-parent="#collapse-tab">
                                                 <div class="product-description">
-                                                    {!! $product->description !!}
+                                                    {!! $product->long_description !!} {{-- Changed to long_description --}}
                                                 </div>
                                             </div>
                                         </div>
@@ -401,7 +422,11 @@
                                                             <h2 class="spr-header-title">Opiniones de clientes</h2>
                                                             <div class="spr-summary rte">
                                                                 <span class="spr-summary-caption">
-                                                                    <span class="spr-summary-caption">Aún no hay reseñas</span>
+                                                                    @if ($reviews->count() > 0)
+                                                                        <span class="spr-summary-caption">Mostrando {{ $reviews->count() }} reseña(s)</span>
+                                                                    @else
+                                                                        <span class="spr-summary-caption">Aún no hay reseñas</span>
+                                                                    @endif
                                                                 </span>
                                                                 <span class="spr-summary-actions">
                                                                     <a href="#add-review" data-bs-toggle="collapse" class="spr-summary-actions-newreview">Escribir una reseña</a>
@@ -410,36 +435,75 @@
                                                             <!-- product-rating end -->
                                                         </div>
                                                         <div class="spr-content">
+                                                            @if ($reviews->count() > 0)
+                                                                @foreach ($reviews as $review)
+                                                                    <div class="spr-review">
+                                                                        <div class="spr-review-header">
+                                                                            <h3 class="spr-review-header-title">{{ $review->title }}</h3>
+                                                                            <div class="spr-review-header-byline">
+                                                                                <strong>{{ $review->author_name }}</strong> en {{ $review->created_at->format('d M, Y') }}
+                                                                            </div>
+                                                                            <div class="product-ratting">
+                                                                                <span class="pro-ratting">
+                                                                                    @for ($i = 0; $i < $review->rating; $i++)
+                                                                                        <i class="fas fa-star"></i>
+                                                                                    @endfor
+                                                                                    @for ($i = $review->rating; $i < 5; $i++)
+                                                                                        <i class="far fa-star"></i>
+                                                                                    @endfor
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="spr-review-body">
+                                                                            <p>{{ $review->content }}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                @endforeach
+                                                            @endif
+
                                                             <!-- spar-from start -->
                                                             <div class="spr-form collapse" id="add-review">
-                                                                <form method="post" class="new-review-form">
+                                                                <form method="post" action="{{ route('reviews.store', $product->slug) }}" class="new-review-form">
+                                                                    @csrf
                                                                     <h3 class="spr-form-title">Escribir una reseña</h3>
                                                                     <fieldset class="spr-form-contact">
                                                                         <div class="spr-form-contact-name">
                                                                             <label class="spr-form-label">Nombre</label>
-                                                                            <input type="text" name="q" class="spr-form-input spr-form-input-text " placeholder="Enter your name">
+                                                                            <input type="text" name="author_name" class="spr-form-input spr-form-input-text @error('author_name') is-invalid @enderror" placeholder="Tu nombre" value="{{ old('author_name') }}" required>
+                                                                            @error('author_name')
+                                                                                <div class="invalid-feedback">{{ $message }}</div>
+                                                                            @enderror
                                                                         </div>
                                                                         <div class="spr-form-contact-email">
                                                                             <label class="spr-form-label">Dirección de correo electrónico</label>
-                                                                            <input type="email" name="q" class="spr-form-input spr-form-input-email" placeholder="john.smith@example.com">
+                                                                            <input type="email" name="author_email" class="spr-form-input spr-form-input-email @error('author_email') is-invalid @enderror" placeholder="john.smith@example.com" value="{{ old('author_email') }}" required>
+                                                                            @error('author_email')
+                                                                                <div class="invalid-feedback">{{ $message }}</div>
+                                                                            @enderror
                                                                         </div>
                                                                     </fieldset>
                                                                     <fieldset class="spr-form-review">
                                                                         <div class="spr-form-review-rating">
                                                                             <label class="spr-form-label">Calificación</label>
-                                                                            <div class="product-ratting">
-                                                                                <span class="pro-ratting">
-                                                                                    <i class="fas fa-star"></i>
-                                                                                    <i class="fas fa-star"></i>
-                                                                                    <i class="fas fa-star"></i>
-                                                                                    <i class="fas fa-star"></i>
-                                                                                    <i class="fas fa-star-half-alt"></i>
-                                                                                </span>
+                                                                            <div class="product-ratting rating-input"> {{-- Added rating-input class for JS --}}
+                                                                                <input type="radio" id="star5" name="rating" value="5" {{ old('rating') == 5 ? 'checked' : '' }} required><label for="star5" title="5 stars" data-value="5"><i class="fas fa-star"></i></label>
+                                                                                <input type="radio" id="star4" name="rating" value="4" {{ old('rating') == 4 ? 'checked' : '' }}><label for="star4" title="4 stars" data-value="4"><i class="fas fa-star"></i></label>
+                                                                                <input type="radio" id="star3" name="rating" value="3" {{ old('rating') == 3 ? 'checked' : '' }}><label for="star3" title="3 stars" data-value="3"><i class="fas fa-star"></i></label>
+                                                                                <input type="radio" id="star2" name="rating" value="2" {{ old('rating') == 2 ? 'checked' : '' }}><label for="star2" title="2 stars" data-value="2"><i class="fas fa-star"></i></label>
+                                                                                <input type="radio" id="star1" name="rating" value="1" {{ old('rating') == 1 ? 'checked' : '' }}><label for="star1" title="1 star" data-value="1"><i class="fas fa-star"></i></label>
+                                                                                {{-- Hidden input to actually store the selected rating value --}}
+                                                                                {{-- Removed the hidden input for rating, as the radio buttons handle the 'rating' name directly --}}
                                                                             </div>
+                                                                            @error('rating')
+                                                                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                                            @enderror
                                                                         </div>
                                                                         <div class="spr-form-review-title">
                                                                             <label class="spr-form-label">Título de la reseña</label>
-                                                                            <input type="text" name="q" class="spr-form-input spr-form-input-text " placeholder="Dale un título a tu reseña">
+                                                                            <input type="text" name="title" class="spr-form-input spr-form-input-text @error('title') is-invalid @enderror" placeholder="Dale un título a tu reseña" value="{{ old('title') }}" required>
+                                                                            @error('title')
+                                                                                <div class="invalid-feedback">{{ $message }}</div>
+                                                                            @enderror
                                                                         </div>
                                                                         <div class="spr-form-review-body">
                                                                             <label class="spr-form-label">Cuerpo de la reseña
@@ -448,12 +512,15 @@
                                                                                 </span>
                                                                             </label>
                                                                             <div class="spr-form-input">
-                                                                                <textarea class="spr-form-input spr-form-input-textarea" placeholder="Escribe tus comentarios aquí" rows="10"></textarea>
+                                                                                <textarea name="content" rows="4" class="spr-form-input spr-form-input-textarea @error('content') is-invalid @enderror" placeholder="Escribe tus comentarios aquí" required>{{ old('content') }}</textarea>
+                                                                                @error('content')
+                                                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                                                @enderror
                                                                             </div>
                                                                         </div>
                                                                     </fieldset>
                                                                     <fieldset class="spr-form-actions">
-                                                                        <input type="submit" name="q" class="spr-button spr-button-primary button button-primary btn btn-primary" value="Enviar reseña">
+                                                                        <input type="submit" value="Enviar reseña" class="spr-button spr-button-primary button button-primary btn btn-primary">
                                                                     </fieldset>
                                                                 </form>
                                                             </div>
@@ -507,75 +574,91 @@
                             <div class="collection-wrap">
                                 <div class="collection-slider swiper" id="Trending-product">
                                     <div class="swiper-wrapper">
-                                        <div class="swiper-slide" data-animate="animate__fadeInUp">
-                                            <div class="single-product-wrap">
-                                                <div class="product-image">
-                                                    <a href="{{ route('product.show', ['slug' => 'auriculares-inalambricos']) }}" class="pro-img">
-                                                        <img src="{{ asset('img/product/home1-pro-1.jpg') }}" class="img-fluid img1 mobile-img1" alt="p1">
-                                                        <img src="{{ asset('img/product/home1-pro-2.jpg') }}" class="img-fluid img2 mobile-img2" alt="p2">
-                                                    </a>
-                                                    <div class="product-action">
-                                                        <a href="#quickview" class="quickview" data-bs-toggle="modal" data-bs-target="#quickview">
-                                                            <span class="tooltip-text">Vista rápida</span>
-                                                            <span class="pro-action-icon"><i class="feather-eye"></i></span>
+                                        @foreach ($trendingProducts as $trendingProduct)
+                                            <div class="swiper-slide" data-animate="animate__fadeInUp">
+                                                <div class="single-product-wrap">
+                                                    <div class="product-image">
+                                                        <a href="{{ route('product.show', ['slug' => $trendingProduct->slug]) }}" class="pro-img">
+                                                            <img src="{{ Storage::url($trendingProduct->main_image_path) }}" class="img-fluid img1 mobile-img1" alt="{{ $trendingProduct->name }}">
+                                                            {{-- Assuming a second image exists for hover effect, otherwise remove or adapt --}}
+                                                            @if (!empty($trendingProduct->gallery_image_paths) && count($trendingProduct->gallery_image_paths) > 0)
+                                                                <img src="{{ Storage::url($trendingProduct->gallery_image_paths[0]) }}" class="img-fluid img2 mobile-img2" alt="{{ $trendingProduct->name }}">
+                                                            @endif
                                                         </a>
-                                                        <a href="#add-to-cart" class="add-to-cart" data-bs-toggle="modal" data-bs-target="#add-to-cart">
-                                                            <span class="tooltip-text">Añadir al carrito</span>
-                                                            <span class="pro-action-icon"><i class="feather-shopping-bag"></i></span>
-                                                        </a>
-                                                        <a href="{{ route('wishlist.index') }}" class="wishlist">
-                                                            <span class="tooltip-text">Lista de deseos</span>
-                                                            <span class="pro-action-icon"><i class="feather-heart"></i></span>
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                                <div class="product-content">
-                                                    <div class="product-sub-title">
-                                                        <span>Dispositivo inalámbrico</span>
-                                                    </div>
-                                                    <div class="product-title">
-                                                        <h6><a href="{{ route('product.show', ['slug' => 'auriculares-inalambricos']) }}">Auriculares inalámbricos</a></h6>
-                                                    </div>
-                                                    <div class="product-price">
-                                                        <div class="pro-price-box">
-                                                            <span class="new-price">$21.00</span>
-                                                            <span class="old-price">$25.00</span>
+                                                        <div class="product-action">
+                                                            <a href="#quickview" class="quickview" data-bs-toggle="modal" data-bs-target="#quickview">
+                                                                <span class="tooltip-text">Vista rápida</span>
+                                                                <span class="pro-action-icon"><i class="feather-eye"></i></span>
+                                                            </a>
+                                                            <a href="#add-to-cart" class="add-to-cart" data-bs-toggle="modal" data-bs-target="#add-to-cart">
+                                                                <span class="tooltip-text">Añadir al carrito</span>
+                                                                <span class="pro-action-icon"><i class="feather-shopping-bag"></i></span>
+                                                            </a>
+                                                            <a href="{{ route('wishlist.index') }}" class="wishlist">
+                                                                <span class="tooltip-text">Lista de deseos</span>
+                                                                <span class="pro-action-icon"><i class="feather-heart"></i></span>
+                                                            </a>
                                                         </div>
                                                     </div>
-                                                    <div class="product-description">
-                                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</p>
+                                                    <div class="product-content">
+                                                        {{-- Assuming product_sub_title is a field or logic --}}
+                                                        {{-- <div class="product-sub-title">
+                                                            <span>Dispositivo inalámbrico</span>
+                                                        </div> --}}
+                                                        <div class="product-title">
+                                                            <h6><a href="{{ route('product.show', ['slug' => $trendingProduct->slug]) }}">{{ $trendingProduct->name }}</a></h6>
+                                                        </div>
+                                                        <div class="product-price">
+                                                            <div class="pro-price-box">
+                                                                @if ($trendingProduct->sale_price && $trendingProduct->sale_price < $trendingProduct->price)
+                                                                    <span class="new-price">${{ number_format($trendingProduct->sale_price, 2) }}</span>
+                                                                    <span class="old-price">${{ number_format($trendingProduct->price, 2) }}</span>
+                                                                @else
+                                                                    <span class="new-price">${{ number_format($trendingProduct->price, 2) }}</span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                        <div class="product-description">
+                                                            <p>{{ $trendingProduct->short_description }}</p>
+                                                        </div>
+                                                        <div class="product-action">
+                                                            <a href="#quickview" class="quickview" data-bs-toggle="modal" data-bs-target="#quickview">
+                                                                <span class="tooltip-text">Vista rápida</span>
+                                                                <span class="pro-action-icon"><i class="feather-eye"></i></span>
+                                                            </a>
+                                                            <a href="#add-to-cart" class="add-to-cart" data-bs-toggle="modal" data-bs-target="#add-to-cart">
+                                                                <span class="tooltip-text">Añadir al carrito</span>
+                                                                <span class="pro-action-icon"><i class="feather-shopping-bag"></i></span>
+                                                            </a>
+                                                            <a href="{{ route('wishlist.index') }}" class="wishlist">
+                                                                <span class="tooltip-text">Lista de deseos</span>
+                                                                <span class="pro-action-icon"><i class="feather-heart"></i></span>
+                                                            </a>
+                                                        </div>
                                                     </div>
-                                                    <div class="product-action">
-                                                        <a href="#quickview" class="quickview" data-bs-toggle="modal" data-bs-target="#quickview">
-                                                            <span class="tooltip-text">Vista rápida</span>
-                                                            <span class="pro-action-icon"><i class="feather-eye"></i></span>
-                                                        </a>
-                                                        <a href="#add-to-cart" class="add-to-cart" data-bs-toggle="modal" data-bs-target="#add-to-cart">
-                                                            <span class="tooltip-text">Añadir al carrito</span>
-                                                            <span class="pro-action-icon"><i class="feather-shopping-bag"></i></span>
-                                                        </a>
-                                                        <a href="{{ route('wishlist.index') }}" class="wishlist">
-                                                            <span class="tooltip-text">Lista de deseos</span>
-                                                            <span class="pro-action-icon"><i class="feather-heart"></i></span>
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                                <div class="pro-label-retting">
-                                                    <div class="product-ratting">
-                                                        <span class="pro-ratting">
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                        </span>
-                                                    </div>
-                                                    <div class="product-label pro-new-sale">
-                                                        <span class="product-label-title">Sale<span>20%</span></span>
+                                                    <div class="pro-label-retting">
+                                                        <div class="product-ratting">
+                                                            <span class="pro-ratting">
+                                                                {{-- Assuming rating is available, otherwise remove or make dynamic --}}
+                                                                <i class="fa-solid fa-star"></i>
+                                                                <i class="fa-solid fa-star"></i>
+                                                                <i class="fa-solid fa-star"></i>
+                                                                <i class="fa-solid fa-star"></i>
+                                                                <i class="fa-solid fa-star"></i>
+                                                            </span>
+                                                        </div>
+                                                        @if ($trendingProduct->sale_price && $trendingProduct->sale_price < $trendingProduct->price)
+                                                            @php
+                                                                $discountPercentage = (($trendingProduct->price - $trendingProduct->sale_price) / $trendingProduct->price) * 100;
+                                                            @endphp
+                                                            <div class="product-label pro-new-sale">
+                                                                <span class="product-label-title">Oferta<span>{{ round($discountPercentage) }}%</span></span>
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        @endforeach
                                     </div>
                                     <div class="collection-button">
                                         <a href="{{ route('collection.index') }}" class="btn btn-style2" data-animate="animate__fadeInUp">Ver todos los artículos</a>
@@ -599,4 +682,66 @@
         <!-- product-tranding end -->
     </main>
     <!-- main section end-->
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Star rating functionality for review form
+            const ratingInputContainer = document.querySelector('.rating-input');
+            if (ratingInputContainer) {
+                const stars = ratingInputContainer.querySelectorAll('label[data-value]');
+                const selectedRatingInput = document.getElementById('selected-rating'); // This is no longer used for setting rating, but for getting old value
+
+                stars.forEach(starLabel => {
+                    starLabel.addEventListener('click', function() {
+                        const value = parseInt(this.getAttribute('data-value'));
+                        // The radio button itself now handles the name="rating"
+                        // selectedRatingInput.value = value; // No longer needed for this approach
+
+                        // Visually update stars
+                        stars.forEach(s => {
+                            const sValue = parseInt(s.getAttribute('data-value'));
+                            if (sValue <= value) {
+                                s.querySelector('i').classList.remove('far');
+                                s.querySelector('i').classList.add('fas');
+                            } else {
+                                s.querySelector('i').classList.remove('fas');
+                                s.querySelector('i').classList.add('far');
+                            }
+                        });
+                    });
+                });
+
+                // Set initial state based on old('rating') if available
+                const initialRating = document.querySelector('input[name="rating"]:checked');
+                if (initialRating) {
+                    const value = parseInt(initialRating.value);
+                    stars.forEach(s => {
+                        const sValue = parseInt(s.getAttribute('data-value'));
+                        if (sValue <= value) {
+                            s.querySelector('i').classList.remove('far');
+                            s.querySelector('i').classList.add('fas');
+                        } else {
+                            s.querySelector('i').classList.remove('fas');
+                            s.querySelector('i').classList.add('far');
+                        }
+                    });
+                } else {
+                    // Default to no stars filled if no old rating and no selection
+                    stars.forEach(s => {
+                        s.querySelector('i').classList.remove('fas');
+                        s.querySelector('i').classList.add('far');
+                    });
+                }
+            }
+
+            // Show review form if there are validation errors after submission
+            @if ($errors->any() && (session('form_type') === 'review_form'))
+                const reviewCollapse = new bootstrap.Collapse(document.getElementById('add-review'), {
+                    toggle: false
+                });
+                reviewCollapse.show();
+                 document.getElementById('collapse-reviews').classList.add('show');
+            @endif
+        });
+    </script>
 </x-app-layout>

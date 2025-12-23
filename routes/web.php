@@ -80,5 +80,8 @@ Route::get('/blog/{slug}', [PageController::class, 'showPost'])->name('blog.show
 // Checkout variation
 Route::get('/checkout-style1', [PageController::class, 'checkoutStyle1'])->name('checkout.style1');
 
+// Route for submitting product reviews
+Route::post('/reviews/{product}', [PageController::class, 'submitReview'])->name('reviews.store');
+
 // Generic page viewer route (should be at the end to avoid catching other routes)
 Route::get('/{slug}', [PageController::class, 'show'])->where('slug', '^(?!admin).*$')->name('page.show');

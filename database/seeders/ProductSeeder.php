@@ -110,42 +110,65 @@ class ProductSeeder extends Seeder
 
     private function addImagesToProduct(Product $product, array $sampleImages, string $storagePath): void
     {
-        $numImages = rand(3, 6);
-        $selectedImageKeys = array_rand($sampleImages, $numImages);
-        $selectedImages = array_map(fn($key) => $sampleImages[$key], (array)$selectedImageKeys);
+        $availableImages = $sampleImages;
 
-        $mainImageDbPath = null;
+        if (empty($availableImages)) {
+            return;
+        }
+
+        // 1. Select and process the main image
+        $mainImageKey = array_rand($availableImages);
+        $mainImageFile = $availableImages[$mainImageKey];
+        $mainImageDbPath = $this->processAndSaveImage($mainImageFile, $product, $storagePath);
+
+        // 2. Remove the main image from the available pool
+        unset($availableImages[$mainImageKey]);
+
+        // 3. Select and process gallery images from the remainder
         $galleryImageDbPaths = [];
+        $numGalleryImages = rand(2, 5);
 
-        foreach ($selectedImages as $index => $imageFile) {
-            $sourcePath = $imageFile->getRealPath();
-            $newFileName = Str::slug($product->name) . '-' . uniqid() . '.webp';
-            $destinationPath = $storagePath . '/' . $newFileName;
-
-            try {
-                $image = imagecreatefromstring(File::get($sourcePath));
-                if ($image !== false) {
-                    imagepalettetotruecolor($image);
-                    imagealphablending($image, true);
-                    imagesavealpha($image, true);
-                    imagewebp($image, $destinationPath, 80);
-                    imagedestroy($image);
-                    
-                    $dbPath = 'products/' . $newFileName;
-                    if ($index === 0) {
-                        $mainImageDbPath = $dbPath;
-                    } else {
-                        $galleryImageDbPaths[] = $dbPath;
-                    }
+        if (count($availableImages) > 0) {
+            $numToSelect = min(count($availableImages), $numGalleryImages);
+            $galleryImageKeys = (array) array_rand($availableImages, $numToSelect);
+            
+            foreach ($galleryImageKeys as $key) {
+                $galleryImageFile = $availableImages[$key];
+                $dbPath = $this->processAndSaveImage($galleryImageFile, $product, $storagePath);
+                if ($dbPath) {
+                    $galleryImageDbPaths[] = $dbPath;
                 }
-            } catch (\Exception $e) {
-                $this->command->warn("No se pudo procesar la imagen: {$sourcePath}. Error: " . $e->getMessage());
             }
         }
 
+        // 4. Save paths to the product
         $product->main_image_path = $mainImageDbPath;
         $product->gallery_image_paths = $galleryImageDbPaths;
         $product->save();
+    }
+
+    private function processAndSaveImage(\SplFileInfo $imageFile, Product $product, string $storagePath): ?string
+    {
+        $sourcePath = $imageFile->getRealPath();
+        $newFileName = Str::slug($product->name) . '-' . uniqid() . '.webp';
+        $destinationPath = $storagePath . '/' . $newFileName;
+
+        try {
+            $image = imagecreatefromstring(File::get($sourcePath));
+            if ($image === false) return null;
+
+            imagepalettetotruecolor($image);
+            imagealphablending($image, true);
+            imagesavealpha($image, true);
+            imagewebp($image, $destinationPath, 80);
+            imagedestroy($image);
+            
+            return 'products/' . $newFileName;
+
+        } catch (\Exception $e) {
+            $this->command->warn("No se pudo procesar la imagen: {$sourcePath}. Error: " . $e->getMessage());
+            return null;
+        }
     }
 
     private function clearDirectory(string $path): void
