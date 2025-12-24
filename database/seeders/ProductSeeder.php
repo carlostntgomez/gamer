@@ -57,24 +57,40 @@ class ProductSeeder extends Seeder
             $isVisible = fake()->boolean(95);
             $availableColors = ['Rojo', 'Azul', 'Verde', 'Negro', 'Blanco', 'Gris', 'Plata', 'Dorado'];
 
+            // --- Especificaciones ---
+            $sampleSpecs = [
+                'Procesador' => ['Intel Core i9-13900K', 'AMD Ryzen 9 7950X', 'Intel Core i7-13700K', 'AMD Ryzen 7 7800X3D'],
+                'Tarjeta Gráfica' => ['NVIDIA GeForce RTX 4090', 'AMD Radeon RX 7900 XTX', 'NVIDIA GeForce RTX 4080'],
+                'Memoria RAM' => ['32GB DDR5 6000MHz', '16GB DDR5 5200MHz', '64GB DDR5 5600MHz'],
+                'Almacenamiento' => ['1TB NVMe SSD Gen4', '2TB NVMe SSD Gen4', '4TB SATA SSD'],
+                'Compatibilidad' => ['PC', 'PlayStation 5', 'Xbox Series X/S', 'Nintendo Switch'],
+                'Conectividad' => ['Wi-Fi 6E', 'Bluetooth 5.3', 'USB-C']
+            ];
+            $specifications = [];
+            $specKeys = array_rand($sampleSpecs, rand(2, 5));
+            foreach ((array)$specKeys as $key) {
+                $specifications[$key] = $sampleSpecs[$key][array_rand($sampleSpecs[$key])];
+            }
+
             $productData = [
                 'name' => ucfirst($name),
                 'slug' => $slug,
                 'short_description' => fake()->sentence(25),
                 'long_description' => '<p>' . implode('</p><p>', fake()->paragraphs(5)) . '</p>',
+                'specifications' => $specifications,
                 'price' => $basePrice,
                 'sale_price' => $salePrice,
                 'sku' => strtoupper(substr(str_replace(' ', '-', $name), 0, 8)) . '-' . fake()->unique()->numberBetween(1000, 9999),
                 'stock_quantity' => fake()->numberBetween(0, 150),
                 'is_visible' => $isVisible,
-                'is_featured' => $isVisible ? fake()->boolean(25) : false, // Un producto no puede ser destacado si no es visible
+                'is_featured' => $isVisible ? fake()->boolean(25) : false,
                 'is_new' => fake()->boolean(30),
                 'brand_id' => $brand->id,
                 'type' => fake()->randomElement(ProductType::cases())->value,
                 'condition' => fake()->randomElement(ProductCondition::cases())->value,
                 'colors' => fake()->randomElements($availableColors, rand(1, 4)),
-                'seo_title' => ucfirst($name) . ' | ' . $brand->name,
-                'seo_description' => fake()->sentence(20),
+                'seo_title' => Str::limit(ucfirst($name) . ' | ' . $brand->name, 60, ''),
+                'seo_description' => Str::limit(fake()->sentence(20), 160, '...'),
                 'seo_keywords' => array_values(array_unique([$brand->name, $category->name, ...fake()->words(rand(2, 4))])),
             ];
 

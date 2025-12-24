@@ -16,7 +16,7 @@ class Product extends Model
     protected $fillable = [
         'name', 'slug', 'short_description', 'long_description', 'price', 'sale_price', 'sku', 'stock_quantity',
         'is_visible', 'is_featured', 'is_new', 'brand_id', 'type', 'condition',
-        'main_image_path', 'gallery_image_paths', 'colors', 'seo_title', 'seo_description', 'seo_keywords'
+        'main_image_path', 'gallery_image_paths', 'colors', 'specifications', 'seo_title', 'seo_description', 'seo_keywords'
     ];
 
     protected $casts = [
@@ -25,8 +25,8 @@ class Product extends Model
         'is_new' => 'boolean',
         'gallery_image_paths' => 'array',
         'colors' => 'array',
+        'specifications' => 'array',
         'seo_keywords' => 'array',
-        'additional_info' => 'array',
         'type' => ProductType::class,
         'condition' => ProductCondition::class,
     ];

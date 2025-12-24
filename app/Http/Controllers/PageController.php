@@ -8,6 +8,7 @@ use App\Models\Post;
 use App\Models\Category;
 use App\Models\Review;
 use App\Models\Brand; // Added this line for Brand model
+use Illuminate\Support\Facades\Log;
 
 class PageController extends Controller
 {
@@ -23,6 +24,7 @@ class PageController extends Controller
     public function productTemplate($slug)
     {
         $product = Product::where('slug', $slug)->firstOrFail();
+        // Log::info('Technical Specifications for product ' . $product->slug . ': ' . $product->technical_specifications); // Removed this line
 
         // Get categories of the current product
         $categoryIds = $product->categories->pluck('id')->toArray();

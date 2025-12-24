@@ -17,6 +17,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\KeyValue;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -25,6 +26,8 @@ use Filament\Forms\Components\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 
 class ProductResource extends Resource
 {
@@ -61,7 +64,13 @@ class ProductResource extends Resource
 
                         $prompt = <<<PROMPT
 Actúa como un Copywriter Senior y Estratega SEO para TecnnyGames, una tienda online líder en el sector gaming.
-Tu objetivo es crear contenido que no solo sea atractivo y persuasivo para nuestro público (gamers, entusiastas de la tecnología y coleccionistas), sino que también esté optimizado para los motores de búsqueda y maximice nuestra visibilidad.
+
+**REGLAS CRÍTICAS e INQUEBRANTABLES:**
+- Los límites de caracteres son ESTRICTOS. NUNCA, bajo ninguna circunstancia, debes excederlos.
+- `seo_title`: MÁXIMO 60 caracteres.
+- `seo_description`: MÁXIMO 160 caracteres.
+
+Tu objetivo es crear contenido persuasivo y optimizado para SEO para nuestro público (gamers, entusiastas tech y coleccionistas).
 
 Basándote EXCLUSIVAMENTE en el nombre del producto, genera el siguiente contenido:
 Producto: {$productName}
@@ -71,12 +80,14 @@ PROMPT;
                             'type' => 'OBJECT',
                             'properties' => [
                                 'short_description' => ['type' => 'STRING', 'description' => 'Un párrafo conciso y atractivo (máx 255 chars) que resuma los puntos fuertes del producto. Ideal para listados y vistas previas.'],
-                                'long_description' => ['type' => 'STRING', 'description' => 'Una descripción MUY EXTENSA y detallada en formato HTML. Usa encabezados (<h3>), listas con viñetas (<ul><li>) y negritas (<strong>) para estructurar la información. Debe ser tan completa como sea posible, cubriendo características, beneficios, especificaciones técnicas (si aplica), y por qué es una compra ideal para un gamer. El objetivo es resolver todas las posibles dudas del cliente y persuadirlo a comprar.'],
-                                'seo_title' => ['type' => 'STRING', 'description' => 'Título SEO optimizado, atractivo y que incluya la palabra clave principal. Debe incitar al clic. MUY IMPORTANTE: Límite estricto de 60 caracteres.'],
-                                'seo_description' => ['type' => 'STRING', 'description' => 'Meta descripción SEO persuasiva. Incluye la palabra clave principal y un llamado a la acción. Debe destacar el beneficio principal para el usuario. MUY IMPORTANTE: Límite estricto de 160 caracteres.'],
-                                'seo_keywords' => ['type' => 'STRING', 'description' => 'Una lista de 7 a 10 palabras clave y términos de búsqueda relevantes (long-tail y short-tail), separadas por comas. Piensa en cómo buscaría este producto un cliente.'],
+                                'long_description' => ['type' => 'STRING', 'description' => 'Una descripción de marketing, persuasiva y atractiva en formato HTML. Usa encabezados (<h3>), listas (<ul><li>) y negritas (<strong>) para estructurar la información. Céntrate en los BENEFICIOS y en por qué es una compra ideal para un gamer. NO incluyas especificaciones técnicas aquí.'],
+                                'specifications' => ['type' => 'STRING', 'description' => 'Un string JSON con clave-valor para las especificaciones técnicas CLAVE del producto. Si el nombre del producto es específico (ej. "PlayStation 5", "Monitor Dell UltraSharp U2723QE"), la IA debe INFERIR las especificaciones más relevantes basándose en su conocimiento general. Si el producto es genérico o no hay especificaciones claras que inferir, o si no son necesarias (ej. una camiseta), devuelve un string con un objeto JSON vacío, como "{}". Intenta ser conciso y solo incluir lo más importante para el comprador.'
+                                ],
+                                'seo_title' => ['type' => 'STRING', 'description' => 'Título SEO optimizado. REGLA ESTRICTA: NO DEBE SUPERAR los 60 caracteres. Es un límite MÁXIMO, no una sugerencia. Incluye la palabra clave principal y debe incitar al clic.'],
+                                'seo_description' => ['type' => 'STRING', 'description' => 'Meta descripción SEO persuasiva. REGLA ESTRICTA: NO DEBE SUPERAR los 160 caracteres. Es un límite MÁXIMO, no una sugerencia. Incluye la palabra clave principal y un llamado a la acción.'],
+                                'seo_keywords' => ['type' => 'STRING', 'description' => 'Una lista de 7 a 10 palabras clave y términos de búsqueda relevantes (long-tail y short-tail), separadas por comas.'],
                             ],
-                            'required' => ['short_description', 'long_description', 'seo_title', 'seo_description', 'seo_keywords']
+                            'required' => ['short_description', 'long_description', 'specifications', 'seo_title', 'seo_description', 'seo_keywords']
                         ];
 
                         try {
@@ -100,17 +111,18 @@ PROMPT;
                                 if (json_last_error() === JSON_ERROR_NONE) {
                                     $set('short_description', $contentJson['short_description'] ?? null);
                                     $set('long_description', $contentJson['long_description'] ?? null);
-                                    $set('seo_title', $contentJson['seo_title'] ?? null);
                                     
+                                    $specifications = json_decode($contentJson['specifications'] ?? '{}', true);
+                                    $set('specifications', $specifications);
+
+                                    $seoTitle = $contentJson['seo_title'] ?? '';
+                                    $set('seo_title', mb_strlen($seoTitle) > 60 ? mb_substr($seoTitle, 0, 60) : $seoTitle);
+
                                     $seoDescription = $contentJson['seo_description'] ?? '';
                                     if (mb_strlen($seoDescription) > 160) {
                                         $truncated = mb_substr($seoDescription, 0, 157);
-                                        // Find the last space to avoid breaking words
                                         $lastSpace = mb_strrpos($truncated, ' ');
-                                        if ($lastSpace !== false) {
-                                            $truncated = mb_substr($truncated, 0, $lastSpace);
-                                        }
-                                        $seoDescription = $truncated . '...';
+                                        $seoDescription = ($lastSpace !== false) ? mb_substr($truncated, 0, $lastSpace) . '...' : $truncated . '...';
                                     }
                                     $set('seo_description', $seoDescription);
                                     
@@ -132,165 +144,54 @@ PROMPT;
                     })
             ])->columnSpanFull(),
             Tabs::make('ProductTabs')->tabs([
-                Tabs\Tab::make('Principal')
-                    ->icon('heroicon-o-clipboard-document')
-                    ->schema([
-                        Forms\Components\TextInput::make('name')
-                            ->label('Nombre del Producto')
-                            ->required()
-                            ->maxLength(255)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, ?string $state, ?string $old) {
-                                if (!$state) { return; }
-                                $set('seo_title', $state);
-                                
-                                $currentSlug = $get('slug');
-                                $expectedOldSlug = Str::slug($old ?? '');
-
-                                if (empty($currentSlug) || $currentSlug === $expectedOldSlug) {
-                                    $set('slug', Str::slug($state));
-                                }
-                            }),
-
-                        Forms\Components\TextInput::make('slug')
-                            ->label('Slug')
-                            ->required()
-                            ->unique(Product::class, 'slug', ignoreRecord: true)
-                            ->live()
-                            ->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))
-                            ->helperText('URL amigable. Se genera del nombre, pero puedes editarla manualmente.'),
-
-                        Forms\Components\Select::make('brand_id')
-                            ->relationship('brand', 'name')
-                            ->searchable()
-                            ->required()
-                            ->label('Marca'),
-
-                        Forms\Components\Select::make('categories')
-                            ->relationship('categories', 'name')
-                            ->multiple()
-                            ->searchable()
-                            ->required()
-                            ->label('Categorías'),
-
-                        Textarea::make('short_description')
-                            ->label('Descripción Corta')
-                            ->rows(3)
-                            ->columnSpanFull()
-                            ->helperText('Un resumen breve para listados y vistas previas.'),
-
-                        RichEditor::make('long_description')
-                            ->label('Descripción Larga')
-                            ->columnSpanFull(),
-                    ])->columns(2),
-
-                Tabs\Tab::make('Detalles y Stock')
-                    ->icon('heroicon-o-archive-box')
-                    ->schema([
-                        Forms\Components\TextInput::make('sku')
-                            ->label('SKU (Stock Keeping Unit)')
-                            ->unique(Product::class, 'sku', ignoreRecord: true)
-                            ->helperText('Código único para identificar el producto. Ej: CAM-ROJ-L-001'),
-
-                        Forms\Components\TextInput::make('stock_quantity')
-                            ->label('Cantidad en Stock')
-                            ->required()
-                            ->numeric()
-                            ->default(0)
-                            ->helperText('Cantidad de unidades disponibles.'),
-
-                        Forms\Components\Select::make('type')
-                            ->options(ProductType::class)
-                            ->required()
-                            ->label('Tipo de Producto'),
-
-                        Forms\Components\Select::make('condition')
-                            ->options(ProductCondition::class)
-                            ->required()
-                            ->label('Condición'),
-
-                        Forms\Components\TagsInput::make('colors')
-                            ->label('Colores Disponibles')
-                            ->placeholder('Añadir color')
-                            ->columnSpanFull(),
-                    ])->columns(2),
-
-                Tabs\Tab::make('Precios y Estado')
-                    ->icon('heroicon-o-currency-dollar')
-                    ->schema([
-                        Forms\Components\TextInput::make('price')
-                            ->label('Precio Base')
-                            ->required()
-                            ->numeric()
-                            ->prefix('COP'),
-
-                        Forms\Components\TextInput::make('sale_price')
-                            ->label('Precio de Oferta')
-                            ->numeric()
-                            ->prefix('COP')
-                            ->helperText('Opcional. Mostrará un descuento.'),
-
-                        Forms\Components\Toggle::make('is_visible')
-                            ->label('Visible en la tienda')
-                            ->default(true)
-                            ->helperText('Desactívalo para ocultar el producto.'),
-
-                        Forms\Components\Toggle::make('is_featured')
-                            ->label('Producto Destacado')
-                            ->helperText('Promociona este producto en la página principal.'),
-
-                        Forms\Components\Toggle::make('is_new')
-                            ->label('Marcar como Nuevo')
-                            ->helperText('Añade una insignia de \'Nuevo\'.'),
-                    ])->columns(2),
-
-                Tabs\Tab::make('Multimedia')
-                    ->icon('heroicon-o-photo')
-                    ->schema([
-                        FileUpload::make('main_image_path')
-                            ->label('Imagen Principal')
-                            ->directory('products')->disk('public')->image()->imageEditor()
-                            ->required()
-                            ->helperText('La primera imagen que verán los clientes.')
-                            ->getUploadedFileNameForStorageUsing(self::getFileName()),
-
-                        FileUpload::make('gallery_image_paths')
-                            ->label('Galería de Imágenes')
-                            ->directory('products')->disk('public')->image()->imageEditor()->multiple()
-                            ->helperText('Imágenes adicionales para mostrar detalles.')
-                            ->getUploadedFileNameForStorageUsing(self::getFileName()),
-                    ])->columns(1),
-
-                Tabs\Tab::make('SEO')
-                    ->icon('heroicon-o-magnifying-glass')
-                    ->schema([
-                        Forms\Components\TextInput::make('seo_title')
-                            ->label('Título SEO')
-                            ->maxLength(60)
-                            ->helperText('Recomendado: Máximo 60 caracteres. Se autocompleta con el nombre del producto.'),
-
-                        Forms\Components\Textarea::make('seo_description')
-                            ->label('Descripción SEO')
-                            ->maxLength(160)
-                            ->rows(3)
-                            ->live(onBlur: true) // Added live(onBlur: true)
-                            ->afterStateUpdated(function (Forms\Set $set, ?string $state) { // Added afterStateUpdated
-                                if ($state && mb_strlen($state) > 160) {
-                                    $truncated = mb_substr($state, 0, 157);
-                                    // Find the last space to avoid breaking words
-                                    $lastSpace = mb_strrpos($truncated, ' ');
-                                    if ($lastSpace !== false) {
-                                        $truncated = mb_substr($truncated, 0, $lastSpace);
-                                    }
-                                    $set('seo_description', $truncated . '...');
-                                }
-                            })
-                            ->helperText('Recomendado: Máximo 160 caracteres. Un resumen para Google.'),
-
-                        Forms\Components\TagsInput::make('seo_keywords')
-                            ->label('Palabras Clave SEO')
-                            ->placeholder('Añadir etiqueta'),
-                    ]),
+                Tabs\Tab::make('Principal')->icon('heroicon-o-clipboard-document')->schema([
+                    Forms\Components\TextInput::make('name')->label('Nombre del Producto')->required()->maxLength(255)->live(onBlur: true)->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, ?string $state, ?string $old) {
+                        if (!$state) { return; }
+                        $set('seo_title', $state);
+                        $currentSlug = $get('slug');
+                        $expectedOldSlug = Str::slug($old ?? '');
+                        if (empty($currentSlug) || $currentSlug === $expectedOldSlug) {
+                            $set('slug', Str::slug($state));
+                        }
+                    }),
+                    Forms\Components\TextInput::make('slug')->label('Slug')->required()->unique(Product::class, 'slug', ignoreRecord: true)->live()->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))->helperText('URL amigable. Se genera del nombre, pero puedes editarla manualmente.'),
+                    Forms\Components\Select::make('brand_id')->relationship('brand', 'name')->searchable()->required()->label('Marca'),
+                    Forms\Components\Select::make('categories')->relationship('categories', 'name')->multiple()->searchable()->required()->label('Categorías'),
+                ])->columns(2),
+                Tabs\Tab::make('Contenido')->icon('heroicon-o-pencil-square')->schema([
+                    Textarea::make('short_description')->label('Descripción Corta')->rows(3)->columnSpanFull()->helperText('Un resumen breve para listados y vistas previas.'),
+                    RichEditor::make('long_description')->label('Descripción Larga')->columnSpanFull(),
+                    KeyValue::make('specifications')->label('Especificaciones')->keyLabel('Característica')->valueLabel('Valor')->columnSpanFull()->helperText('Añade las especificaciones técnicas del producto.'),
+                ]),
+                Tabs\Tab::make('Detalles y Stock')->icon('heroicon-o-archive-box')->schema([
+                    Forms\Components\TextInput::make('sku')->label('SKU (Stock Keeping Unit)')->unique(Product::class, 'sku', ignoreRecord: true)->helperText('Código único para identificar el producto. Ej: CAM-ROJ-L-001'),
+                    Forms\Components\TextInput::make('stock_quantity')->label('Cantidad en Stock')->required()->numeric()->default(0)->helperText('Cantidad de unidades disponibles.'),
+                    Forms\Components\Select::make('type')->options(ProductType::class)->required()->label('Tipo de Producto'),
+                    Forms\Components\Select::make('condition')->options(ProductCondition::class)->required()->label('Condición'),
+                    Forms\Components\TagsInput::make('colors')->label('Colores Disponibles')->placeholder('Añadir color')->columnSpanFull(),
+                ])->columns(2),
+                Tabs\Tab::make('Precios y Estado')->icon('heroicon-o-currency-dollar')->schema([
+                    Forms\Components\TextInput::make('price')->label('Precio Base')->required()->numeric()->prefix('COP'),
+                    Forms\Components\TextInput::make('sale_price')->label('Precio de Oferta')->numeric()->prefix('COP')->helperText('Opcional. Mostrará un descuento.'),
+                    Forms\Components\Toggle::make('is_visible')->label('Visible en la tienda')->default(true)->helperText('Desactívalo para ocultar el producto.'),
+                    Forms\Components\Toggle::make('is_featured')->label('Producto Destacado')->helperText('Promociona este producto en la página principal.'),
+                    Forms\Components\Toggle::make('is_new')->label('Marcar como Nuevo')->helperText('Añade una insignia de \'Nuevo\'.'),
+                ])->columns(2),
+                Tabs\Tab::make('Multimedia')->icon('heroicon-o-photo')->schema([
+                    FileUpload::make('main_image_path')->label('Imagen Principal')->directory('products')->disk('public')->image()->imageEditor()->required()->helperText('La primera imagen que verán los clientes.')->getUploadedFileNameForStorageUsing(self::getFileName()),
+                    FileUpload::make('gallery_image_paths')->label('Galería de Imágenes')->directory('products')->disk('public')->image()->imageEditor()->multiple()->helperText('Imágenes adicionales para mostrar detalles.')->getUploadedFileNameForStorageUsing(self::getFileName()),
+                ])->columns(1),
+                Tabs\Tab::make('SEO')->icon('heroicon-o-magnifying-glass')->schema([
+                    Forms\Components\TextInput::make('seo_title')->label('Título SEO')->maxLength(60)->helperText('Recomendado: Máximo 60 caracteres. Se autocompleta con el nombre del producto.'),
+                    Forms\Components\Textarea::make('seo_description')->label('Descripción SEO')->maxLength(160)->rows(3)->live(onBlur: true)->afterStateUpdated(function (Forms\Set $set, ?string $state) {
+                        if ($state && mb_strlen($state) > 160) {
+                            $truncated = mb_substr($state, 0, 157);
+                            $lastSpace = mb_strrpos($truncated, ' ');
+                            $seoDescription = ($lastSpace !== false) ? mb_substr($truncated, 0, $lastSpace) . '...' : $truncated . '...';
+                        }
+                    })->helperText('Recomendado: Máximo 160 caracteres. Un resumen para Google.'),
+                    Forms\Components\TagsInput::make('seo_keywords')->label('Palabras Clave SEO')->placeholder('Añadir etiqueta'),
+                ]),
             ])->columnSpanFull(),
         ]);
     }
@@ -300,40 +201,25 @@ PROMPT;
         return $table
             ->columns([
                 ImageColumn::make('main_image_path')->label('Imagen')->disk('public')->defaultImageUrl(url('/images/product-placeholder.png'))->square(),
-
-                Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable()->sortable(),
-
-                Tables\Columns\TextColumn::make('brand.name')->label('Marca')->searchable()->sortable(),
-
-                Tables\Columns\TextColumn::make('categories.name')->label('Categorías')->badge(),
-
-                Tables\Columns\TextColumn::make('stock_quantity')
-                    ->label('Stock')
-                    ->numeric()
-                    ->sortable()
-                    ->badge()
-                    ->color(fn (int $state): string => match (true) {
-                        $state === 0 => 'danger',
-                        $state < 10 => 'warning',
-                        default => 'success',
-                    }),
-
-                Tables\Columns\TextColumn::make('price')
-                    ->label('Precio')
-                    ->sortable()
-                    ->html()
-                    ->formatStateUsing(function (Product $record) {
-                        $price = number_format($record->price, 0, ',', '.');
-                        if ($record->sale_price && $record->sale_price < $record->price) {
-                            $salePrice = number_format($record->sale_price, 0, ',', '.');
-                            return "<s class='text-gray-500'>$ {$price}</s><br><strong class='text-primary-600'>$ {$salePrice}</strong>";
-                        }
-                        return "$ {$price}";
-                    }),
-
+                Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable()->sortable()->weight('bold')->description(fn (Product $record): string => $record->sku ? "SKU: {$record->sku}" : 'SKU no definido'),
+                Tables\Columns\TextColumn::make('brand.name')->label('Marca')->searchable()->sortable()->badge(),
+                Tables\Columns\TextColumn::make('categories.name')->label('Categorías')->badge()->color('primary'),
+                Tables\Columns\TextColumn::make('price')->label('Precio')->sortable()->html()->formatStateUsing(function (Product $record) {
+                    $price = number_format($record->price, 0, ',', '.');
+                    if ($record->sale_price && $record->sale_price < $record->price) {
+                        $salePrice = number_format($record->sale_price, 0, ',', '.');
+                        return "<s class='text-gray-400'>$ {$price}</s><br><strong class='text-success-600'>$ {$salePrice}</strong>";
+                    }
+                    return "$ {$price}";
+                })->alignRight(),
+                Tables\Columns\TextColumn::make('stock_quantity')->label('Stock')->numeric()->sortable()->badge()->color(fn (int $state): string => match (true) {
+                    $state === 0 => 'danger',
+                    $state < 10 => 'warning',
+                    default => 'success',
+                })->alignCenter(),
                 ToggleColumn::make('is_visible')->label('Visible'),
-
                 ToggleColumn::make('is_featured')->label('Destacado'),
+                ToggleColumn::make('is_new')->label('Nuevo'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('brand')->relationship('brand', 'name')->label('Marca'),
@@ -342,25 +228,67 @@ PROMPT;
                 Tables\Filters\Filter::make('is_visible')->query(fn ($query) => $query->where('is_visible', true))->label('Solo Visibles'),
             ])
             ->actions([
-                Tables\Actions\Action::make('view_public')
-                    ->label('Ver en Web')
-                    ->url(fn (Product $record): string => route('product.show', ['slug' => $record->slug]))
-                    ->openUrlInNewTab()
-                    ->icon('heroicon-o-eye')
-                    ->color('success')
-                    ->iconButton(),
-                Tables\Actions\ViewAction::make()->iconButton()->color('info'),
-                Tables\Actions\EditAction::make()->iconButton()->color('primary'),
-                Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
+                Tables\Actions\Action::make('view_public')->label('Ver en Web')->url(fn (Product $record): string => route('product.show', ['slug' => $record->slug]))->openUrlInNewTab()->icon('heroicon-o-arrow-top-right-on-square')->color('info')->tooltip('Ver en la tienda')->iconButton(),
+                Tables\Actions\ViewAction::make()->icon('heroicon-o-document-magnifying-glass')->color('gray')->tooltip('Ver detalles del producto')->iconButton(),
+                Tables\Actions\EditAction::make()->icon('heroicon-o-pencil-square')->color('warning')->tooltip('Editar producto')->iconButton(),
+                Tables\Actions\DeleteAction::make()->icon('heroicon-o-trash')->color('danger')->tooltip('Eliminar producto')->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([ Tables\Actions\DeleteBulkAction::make() ]),
             ])
             ->defaultSort('created_at', 'desc');
     }
+    
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            Infolists\Components\Section::make('Imágenes del Producto')->schema([
+                Infolists\Components\ImageEntry::make('main_image_path')->label('Imagen Principal')->hiddenLabel()->width('100%')->height('auto')->disk('public'),
+                Infolists\Components\ImageEntry::make('gallery_image_paths')->label('Galería de Imágenes')->hiddenLabel()->width('100%')->height('auto')->disk('public'),
+            ])->columnSpan(1),
+
+            Infolists\Components\Group::make([
+                Infolists\Components\Section::make('Información del Producto')->schema([
+                    Infolists\Components\TextEntry::make('name')->label('Nombre')->weight('bold')->size('lg'),
+                    Infolists\Components\TextEntry::make('slug')->label('URL Slug')->icon('heroicon-o-link'),
+                    Infolists\Components\TextEntry::make('brand.name')->label('Marca')->badge(),
+                    Infolists\Components\TextEntry::make('categories.name')->label('Categorías')->badge(),
+                    Infolists\Components\TextEntry::make('colors')->label('Colores')->badge(),
+                ])->columns(2),
+
+                Infolists\Components\Section::make('Estado y Visibilidad')->schema([
+                    Infolists\Components\IconEntry::make('is_visible')->label('Visibilidad')->boolean(),
+                    Infolists\Components\IconEntry::make('is_featured')->label('Destacado')->boolean(),
+                    Infolists\Components\IconEntry::make('is_new')->label('Nuevo')->boolean(),
+                ])->columns(3),
+
+                Infolists\Components\Section::make('Precios y Stock')->schema([
+                    Infolists\Components\TextEntry::make('price')->label('Precio Base')->money('cop')->weight('semibold'),
+                    Infolists\Components\TextEntry::make('sale_price')->label('Precio de Oferta')->money('cop')->weight('semibold')->color('success'),
+                    Infolists\Components\TextEntry::make('stock_quantity')->label('Stock')->badge(),
+                    Infolists\Components\TextEntry::make('sku')->label('SKU'),
+                    Infolists\Components\TextEntry::make('type')->label('Tipo')->badge(),
+                    Infolists\Components\TextEntry::make('condition')->label('Condición')->badge(),
+                ])->columns(3),
+
+                Infolists\Components\Section::make('Descripciones')->schema([
+                    Infolists\Components\TextEntry::make('short_description')->label('Descripción Corta')->columnSpanFull(),
+                    Infolists\Components\TextEntry::make('long_description')->label('Descripción Larga')->html()->columnSpanFull(),
+                    Infolists\Components\ViewEntry::make('specifications')->view('infolists.components.key-value-entry'),
+                ])->collapsible(),
+
+                Infolists\Components\Section::make('SEO')->schema([
+                    Infolists\Components\TextEntry::make('seo_title')->label('Título SEO'),
+                    Infolists\Components\TextEntry::make('seo_description')->label('Descripción SEO'),
+                    Infolists\Components\TextEntry::make('seo_keywords')->label('Palabras Clave')->badge(),
+                ])->columns(2)->collapsible(),
+            ])->columnSpan(2),
+        ])->columns(3);
+    }
 
     public static function getRelations(): array
-    { return [ RelationManagers\ReviewsRelationManager::class ]; }
+    {
+        return [ RelationManagers\ReviewsRelationManager::class ]; }
 
     public static function getPages(): array
     {
@@ -376,5 +304,10 @@ PROMPT;
             $slug = str(pathinfo($originalName, PATHINFO_FILENAME))->slug();
             return (string) $slug->append('-' . uniqid() . '.webp');
         };
+    }
+    
+    public static function getModalWidth(): string
+    {
+        return '6xl';
     }
 }

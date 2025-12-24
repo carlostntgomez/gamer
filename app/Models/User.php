@@ -50,6 +50,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function getAvatarUrl(): string
+    {
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=random';
+    }
+
     public function reviews()
     {
         return $this->hasMany(Review::class);
