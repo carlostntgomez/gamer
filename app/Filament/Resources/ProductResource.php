@@ -203,7 +203,7 @@ PROMPT;
                 ImageColumn::make('main_image_path')->label('Imagen')->disk('public')->defaultImageUrl(url('/images/product-placeholder.png'))->square(),
                 Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable()->sortable()->weight('bold')->description(fn (Product $record): string => $record->sku ? "SKU: {$record->sku}" : 'SKU no definido'),
                 Tables\Columns\TextColumn::make('brand.name')->label('Marca')->searchable()->sortable()->badge(),
-                Tables\Columns\TextColumn::make('categories.name')->label('Categorías')->badge()->color('primary'),
+                Tables\Columns\TextColumn::make('category.name')->label('Categoría')->badge()->color('primary'),
                 Tables\Columns\TextColumn::make('price')->label('Precio')->sortable()->html()->formatStateUsing(function (Product $record) {
                     $price = number_format($record->price, 0, ',', '.');
                     if ($record->sale_price && $record->sale_price < $record->price) {
@@ -222,13 +222,11 @@ PROMPT;
                 ToggleColumn::make('is_new')->label('Nuevo'),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('brand')->relationship('brand', 'name')->label('Marca'),
-                Tables\Filters\SelectFilter::make('categories')->relationship('categories', 'name')->label('Categoría'),
+                Tables\Filters\SelectFilter::make('category')->relationship('category', 'name')->label('Categoría'),
                 Tables\Filters\Filter::make('is_featured')->query(fn ($query) => $query->where('is_featured', true))->label('Solo Destacados'),
                 Tables\Filters\Filter::make('is_visible')->query(fn ($query) => $query->where('is_visible', true))->label('Solo Visibles'),
             ])
             ->actions([
-                Tables\Actions\Action::make('view_public')->label('Ver en Web')->url(fn (Product $record): string => route('product.show', ['slug' => $record->slug]))->openUrlInNewTab()->icon('heroicon-o-arrow-top-right-on-square')->color('info')->tooltip('Ver en la tienda')->iconButton(),
                 Tables\Actions\ViewAction::make()->icon('heroicon-o-document-magnifying-glass')->color('gray')->tooltip('Ver detalles del producto')->iconButton(),
                 Tables\Actions\EditAction::make()->icon('heroicon-o-pencil-square')->color('warning')->tooltip('Editar producto')->iconButton(),
                 Tables\Actions\DeleteAction::make()->icon('heroicon-o-trash')->color('danger')->tooltip('Eliminar producto')->iconButton(),

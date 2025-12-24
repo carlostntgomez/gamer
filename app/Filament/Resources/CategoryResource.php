@@ -256,14 +256,6 @@ PROMPT;
                     ->placeholder('Todas las categorías principales'),
             ])
             ->actions([
-                Tables\Actions\Action::make('view_public')
-                    ->label('Ver en Web')
-                    ->url(fn (Category $record): string => route('category.show', ['slug' => $record->slug]))
-                    ->openUrlInNewTab()
-                    ->icon('heroicon-o-arrow-top-right-on-square')
-                    ->color('info')
-                    ->tooltip('Ver en la tienda')
-                    ->iconButton(),
                 Tables\Actions\ViewAction::make()->icon('heroicon-o-document-magnifying-glass')->color('gray')->tooltip('Ver detalles')->iconButton(),
                 Tables\Actions\EditAction::make()->icon('heroicon-o-pencil-square')->color('warning')->tooltip('Editar')->iconButton(),
                 Tables\Actions\DeleteAction::make()->icon('heroicon-o-trash')->color('danger')->tooltip('Eliminar')->iconButton(),

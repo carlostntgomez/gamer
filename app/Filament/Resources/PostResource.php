@@ -239,8 +239,6 @@ PROMPT;
                 ),
             ])
             ->actions([
-                 Tables\Actions\Action::make('view_on_web')
-                    ->label('Ver')->icon('heroicon-o-arrow-top-right-on-square')->url(fn (Post $record): ?string => ($record->published_at && $record->published_at <= now()) ? route('blog.show', $record->slug) : null)->openUrlInNewTab()->color('info')->tooltip('Ver en la web')->iconButton()->hidden(fn (Post $record): bool => !$record->published_at || $record->published_at > now()),
                 Tables\Actions\ViewAction::make()->icon('heroicon-o-document-magnifying-glass')->color('gray')->tooltip('Ver detalles')->iconButton(),
                 Tables\Actions\EditAction::make()->icon('heroicon-o-pencil-square')->color('warning')->tooltip('Editar')->iconButton(),
                 Tables\Actions\DeleteAction::make()->icon('heroicon-o-trash')->color('danger')->tooltip('Eliminar')->iconButton(),
