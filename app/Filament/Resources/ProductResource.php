@@ -22,12 +22,13 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Forms\Components\Actions;
-use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Illuminate\Http\Client\Response;
 
 class ProductResource extends Resource
 {
@@ -44,7 +45,7 @@ class ProductResource extends Resource
     {
         return $form->schema([
             Actions::make([
-                Action::make('generateContent')
+                FormAction::make('generateContent')
                     ->label('Generar Contenido con IA')
                     ->icon('heroicon-o-sparkles')
                     ->color('primary')
@@ -81,8 +82,7 @@ PROMPT;
                             'properties' => [
                                 'short_description' => ['type' => 'STRING', 'description' => 'Un párrafo conciso y atractivo (máx 255 chars) que resuma los puntos fuertes del producto. Ideal para listados y vistas previas.'],
                                 'long_description' => ['type' => 'STRING', 'description' => 'Una descripción de marketing, persuasiva y atractiva en formato HTML. Usa encabezados (<h3>), listas (<ul><li>) y negritas (<strong>) para estructurar la información. Céntrate en los BENEFICIOS y en por qué es una compra ideal para un gamer. NO incluyas especificaciones técnicas aquí.'],
-                                'specifications' => ['type' => 'STRING', 'description' => 'Un string JSON con clave-valor para las especificaciones técnicas CLAVE del producto. Si el nombre del producto es específico (ej. "PlayStation 5", "Monitor Dell UltraSharp U2723QE"), la IA debe INFERIR las especificaciones más relevantes basándose en su conocimiento general. Si el producto es genérico o no hay especificaciones claras que inferir, o si no son necesarias (ej. una camiseta), devuelve un string con un objeto JSON vacío, como "{}". Intenta ser conciso y solo incluir lo más importante para el comprador.'
-                                ],
+                                'specifications' => ['type' => 'STRING', 'description' => 'Un string JSON con clave-valor para las especificaciones técnicas CLAVE del producto. Si el nombre del producto es específico (ej. "PlayStation 5", "Monitor Dell UltraSharp U2723QE"), la IA debe INFERIR las especificaciones más relevantes basándose en su conocimiento general. Si el producto es genérico o no hay especificaciones claras que inferir, o si no son necesarias (ej. una camiseta), devuelve un string con un objeto JSON vacío, como "{}"'],
                                 'seo_title' => ['type' => 'STRING', 'description' => 'Título SEO optimizado. REGLA ESTRICTA: NO DEBE SUPERAR los 60 caracteres. Es un límite MÁXIMO, no una sugerencia. Incluye la palabra clave principal y debe incitar al clic.'],
                                 'seo_description' => ['type' => 'STRING', 'description' => 'Meta descripción SEO persuasiva. REGLA ESTRICTA: NO DEBE SUPERAR los 160 caracteres. Es un límite MÁXIMO, no una sugerencia. Incluye la palabra clave principal y un llamado a la acción.'],
                                 'seo_keywords' => ['type' => 'STRING', 'description' => 'Una lista de 7 a 10 palabras clave y términos de búsqueda relevantes (long-tail y short-tail), separadas por comas.'],
@@ -91,6 +91,7 @@ PROMPT;
                         ];
 
                         try {
+                            /** @var Response $response */
                             $response = Http::withHeaders(['Content-Type' => 'application/json'])
                                 ->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey, [
                                     'contents' => [
@@ -178,8 +179,8 @@ PROMPT;
                     Forms\Components\Toggle::make('is_new')->label('Marcar como Nuevo')->helperText('Añade una insignia de \'Nuevo\'.'),
                 ])->columns(2),
                 Tabs\Tab::make('Multimedia')->icon('heroicon-o-photo')->schema([
-                    FileUpload::make('main_image_path')->label('Imagen Principal')->directory('products')->disk('public')->image()->imageEditor()->required()->helperText('La primera imagen que verán los clientes.')->getUploadedFileNameForStorageUsing(self::getFileName()),
-                    FileUpload::make('gallery_image_paths')->label('Galería de Imágenes')->directory('products')->disk('public')->image()->imageEditor()->multiple()->helperText('Imágenes adicionales para mostrar detalles.')->getUploadedFileNameForStorageUsing(self::getFileName()),
+                    FileUpload::make('main_image_path')->label('Imagen Principal')->directory('products')->disk('public')->image()->imageEditor()->required()->helperText('La primera imagen que verán los clientes.'),
+                    FileUpload::make('gallery_image_paths')->label('Galería de Imágenes')->directory('products')->disk('public')->image()->imageEditor()->multiple()->helperText('Imágenes adicionales para mostrar detalles.'),
                 ])->columns(1),
                 Tabs\Tab::make('SEO')->icon('heroicon-o-magnifying-glass')->schema([
                     Forms\Components\TextInput::make('seo_title')->label('Título SEO')->maxLength(60)->helperText('Recomendado: Máximo 60 caracteres. Se autocompleta con el nombre del producto.'),
@@ -188,6 +189,7 @@ PROMPT;
                             $truncated = mb_substr($state, 0, 157);
                             $lastSpace = mb_strrpos($truncated, ' ');
                             $seoDescription = ($lastSpace !== false) ? mb_substr($truncated, 0, $lastSpace) . '...' : $truncated . '...';
+                            $set('seo_description', $seoDescription);
                         }
                     })->helperText('Recomendado: Máximo 160 caracteres. Un resumen para Google.'),
                     Forms\Components\TagsInput::make('seo_keywords')->label('Palabras Clave SEO')->placeholder('Añadir etiqueta'),
@@ -203,7 +205,7 @@ PROMPT;
                 ImageColumn::make('main_image_path')->label('Imagen')->disk('public')->defaultImageUrl(url('/images/product-placeholder.png'))->square(),
                 Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable()->sortable()->weight('bold')->description(fn (Product $record): string => $record->sku ? "SKU: {$record->sku}" : 'SKU no definido'),
                 Tables\Columns\TextColumn::make('brand.name')->label('Marca')->searchable()->sortable()->badge(),
-                Tables\Columns\TextColumn::make('category.name')->label('Categoría')->badge()->color('primary'),
+                Tables\Columns\TextColumn::make('categories.name')->label('Categorías')->badge()->color('primary'),
                 Tables\Columns\TextColumn::make('price')->label('Precio')->sortable()->html()->formatStateUsing(function (Product $record) {
                     $price = number_format($record->price, 0, ',', '.');
                     if ($record->sale_price && $record->sale_price < $record->price) {
@@ -222,11 +224,18 @@ PROMPT;
                 ToggleColumn::make('is_new')->label('Nuevo'),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('category')->relationship('category', 'name')->label('Categoría'),
+                Tables\Filters\SelectFilter::make('categories')->relationship('categories', 'name')->label('Categoría'),
                 Tables\Filters\Filter::make('is_featured')->query(fn ($query) => $query->where('is_featured', true))->label('Solo Destacados'),
                 Tables\Filters\Filter::make('is_visible')->query(fn ($query) => $query->where('is_visible', true))->label('Solo Visibles'),
             ])
             ->actions([
+                Tables\Actions\Action::make('viewPublic')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn (Product $record): string => route('shop.show', ['product' => $record]))
+                    ->openUrlInNewTab()
+                    ->color('success')
+                    ->tooltip('Ver producto en la tienda')
+                    ->iconButton(),
                 Tables\Actions\ViewAction::make()->icon('heroicon-o-document-magnifying-glass')->color('gray')->tooltip('Ver detalles del producto')->iconButton(),
                 Tables\Actions\EditAction::make()->icon('heroicon-o-pencil-square')->color('warning')->tooltip('Editar producto')->iconButton(),
                 Tables\Actions\DeleteAction::make()->icon('heroicon-o-trash')->color('danger')->tooltip('Eliminar producto')->iconButton(),
@@ -293,15 +302,6 @@ PROMPT;
         return [
             'index' => Pages\ManageProducts::route('/'),
         ];
-    }
-
-    private static function getFileName(): callable
-    {
-        return function (TemporaryUploadedFile $file): string {
-            $originalName = $file->getClientOriginalName();
-            $slug = str(pathinfo($originalName, PATHINFO_FILENAME))->slug();
-            return (string) $slug->append('-' . uniqid() . '.webp');
-        };
     }
     
     public static function getModalWidth(): string

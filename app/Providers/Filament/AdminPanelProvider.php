@@ -37,8 +37,8 @@ class AdminPanelProvider extends PanelProvider
                 'Contenido',
                 'Páginas Estáticas',
                 'Configuración',
+                'Home',
             ])
-            // Remove discoverResources and manually define navigation items
             ->resources([
                 \App\Filament\Resources\ProductResource::class,
                 \App\Filament\Resources\CategoryResource::class,
@@ -55,6 +55,11 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Resources\SettingResource::class,
                 \App\Filament\Resources\BrandResource::class,
                 \App\Filament\Resources\TestimonialResource::class,
+                \App\Filament\Resources\TopCategoryResource::class,
+                \App\Filament\Resources\NewArrivalResource::class,
+                \App\Filament\Resources\OfferResource::class,
+                \App\Filament\Resources\BrandLogoResource::class,
+                \App\Filament\Resources\MainSliderResource::class,
             ])
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([

@@ -22,6 +22,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Http;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Illuminate\Support\Facades\Auth;
 
 class PostResource extends Resource
 {
@@ -85,6 +86,7 @@ PROMPT;
                             ];
 
                             try {
+                                /** @var \Illuminate\Http\Client\Response $response */
                                 $response = Http::withHeaders(['Content-Type' => 'application/json'])
                                     ->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey, [
                                         'contents' => [
@@ -104,7 +106,14 @@ PROMPT;
 
                                     if (json_last_error() === JSON_ERROR_NONE) {
                                         $set('content', $contentJson['content'] ?? null);
-                                        $set('excerpt', $contentJson['excerpt'] ?? null);
+
+                                        $excerpt = $contentJson['excerpt'] ?? '';
+                                        if (mb_strlen($excerpt) > 255) {
+                                            $truncated = mb_substr($excerpt, 0, 252);
+                                            $lastSpace = mb_strrpos($truncated, ' ');
+                                            $excerpt = ($lastSpace !== false) ? mb_substr($truncated, 0, $lastSpace) . '...' : $truncated . '...';
+                                        }
+                                        $set('excerpt', $excerpt);
 
                                         $seoTitle = $contentJson['seo_title'] ?? '';
                                         $set('seo_title', mb_strlen($seoTitle) > 60 ? mb_substr($seoTitle, 0, 60) : $seoTitle);
@@ -181,7 +190,7 @@ PROMPT;
                             Forms\Components\Select::make('user_id')
                                 ->label('Autor')
                                 ->relationship('user', 'name')
-                                ->required()->searchable()->preload()->default(fn () => auth()->id()),
+                                ->required()->searchable()->preload()->default(fn () => Auth::id()),
                             Forms\Components\Select::make('tags')
                                 ->label('Etiquetas')
                                 ->relationship('tags', 'name')
@@ -239,6 +248,15 @@ PROMPT;
                 ),
             ])
             ->actions([
+                Tables\Actions\Action::make('view_live')
+                    ->label('Ver en web')
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->color('info')
+                    ->url(fn (Post $record): string => route('posts.show', $record))
+                    ->openUrlInNewTab()
+                    ->iconButton()
+                    ->tooltip('Ver el post en el sitio web')
+                    ->visible(fn (Post $record): bool => $record->published_at && $record->published_at <= now()),
                 Tables\Actions\ViewAction::make()->icon('heroicon-o-document-magnifying-glass')->color('gray')->tooltip('Ver detalles')->iconButton(),
                 Tables\Actions\EditAction::make()->icon('heroicon-o-pencil-square')->color('warning')->tooltip('Editar')->iconButton(),
                 Tables\Actions\DeleteAction::make()->icon('heroicon-o-trash')->color('danger')->tooltip('Eliminar')->iconButton(),

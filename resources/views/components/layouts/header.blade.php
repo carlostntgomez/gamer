@@ -22,17 +22,17 @@
                                             </a>
                                         </li>
                                         <li class="menu-link">
-                                            <a href="/collection" class="link-title">
+                                            <a href="{{ route('shop.index') }}" class="link-title">
                                                 <span class="sp-link-title">Tienda</span>
                                             </a>
                                         </li>
                                         <li class="menu-link">
-                                            <a href="/collection" class="link-title">
+                                            <a href="{{ route('shop.index') }}" class="link-title">
                                                 <span class="sp-link-title">Colección</span>
                                             </a>
                                         </li>
                                         <li class="menu-link">
-                                            <a href="/blog-grid" class="link-title">
+                                            <a href="{{ route('posts.index') }}" class="link-title">
                                                 <span class="sp-link-title">Blog</span>
                                             </a>
                                         </li>
@@ -190,7 +190,7 @@
                                 <ul class="shop-element">
                                     <li class="side-wrap search">
                                         <div class="search-box">
-                                            <form action="/search" method="get" class="search-bar">
+                                            <form action="{{ route('shop.search') }}" method="get" class="search-bar">
                                                 <div class="form-search">
                                                     <input type="search" name="q" placeholder="Busca tu producto" class="search-input">
                                                     <button type="submit" class="search-btn"><span><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span></button>

@@ -5,81 +5,91 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\BannerResource\Pages;
 use App\Models\Banner;
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use Filament\Forms\Components\Tabs;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Support\Str;
 
 class BannerResource extends Resource
 {
     protected static ?string $model = Banner::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-megaphone';
-    protected static ?string $navigationGroup = 'Contenido';
+    protected static ?string $navigationIcon = 'heroicon-o-photo';
+
+    protected static ?string $navigationGroup = 'Home';
+
+    // Traducciones
     protected static ?string $modelLabel = 'Banner';
     protected static ?string $pluralModelLabel = 'Banners';
-    protected static ?string $navigationLabel = 'Banners';
-    protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Tabs::make('BannerTabs')->tabs([
-                    Tabs\Tab::make('Contenido del Banner')
-                        ->icon('heroicon-o-photo')
-                        ->schema([
-                            Forms\Components\TextInput::make('name')
-                                ->label('Nombre del Banner')
+                Section::make('Información del Banner')
+                    ->description('Define los detalles principales y la visibilidad del banner.')
+                    ->schema([
+                        Grid::make(2)->schema([
+                            TextInput::make('name')
+                                ->label('Nombre')
                                 ->required()
                                 ->maxLength(255)
-                                ->helperText('Nombre interno para identificar el banner.'),
-                            Forms\Components\TextInput::make('url')
-                                ->label('URL (Enlace del Banner)')
-                                ->url()
+                                ->placeholder('Ej: Banner de Rebajas de Verano'),
+                            TextInput::make('url')
+                                ->label('URL de destino')
                                 ->maxLength(255)
-                                ->nullable()
-                                ->helperText('La dirección a la que se redirigirá al hacer clic en el banner. Opcional.'),
-                            FileUpload::make('image_path')
-                                ->label('Imagen del Banner')
-                                ->directory('banners')->disk('public')->image()->imageEditor()
-                                ->getUploadedFileNameForStorageUsing(
-                                    fn (TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
-                                        ->beforeLast('.')
-                                        ->slug()
-                                        ->append('-' . uniqid() . '.webp')
-                                )
-                                ->columnSpanFull(),
-                        ])->columns(2),
-
-                    Tabs\Tab::make('Reglas de Visualización')
-                        ->icon('heroicon-o-calendar-days')
-                        ->schema([
-                            Forms\Components\Toggle::make('is_active')
-                                ->label('Activo')
-                                ->default(true)
-                                ->helperText('Controla si el banner está visible en el sitio web.'),
-                            Forms\Components\TextInput::make('order')
-                                ->label('Orden de Visualización')
+                                ->placeholder('Ej: /ofertas/verano'),
+                        ]),
+                        Grid::make(2)->schema([
+                             TextInput::make('order')
+                                ->label('Orden')
+                                ->required()
                                 ->numeric()
                                 ->default(0)
-                                ->helperText('Un número para ordenar los banners. Menor número se muestra primero.'),
+                                ->helperText('Un número más bajo se muestra primero.'),
+                            Toggle::make('is_active')
+                                ->label('¿Está activo?')
+                                ->required()
+                                ->default(true),
+                        ]),
+                    ]),
+
+                Section::make('Programación (Opcional)')
+                    ->description('Establece un período de tiempo para que el banner se muestre automáticamente.')
+                    ->schema([
+                        Grid::make(2)->schema([
                             Forms\Components\DateTimePicker::make('starts_at')
-                                ->label('Fecha de Inicio')
-                                ->native(false)
-                                ->nullable()
-                                ->helperText('El banner aparecerá a partir de esta fecha.'),
+                                ->label('Fecha de inicio'),
                             Forms\Components\DateTimePicker::make('expires_at')
-                                ->label('Fecha de Caducidad')
-                                ->native(false)
-                                ->nullable()
-                                ->helperText('El banner dejará de ser visible después de esta fecha.'),
-                        ])->columns(2),
-                ])->columnSpanFull(),
+                                ->label('Fecha de expiración'),
+                        ]),
+                    ]),
+
+                Section::make('Imagen del Banner')
+                    ->schema([
+                        FileUpload::make('image_path')
+                            ->label('Imagen')
+                            ->required()
+                            ->directory('banners') // Directorio en public
+                            ->preserveFilenames()
+                            ->image()
+                            ->imageEditor()
+                            ->imagePreviewHeight('250')
+                            ->getUploadedFileNameForStorageUsing(function (\Livewire\Features\SupportFileUploads\TemporaryUploadedFile $file): string {
+                                $fileName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
+                                return (string) str($fileName)->append('-' . uniqid() . '.webp');
+                            })
+                            ->helperText('La imagen se convertirá a formato WebP para optimizar la carga.'),
+                    ])->collapsible(),
             ]);
     }
 
@@ -87,33 +97,43 @@ class BannerResource extends Resource
     {
         return $table
             ->columns([
-                ImageColumn::make('image_path')->label('Imagen')->disk('public')->circular(),
-                Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('is_active')->label('Estado')->badge()->formatStateUsing(fn (bool $state): string => $state ? 'Activo' : 'Inactivo')->color(fn (bool $state): string => $state ? 'success' : 'danger')->sortable(),
-                Tables\Columns\TextColumn::make('order')->label('Orden')->numeric()->sortable(),
-                Tables\Columns\TextColumn::make('starts_at')->label('Inicia')->dateTime('d/m/Y')->sortable()->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('expires_at')->label('Expira')->dateTime('d/m/Y')->sortable()->toggleable(isToggledHiddenByDefault: true),
+                ImageColumn::make('image_path')
+                    ->label('Imagen')
+                    ->width(150)
+                    ->height('auto'),
+                TextColumn::make('name')
+                    ->label('Nombre')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('order')
+                    ->label('Orden')
+                    ->numeric()
+                    ->sortable(),
+                IconColumn::make('is_active')
+                    ->label('Activo')
+                    ->boolean(),
+                TextColumn::make('starts_at')
+                    ->label('Inicia')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable(),
+                TextColumn::make('expires_at')
+                    ->label('Expira')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable(),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('is_active')->label('Estado')->trueLabel('Activo')->falseLabel('Inactivo'),
+                //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('info')->modal(),
-                Tables\Actions\EditAction::make()->iconButton()->color('primary')->modal(),
-                Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
+                Tables\Actions\EditAction::make()->modal(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([ Tables\Actions\DeleteBulkAction::make() ]),
-            ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make()->modal(),
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ])
             ->defaultSort('order', 'asc');
-    }
-
-    public static function getRelations(): array
-    {
-        return [];
     }
 
     public static function getPages(): array

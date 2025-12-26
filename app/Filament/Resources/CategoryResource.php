@@ -18,7 +18,7 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Forms\Components\Actions;
-use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Http;
 
@@ -37,7 +37,7 @@ class CategoryResource extends Resource
     {
         return $form->schema([
             Actions::make([
-                Action::make('generateContent')
+                FormAction::make('generateContent')
                     ->label('Generar Contenido con IA')
                     ->icon('heroicon-o-sparkles')
                     ->color('primary')
@@ -81,6 +81,7 @@ PROMPT;
                         ];
 
                         try {
+                            /** @var \Illuminate\Http\Client\Response $response */
                             $response = Http::withHeaders(['Content-Type' => 'application/json'])
                                 ->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey, [
                                     'contents' => [
@@ -256,6 +257,13 @@ PROMPT;
                     ->placeholder('Todas las categorías principales'),
             ])
             ->actions([
+                Tables\Actions\Action::make('viewPublic')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn (Category $record): string => route('categories.show', ['category' => $record]))
+                    ->openUrlInNewTab()
+                    ->color('success')
+                    ->tooltip('Ver categoría en la tienda')
+                    ->iconButton(),
                 Tables\Actions\ViewAction::make()->icon('heroicon-o-document-magnifying-glass')->color('gray')->tooltip('Ver detalles')->iconButton(),
                 Tables\Actions\EditAction::make()->icon('heroicon-o-pencil-square')->color('warning')->tooltip('Editar')->iconButton(),
                 Tables\Actions\DeleteAction::make()->icon('heroicon-o-trash')->color('danger')->tooltip('Eliminar')->iconButton(),
@@ -300,7 +308,7 @@ PROMPT;
 
     private static function getFileName(string $context): callable
     {
-        return function (TemporaryUploadedFile $file, callable $get): string {
+        return function (TemporaryUploadedFile $file, callable $get) use ($context): string {
             $name = $get('name');
             $slug = !empty($name) ? Str::slug($name) : pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
             $finalSlug = $context === 'banner' ? $slug . '-banner' : $slug;

@@ -28,6 +28,8 @@
         <link rel="stylesheet" type="text/css" href="{{ asset('css/swiper-bundle.min.css') }}">
         <!-- slick slider css -->
         <link rel="stylesheet" type="text/css" href="{{ asset('css/slick.css') }}">
+        <!-- jquery-ui css -->
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/themes/base/jquery-ui.min.css">
         <!-- collection css -->
         <link rel="stylesheet" type="text/css" href="{{ asset('css/collection.css') }}">
         <!-- blog css -->
@@ -66,6 +68,8 @@
         <script src="{{ asset('js/swiper-bundle.min.js') }}"></script>
         <!-- slick js -->
         <script src="{{ asset('js/slick.min.js') }}"></script>
+        <!-- jquery-ui js -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
         <!-- waypoints js -->
         <script src="{{ asset('js/waypoints.min.js') }}"></script>
         <!-- counter js -->

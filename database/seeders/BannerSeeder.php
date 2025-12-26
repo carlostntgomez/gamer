@@ -3,97 +3,90 @@
 namespace Database\Seeders;
 
 use App\Models\Banner;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class BannerSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     public function run(): void
     {
-        $this->command->info('Starting Banner Seeder...');
+        $this->command->info('Starting Banner Seeder with WebP conversion...');
 
-        $storagePath = storage_path('app/public/banners');
-        $this->clearDirectory($storagePath);
-
-        $this->command->warn('Deleting all existing banners from the database...');
-        Banner::query()->delete();
-
-        $sampleImagesPath = public_path('imagenes de muestra/banners');
-        if (!File::exists($sampleImagesPath) || count(File::files($sampleImagesPath)) === 0) {
-            $this->command->warn('! Sample images directory not found or is empty at "public/imagenes de muestra/banners".');
-            $this->command->info('Creating 5 banners without images as a fallback.');
-            Banner::factory()->count(5)->create();
-            $this->command->info('Banner seeder finished.');
+        // 1. Check for GD library
+        if (!extension_loaded('gd')) {
+            $this->command->error('The GD library extension is required, but it is not enabled.');
             return;
         }
 
+        // 2. Cleanup
+        Banner::query()->truncate();
+        $storagePath = storage_path('app/public/banners');
+        if (File::isDirectory($storagePath)) {
+            File::deleteDirectory($storagePath);
+        }
+        File::makeDirectory($storagePath, 0755, true, true);
+        $this->command->info('Cleaned up banners table and directory.');
+
+        // 3. Get sample images
+        $sampleImagesPath = public_path('imagenes de muestra/banners');
+        if (!File::exists($sampleImagesPath)) {
+            $this->command->error('Sample images directory not found: ' . $sampleImagesPath);
+            return;
+        }
         $sampleImages = File::files($sampleImagesPath);
-        $this->command->info('Creating 5 banners and assigning random images (converted to WebP)...');
+        if (empty($sampleImages)) {
+            $this->command->warn('No sample images found in ' . $sampleImagesPath);
+            return; // Salir si no hay imágenes
+        }
 
-        Banner::factory()->count(5)->create()->each(function (Banner $banner) use ($sampleImages, $storagePath) {
-            $randomImageFile = $sampleImages[array_rand($sampleImages)];
-            $sourcePath = $randomImageFile->getRealPath();
+        // 4. Create Banner entries with specific images
+        $bannerData = [
+            ['name' => 'Banner Principal 1', 'order' => 1],
+            ['name' => 'Banner Secundario 2', 'order' => 2],
+            ['name' => 'Banner de Promoción 3', 'order' => 3],
+        ];
 
-            // Use exif_imagetype to determine the real image type
-            $imageType = @exif_imagetype($sourcePath);
+        foreach ($sampleImages as $index => $sampleImage) {
+            if (!isset($bannerData[$index])) continue; // Evita errores si hay más imágenes que datos
 
-            $newFileName = Str::slug($banner->name) . '-' . uniqid() . '.webp';
-            $destinationPath = $storagePath . '/' . $newFileName;
+            $data = $bannerData[$index];
+            $imagePath = null;
+            $sourcePath = $sampleImage->getPathname();
+            $originalFileName = $sampleImage->getFilename();
 
-            $image = null;
-            $processed = false;
+            $newWebpFileName = pathinfo($originalFileName, PATHINFO_FILENAME) . '-' . uniqid() . '.webp';
+            $destinationPath = $storagePath . '/' . $newWebpFileName;
 
-            switch ($imageType) {
-                case IMAGETYPE_JPEG:
-                    $image = imagecreatefromjpeg($sourcePath);
-                    break;
-                case IMAGETYPE_PNG:
-                    $image = imagecreatefrompng($sourcePath);
+            try {
+                $image = @imagecreatefromstring(File::get($sourcePath));
+
+                if ($image !== false) {
                     imagepalettetotruecolor($image);
                     imagealphablending($image, true);
                     imagesavealpha($image, true);
-                    break;
-                case IMAGETYPE_GIF:
-                    $image = imagecreatefromgif($sourcePath);
-                    break;
-                case IMAGETYPE_WEBP:
-                    File::copy($sourcePath, $destinationPath);
-                    $this->command->line("  - Image '{$randomImageFile->getFilename()}' (already webp) assigned to banner '{$banner->name}'.");
-                    $processed = true;
-                    break;
-                default:
-                    // Try to get extension for error message if imagetype fails
-                    $sourceExtension = strtolower($randomImageFile->getExtension());
-                    $this->command->error("  - Unsupported or corrupt image type '{$sourceExtension}' for '{$randomImageFile->getFilename()}'. Banner '{$banner->name}' will have no image.");
-                    return; // Continue to the next banner
+                    imagewebp($image, $destinationPath, 85); // 85% quality
+                    imagedestroy($image);
+
+                    $imagePath = 'banners/' . $newWebpFileName;
+                    $this->command->info("Converted image for banner '{$data['name']}' -> {$imagePath}");
+                } else {
+                    $this->command->warn("Could not create image from string for banner '{$data['name']}'. File: " . $originalFileName);
+                }
+            } catch (\Exception $e) {
+                $this->command->error("Failed to process image for banner '{$data['name']}': " . $e->getMessage());
             }
 
-            if ($image !== null) {
-                imagewebp($image, $destinationPath, 80); // 80% quality
-                imagedestroy($image);
-                $processed = true;
-                $this->command->line("  - Image '{$randomImageFile->getFilename()}' converted to webp and assigned to banner '{$banner->name}'.");
-            }
-
-            if ($processed) {
-                $banner->image_path = 'banners/' . $newFileName;
-                $banner->save();
-            }
-        });
+            Banner::create([
+                'name' => $data['name'],
+                'order' => $data['order'],
+                'url' => '#',
+                'is_active' => true,
+                'image_path' => $imagePath,
+            ]);
+        }
 
         $this->command->info('Banner seeder finished successfully.');
-    }
-
-    private function clearDirectory(string $path): void
-    {
-        if (File::isDirectory($path)) {
-            $this->command->info('Cleaning and recreating the banner images directory...');
-            File::deleteDirectory($path);
-        }
-        File::makeDirectory($path, 0755, true, true);
     }
 }

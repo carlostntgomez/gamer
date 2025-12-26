@@ -27,8 +27,10 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             CategorySeeder::class,
+            TopCategorySeeder::class,
             BrandSeeder::class,
             ProductSeeder::class,
+            OfferSeeder::class, // <-- Added here
             PostSeeder::class,
             OrderSeeder::class,
             TicketSeeder::class,
@@ -37,6 +39,7 @@ class DatabaseSeeder extends Seeder
             WishlistSeeder::class,
             TestimonialSeeder::class,
             ReviewSeeder::class,
+            MainSliderSeeder::class,
         ]);
     }
 }
