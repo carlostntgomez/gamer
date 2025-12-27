@@ -78,21 +78,15 @@ class ReviewResource extends Resource
                 Tables\Filters\TernaryFilter::make('is_approved')->label('Estado de Aprobación'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('info')->modal(),
-                Tables\Actions\EditAction::make()->iconButton()->color('primary')->modal(),
+                Tables\Actions\ViewAction::make()->iconButton()->color('info'),
+                Tables\Actions\EditAction::make()->iconButton()->color('primary'),
                 Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([ Tables\Actions\DeleteBulkAction::make() ]),
             ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make()->modal(),
-            ])
             ->defaultSort('created_at', 'desc');
     }
-
-    public static function getRelations(): array
-    { return []; }
 
     public static function getPages(): array
     {

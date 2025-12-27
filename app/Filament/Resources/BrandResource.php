@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Section;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -30,36 +31,36 @@ class BrandResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Grid::make(2)->schema([
-                Forms\Components\TextInput::make('name')
-                    ->label('Nombre de la Marca')
-                    ->required()
-                    ->maxLength(255)
-                    ->live(onBlur: true)
-                    ->afterStateUpdated(function (Forms\Set $set, ?string $state) {
-                        $set('slug', Str::slug($state));
-                        $set('seo_title', $state);
-                    })
-                    ->columnSpan(1),
+            Section::make('Información de la Marca')
+                ->description('Ingresa los detalles principales de la marca.')
+                ->schema([
+                    Forms\Components\Grid::make(2)->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nombre de la Marca')
+                            ->required()
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Forms\Set $set, ?string $state) {
+                                $set('slug', Str::slug($state));
+                                $set('seo_title', $state);
+                            }),
 
-                FileUpload::make('logo_path')
-                    ->label('Logo')
-                    ->directory('brands')
-                    ->disk('public')
-                    ->image()
-                    ->imageEditor()
-                    ->imagePreviewHeight('150')
-                    ->getUploadedFileNameForStorageUsing(
-                        fn (TemporaryUploadedFile $file, callable $get): string => Str::slug($get('name')) . '-' . uniqid() . '.' . $file->guessExtension()
-                    )
-                    ->helperText('Sube el logo de la marca.')
-                    ->columnSpan(1),
-
-                Forms\Components\RichEditor::make('description')
-                    ->label('Descripción')
-                    ->columnSpanFull()
-                    ->nullable(),
-            ]),
+                        FileUpload::make('logo_path')
+                            ->label('Logo')
+                            ->directory('brands')
+                            ->disk('public')
+                            ->image()
+                            ->imageEditor()
+                            ->imagePreviewHeight('150')
+                            ->getUploadedFileNameForStorageUsing(
+                                fn (TemporaryUploadedFile $file, callable $get): string => Str::slug($get('name')) . '-' . uniqid() . '.' . $file->guessExtension()
+                            )
+                            ->helperText('Sube el logo de la marca. Se recomienda un formato cuadrado (ej: 200x200px).'),
+                    ]),
+                    Forms\Components\RichEditor::make('description')
+                        ->label('Descripción')
+                        ->nullable(),
+                ]),
 
             Section::make('Contenido SEO')
                 ->icon('heroicon-o-magnifying-glass')
@@ -71,21 +72,22 @@ class BrandResource extends Resource
                         ->label('Slug (URL Amigable)')
                         ->required()
                         ->unique(Brand::class, 'slug', ignoreRecord: true)
-                        ->helperText('Generado automáticamente, pero puedes ajustarlo.'),
+                        ->helperText('Generado automáticamente a partir del nombre, pero puedes ajustarlo.'),
 
                     Forms\Components\TextInput::make('seo_title')
                         ->label('Título SEO')
                         ->maxLength(60)
-                        ->helperText('Máximo 60 caracteres. Ideal para Google.'),
+                        ->helperText('Máximo 60 caracteres recomendados. Ideal para Google.'),
 
                     Forms\Components\Textarea::make('seo_description')
                         ->label('Descripción SEO')
                         ->maxLength(160)
                         ->rows(3)
-                        ->helperText('Máximo 160 caracteres. El resumen para Google.'),
+                        ->helperText('Máximo 160 caracteres. Es el resumen que aparece en Google.'),
 
                     Forms\Components\TagsInput::make('seo_keywords')
-                        ->label('Palabras Clave SEO'),
+                        ->label('Palabras Clave SEO')
+                        ->helperText('Palabras clave relevantes separadas por comas.'),
                 ]),
         ]);
     }
@@ -118,9 +120,15 @@ class BrandResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('info'),
-                Tables\Actions\EditAction::make()->iconButton()->color('primary'),
-                Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
+                Action::make('view')
+                    ->label('Ver en la tienda')
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->color('info')
+                    ->url(fn (Brand $record) => url("/marcas/{$record->slug}"))
+                    ->openUrlInNewTab()
+                    ->iconButton(),
+                Tables\Actions\EditAction::make()->iconButton(),
+                Tables\Actions\DeleteAction::make()->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

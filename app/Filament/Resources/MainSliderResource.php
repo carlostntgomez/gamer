@@ -11,17 +11,17 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Filament\Forms\Components\Section;
 
 class MainSliderResource extends Resource
 {
     protected static ?string $model = MainSlider::class;
 
-    // Translations for Model
     protected static ?string $modelLabel = 'Slider Principal';
     protected static ?string $pluralModelLabel = 'Sliders Principales';
+    protected static ?string $navigationLabel = 'Sliders Principales';
 
-
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-photo';
 
     protected static ?string $navigationGroup = 'Home';
 
@@ -63,37 +63,45 @@ class MainSliderResource extends Resource
 
         return $form
             ->schema([
-                Forms\Components\TextInput::make('title')
-                    ->label('Título')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\RichEditor::make('subtitle')
-                    ->label('Subtítulo')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\FileUpload::make('image_path')
-                    ->label('Imagen de Escritorio')
-                    ->required()
-                    ->image()
-                    ->helperText('La imagen debe tener un tamaño mínimo de 1920x930 píxeles. Se convertirá a WebP.')
-                    ->imageEditor()
-                    ->imageEditorAspectRatios(['64:31'])
-                    ->rules(['dimensions:min_width=1920,min_height=930'])
-                    ->dehydrateStateUsing($saveImageLogic),
-                Forms\Components\FileUpload::make('image_path_mobile')
-                    ->label('Imagen Móvil')
-                    ->image()
-                    ->helperText('La imagen debe tener un tamaño mínimo de 360x430 píxeles. Se convertirá a WebP.')
-                    ->imageEditor()
-                    ->imageEditorAspectRatios(['36:43'])
-                    ->rules(['dimensions:min_width=360,min_height=430'])
-                    ->dehydrateStateUsing($saveImageLogic),
-                Forms\Components\TextInput::make('button_text')
-                    ->label('Texto del Botón')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('button_link')
-                    ->label('Enlace del Botón')
-                    ->maxLength(255),
+                Section::make('Contenido de Texto')->schema([
+                    Forms\Components\TextInput::make('title')
+                        ->label('Título')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\RichEditor::make('subtitle')
+                        ->label('Subtítulo')
+                        ->required()
+                        ->maxLength(255),
+                ])->columns(1),
+
+                Section::make('Imágenes')->schema([
+                    Forms\Components\FileUpload::make('image_path')
+                        ->label('Imagen de Escritorio')
+                        ->required()
+                        ->image()
+                        ->helperText('La imagen debe tener un tamaño mínimo de 1920x930 píxeles. Se convertirá a WebP.')
+                        ->imageEditor()
+                        ->imageEditorAspectRatios(['64:31'])
+                        ->rules(['dimensions:min_width=1920,min_height=930'])
+                        ->dehydrateStateUsing($saveImageLogic),
+                    Forms\Components\FileUpload::make('image_path_mobile')
+                        ->label('Imagen Móvil')
+                        ->image()
+                        ->helperText('La imagen debe tener un tamaño mínimo de 360x430 píxeles. Se convertirá a WebP.')
+                        ->imageEditor()
+                        ->imageEditorAspectRatios(['36:43'])
+                        ->rules(['dimensions:min_width=360,min_height=430'])
+                        ->dehydrateStateUsing($saveImageLogic),
+                ])->columns(2),
+
+                Section::make('Botón de Acción')->schema([
+                    Forms\Components\TextInput::make('button_text')
+                        ->label('Texto del Botón')
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('button_link')
+                        ->label('Enlace del Botón')
+                        ->maxLength(255),
+                ])->columns(2),
             ]);
     }
 
@@ -116,8 +124,8 @@ class MainSliderResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->modal()->iconButton(),
-                Tables\Actions\EditAction::make()->modal()->iconButton(),
+                Tables\Actions\ViewAction::make()->iconButton(),
+                Tables\Actions\EditAction::make()->iconButton(),
                 Tables\Actions\DeleteAction::make()->iconButton(),
             ])
             ->bulkActions([

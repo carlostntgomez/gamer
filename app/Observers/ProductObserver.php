@@ -4,7 +4,7 @@ namespace App\Observers;
 
 use App\Models\Product;
 use App\Models\DealOfTheDay;
-use App\Models\NewArrival;
+// use App\Models\NewArrival;
 
 class ProductObserver
 {
@@ -18,6 +18,6 @@ class ProductObserver
     {
         // Find and delete related models
         DealOfTheDay::where('product_id', $product->id)->delete();
-        NewArrival::where('product_id', $product->id)->delete();
+        // NewArrival::where('product_id', $product->id)->delete();
     }
 }

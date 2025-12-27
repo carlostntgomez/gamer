@@ -302,7 +302,7 @@ PROMPT;
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageCategories::route('/'),
+            'index' => Pages\ListCategories::route('/'),
         ];
     }
 

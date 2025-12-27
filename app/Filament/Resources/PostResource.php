@@ -299,7 +299,9 @@ PROMPT;
 
     public static function getPages(): array
     {
-        return [ 'index' => Pages\ManagePosts::route('/') ];
+        return [
+            'index' => Pages\ListPosts::route('/'),
+        ];
     }
 
     public static function getEloquentQuery(): Builder

@@ -15,8 +15,7 @@ class TopCategoryResource extends Resource
     protected static ?string $model = TopCategory::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-up';
-
-    protected static ?string $navigationGroup = 'E-commerce';
+    protected static ?string $navigationGroup = 'Home';
     protected static ?string $modelLabel = 'Categoría Top';
     protected static ?string $pluralModelLabel = 'Categorías Top';
     protected static ?string $navigationLabel = 'Categorías Top';
@@ -28,8 +27,10 @@ class TopCategoryResource extends Resource
             ->schema([
                 Forms\Components\Select::make('category_id')
                     ->relationship('category', 'name')
+                    ->label('Categoría')
                     ->required(),
                 Forms\Components\TextInput::make('priority')
+                    ->label('Prioridad')
                     ->required()
                     ->numeric(),
             ]);
@@ -40,16 +41,20 @@ class TopCategoryResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('category.name')
+                    ->label('Categoría')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('priority')
+                    ->label('Prioridad')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Creado el')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Actualizado el')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

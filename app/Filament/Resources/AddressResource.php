@@ -28,19 +28,23 @@ class AddressResource extends Resource
             Forms\Components\Group::make()
                 ->schema([
                     Forms\Components\Section::make('Información del Destinatario')
+                        ->description('Datos de la persona que recibirá el envío.')
                         ->schema([
                             Forms\Components\Select::make('user_id')
                                 ->relationship('user', 'name')->label('Cliente')->searchable()->preload()
-                                ->helperText('Opcional. Asociar esta dirección a un cliente existente.'),
+                                ->helperText('Asociar esta dirección a un cliente existente para un seguimiento más fácil.'),
                             Forms\Components\TextInput::make('first_name')->label('Nombre')->required(),
                             Forms\Components\TextInput::make('last_name')->label('Apellidos')->required(),
-                            Forms\Components\TextInput::make('phone')->label('Teléfono')->tel(),
+                            Forms\Components\TextInput::make('phone')->label('Teléfono')->tel()
+                                ->helperText('Incluye el código de país si es necesario.'),
                         ])->columns(2),
 
                     Forms\Components\Section::make('Detalles de la Dirección Postal')
+                        ->description('Información completa para el envío del paquete.')
                         ->schema([
                             Forms\Components\TextInput::make('address_line_1')->label('Línea de Dirección 1')->required(),
-                            Forms\Components\TextInput::make('address_line_2')->label('Línea de Dirección 2'),
+                            Forms\Components\TextInput::make('address_line_2')->label('Línea de Dirección 2')
+                                ->helperText('Información adicional como número de apartamento o edificio.'),
                             Forms\Components\TextInput::make('city')->label('Ciudad')->required(),
                             Forms\Components\TextInput::make('state')->label('Estado / Provincia')->required(),
                             Forms\Components\TextInput::make('zip_code')->label('Código Postal')->required(),
@@ -56,7 +60,8 @@ class AddressResource extends Resource
                             Forms\Components\Select::make('type')
                                 ->label('Tipo de Dirección')
                                 ->options(AddressType::class)
-                                ->required(),
+                                ->required()
+                                ->helperText('Clasifica si es una dirección de envío o de facturación.'),
                             Forms\Components\Placeholder::make('created_at')
                                 ->label('Fecha de Creación')
                                 ->content(fn(?Address $record): string => $record?->created_at?->translatedFormat('d M Y, H:i') ?? '-'),
@@ -74,14 +79,10 @@ class AddressResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')->label('Cliente')->default('Invitado')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('full_name')->label('Nombre Completo')->searchable(query: function ($query, $search) {
-                    $query->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"]);
-                }),
+                Tables\Columns\TextColumn::make('full_name')->label('Nombre Completo')->searchable(),
                 Tables\Columns\TextColumn::make('type')->badge()->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('full_address')->label('Dirección Completa')->searchable(query: function ($query, $search) {
-                    $query->whereRaw("CONCAT(address_line_1, ', ', city, ', ', state) LIKE ?", ["%{$search}%"]);
-                }),
-                Tables\Columns\TextColumn::make('country')->label('País')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('full_address')->label('Dirección Completa')->searchable(),
+                Tables\Columns\TextColumn::make('country')->label('País')->searchable()->sortable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')->label('Creado el')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
@@ -89,8 +90,8 @@ class AddressResource extends Resource
                 Tables\Filters\SelectFilter::make('type')->options(AddressType::class),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()->iconButton(),
+                Tables\Actions\DeleteAction::make()->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()]),

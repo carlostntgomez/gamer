@@ -12,60 +12,71 @@ use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use Intervention\Image\Laravel\Facades\Image;
 use Illuminate\Support\Facades\Storage;
+use Filament\Forms\Components\Section;
 
 class OfferResource extends Resource
 {
     protected static ?string $model = Offer::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-gift';
-
     protected static ?string $navigationGroup = 'Home';
+    protected static ?string $modelLabel = 'Oferta';
+    protected static ?string $pluralModelLabel = 'Ofertas';
+    protected static ?string $navigationLabel = 'Ofertas';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('title')
-                    ->label('Título')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('subtitle')
-                    ->label('Subtítulo')
-                    ->maxLength(255),
-                Forms\Components\FileUpload::make('image')
-                    ->label('Imagen')
-                    ->image()
-                    ->directory('offers')
-                    ->required()
-                    ->mutateDehydratedStateUsing(function ($state, $get) {
-                        if (!$state) {
-                            return null;
-                        }
+                Section::make('Contenido Principal')->schema([
+                    Forms\Components\TextInput::make('title')
+                        ->label('Título')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('subtitle')
+                        ->label('Subtítulo')
+                        ->maxLength(255),
+                ])->columnSpan(2),
 
-                        $title = $get('title');
-                        $filename = Str::slug($title) . '-' . uniqid() . '.webp';
-                        $path = 'offers/' . $filename;
+                Section::make('Imagen de la Oferta')->schema([
+                    Forms\Components\FileUpload::make('image')
+                        ->label('Imagen')
+                        ->image()
+                        ->directory('offers')
+                        ->required()
+                        ->mutateDehydratedStateUsing(function ($state, $get) {
+                            if (!$state) {
+                                return null;
+                            }
 
-                        $image = Image::read(storage_path('app/public/' . $state));
-                        $image->encode(new \Intervention\Image\Encoders\WebpEncoder(quality: 80));
-                        Storage::disk('public')->put($path, (string) $image);
-                        
-                        // Eliminar el archivo temporal
-                        Storage::disk('public')->delete($state);
+                            $title = $get('title');
+                            $filename = Str::slug($title) . '-' . uniqid() . '.webp';
+                            $path = 'offers/' . $filename;
 
-                        return $path;
-                    }),
-                Forms\Components\TextInput::make('cta_text')
-                    ->label('Texto del Botón (CTA)')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('cta_link')
-                    ->label('Enlace del Botón (CTA)')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Toggle::make('is_active')
-                    ->label('Activo')
-                    ->required(),
+                            $image = Image::read(storage_path('app/public/' . $state));
+                            $image->encode(new \Intervention\Image\Encoders\WebpEncoder(quality: 80));
+                            Storage::disk('public')->put($path, (string) $image);
+                            
+                            // Eliminar el archivo temporal
+                            Storage::disk('public')->delete($state);
+
+                            return $path;
+                        }),
+                ])->columnSpan(2),
+
+                Section::make('Llamada a la Acción (CTA)')->schema([
+                    Forms\Components\TextInput::make('cta_text')
+                        ->label('Texto del Botón (CTA)')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('cta_link')
+                        ->label('Enlace del Botón (CTA)')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\Toggle::make('is_active')
+                        ->label('Activo')
+                        ->required(),
+                ])->columns(2),
             ]);
     }
 
@@ -94,8 +105,8 @@ class OfferResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()->iconButton(),
+                Tables\Actions\DeleteAction::make()->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -13,7 +13,12 @@ class ListAddresses extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Nueva Dirección')
+                ->icon('heroicon-o-plus-circle')
+                ->modalHeading('Crear Nueva Dirección')
+                ->modalDescription('Crea una nueva dirección para un cliente o como invitado.')
+                ->modalWidth('4xl'),
         ];
     }
 }

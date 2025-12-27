@@ -155,7 +155,7 @@ PROMPT;
                             $set('slug', Str::slug($state));
                         }
                     }),
-                    Forms\Components\TextInput::make('slug')->label('Slug')->required()->unique(Product::class, 'slug', ignoreRecord: true)->live()->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))->helperText('URL amigable. Se genera del nombre, pero puedes editarla manualmente.'),
+                    Forms\Components\TextInput::make('slug')->label('Slug')->required()->unique(Product::class, 'slug', ignoreRecord: true)->live()->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))->helperText('URL amigable. Se genera del nombre, pero puedes editarla manually.'),
                     Forms\Components\Select::make('brand_id')->relationship('brand', 'name')->searchable()->required()->label('Marca'),
                     Forms\Components\Select::make('categories')->relationship('categories', 'name')->multiple()->searchable()->required()->label('Categorías'),
                 ])->columns(2),
@@ -295,12 +295,13 @@ PROMPT;
 
     public static function getRelations(): array
     {
-        return [ RelationManagers\ReviewsRelationManager::class ]; }
+        return [ RelationManagers\ReviewsRelationManager::class ];
+    }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageProducts::route('/'),
+            'index' => Pages\ListProducts::route('/'),
         ];
     }
     

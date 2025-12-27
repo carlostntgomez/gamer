@@ -12,6 +12,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Tabs;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 
 class UserResource extends Resource
 {
@@ -21,9 +23,9 @@ class UserResource extends Resource
     protected static ?string $navigationGroup = 'CRM';
     protected static ?string $recordTitleAttribute = 'name';
     protected static ?int $navigationSort = 1;
-    protected static ?string $modelLabel = 'Usuario';
-    protected static ?string $pluralModelLabel = 'Usuarios';
-    protected static ?string $navigationLabel = 'Usuarios';
+    protected static ?string $modelLabel = 'Cliente';
+    protected static ?string $pluralModelLabel = 'Clientes';
+    protected static ?string $navigationLabel = 'Clientes';
 
     public static function form(Form $form): Form
     {
@@ -34,22 +36,25 @@ class UserResource extends Resource
                         ->icon('heroicon-o-user-circle')
                         ->schema([
                             Forms\Components\TextInput::make('name')
-                                ->label('Nombre')
+                                ->label('Nombre Completo')
+                                ->icon('heroicon-o-user')
                                 ->required()
                                 ->maxLength(255),
                             Forms\Components\TextInput::make('email')
                                 ->label('Correo Electrónico')
+                                ->icon('heroicon-o-envelope')
                                 ->email()
                                 ->required()
                                 ->maxLength(255)
                                 ->unique(ignoreRecord: true),
                             Forms\Components\TextInput::make('password')
                                 ->label('Contraseña')
+                                ->icon('heroicon-o-key')
                                 ->password()
                                 ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                                 ->dehydrated(fn ($state) => filled($state))
                                 ->required(fn (string $context): bool => $context === 'create')
-                                ->helperText('Dejar en blanco para no cambiar la contraseña.'),
+                                ->helperText('Dejar en blanco para no cambiar la contraseña actual.'),
                         ])->columns(2),
 
                     Tabs\Tab::make('Detalles Adicionales')
@@ -57,10 +62,11 @@ class UserResource extends Resource
                         ->schema([
                             Forms\Components\TextInput::make('phone')
                                 ->label('Teléfono')
+                                ->icon('heroicon-o-phone')
                                 ->tel(),
                             Forms\Components\Toggle::make('marketing_opt_in')
                                 ->label('Suscrito a Marketing')
-                                ->helperText('El cliente acepta recibir correos de marketing.'),
+                                ->helperText('Indica si el cliente acepta recibir correos de marketing.'),
                             Forms\Components\RichEditor::make('customer_notes')
                                 ->label('Notas Internas del Cliente')
                                 ->columnSpanFull(),
@@ -76,18 +82,18 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nombre')
                     ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('email')
-                    ->label('Correo Electrónico')
-                    ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('bold')
+                    ->description(fn (User $record): string => $record->email),
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Teléfono')
+                    ->icon('heroicon-o-phone')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('orders_count')
                     ->counts('orders')
                     ->label('Nº Pedidos')
-                    ->sortable(),
+                    ->sortable()
+                    ->badge(),
                 Tables\Columns\IconColumn::make('marketing_opt_in')
                     ->label('Suscrito')
                     ->boolean(),
@@ -102,21 +108,38 @@ class UserResource extends Resource
                     ->label('Suscrito a Marketing'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('info')->modal(),
-                Tables\Actions\EditAction::make()->iconButton()->color('primary')->modal(),
-                Tables\Actions\DeleteAction::make()->iconButton()->color('danger'),
+                Tables\Actions\ViewAction::make()->iconButton()->color('gray')->tooltip('Ver detalles del cliente'),
+                Tables\Actions\EditAction::make()->iconButton()->color('warning')->tooltip('Editar cliente'),
+                Tables\Actions\DeleteAction::make()->iconButton()->color('danger')->tooltip('Eliminar cliente'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make()->modal(),
-            ])
             ->defaultSort('created_at', 'desc');
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            Infolists\Components\Section::make('Información del Cliente')->schema([
+                Infolists\Components\TextEntry::make('name')->label('Nombre')->weight('bold'),
+                Infolists\Components\TextEntry::make('email')->label('Correo Electrónico')->icon('heroicon-o-envelope'),
+                Infolists\Components\TextEntry::make('phone')->label('Teléfono')->icon('heroicon-o-phone'),
+            ])->columns(2),
+
+            Infolists\Components\Section::make('Estado y Preferencias')->schema([
+                Infolists\Components\IconEntry::make('marketing_opt_in')->label('Suscrito a Marketing')->boolean(),
+                Infolists\Components\TextEntry::make('created_at')->label('Fecha de Registro')->dateTime('d/m/Y H:i'),
+            ])->columns(2),
+
+            Infolists\Components\Section::make('Notas Internas')->schema([
+                Infolists\Components\TextEntry::make('customer_notes')->html()->columnSpanFull(),
+            ])->collapsible(),
+        ]);
+    }
+    
     public static function getRelations(): array
     {
         return [
@@ -130,5 +153,10 @@ class UserResource extends Resource
         return [
             'index' => Pages\ListUsers::route('/'),
         ];
+    }
+
+    public static function getModalWidth(): string
+    {
+        return '4xl';
     }
 }

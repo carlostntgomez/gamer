@@ -52,11 +52,9 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Resources\PostResource::class,
                 \App\Filament\Resources\TagResource::class,
                 \App\Filament\Resources\BannerResource::class,
-                \App\Filament\Resources\SettingResource::class,
                 \App\Filament\Resources\BrandResource::class,
                 \App\Filament\Resources\TestimonialResource::class,
                 \App\Filament\Resources\TopCategoryResource::class,
-                \App\Filament\Resources\NewArrivalResource::class,
                 \App\Filament\Resources\OfferResource::class,
                 \App\Filament\Resources\MainSliderResource::class,
             ])
