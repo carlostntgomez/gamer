@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
             TopCategorySeeder::class,
             BrandSeeder::class,
             ProductSeeder::class,
-            OfferSeeder::class, // <-- Added here
+            OfferSeeder::class,
             PostSeeder::class,
             OrderSeeder::class,
             TicketSeeder::class,

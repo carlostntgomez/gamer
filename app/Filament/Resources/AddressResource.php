@@ -101,7 +101,7 @@ class AddressResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageAddresses::route('/'),
+            'index' => Pages\ListAddresses::route('/'),
         ];
     }
 }

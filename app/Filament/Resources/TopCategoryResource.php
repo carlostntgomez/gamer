@@ -9,40 +9,29 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class TopCategoryResource extends Resource
 {
     protected static ?string $model = TopCategory::class;
 
-    protected static ?string $modelLabel = 'Categoría Superior';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-up';
 
-    protected static ?string $pluralModelLabel = 'Categorías Superiores';
-
-    protected static ?string $navigationIcon = 'heroicon-o-star';
-
-    protected static ?string $navigationGroup = 'Página de Inicio';
+    protected static ?string $navigationGroup = 'E-commerce';
+    protected static ?string $modelLabel = 'Categoría Top';
+    protected static ?string $pluralModelLabel = 'Categorías Top';
+    protected static ?string $navigationLabel = 'Categorías Top';
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\Select::make('category_id')
-                    ->relationship('category', 'name', modifyQueryUsing: fn (Builder $query) => $query->orderBy('name'))
-                    ->searchable()
-                    ->preload()
+                    ->relationship('category', 'name')
+                    ->required(),
+                Forms\Components\TextInput::make('priority')
                     ->required()
-                    ->label('Categoría'),
-                Forms\Components\FileUpload::make('image')
-                    ->image()
-                    ->directory('top-categories')
-                    ->imageEditor()
-                    ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png'])
-                    ->imagePreviewHeight('150')
-                    ->required()
-                    ->label('Imagen')
-                    ->saveAs('webp'),
+                    ->numeric(),
             ]);
     }
 
@@ -50,43 +39,32 @@ class TopCategoryResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('image')
-                    ->width(100)
-                    ->height('auto')
-                    ->label('Imagen'),
                 Tables\Columns\TextColumn::make('category.name')
-                    ->searchable()
-                    ->sortable()
-                    ->label('Nombre de la Categoría')
-                    ->default('Categoría Eliminada'),
-                Tables\Columns\TextColumn::make('sort_order')
-                    ->label('Orden')
+                    ->numeric()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('priority')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
-                    ->iconButton()
-                    ->modalHeading('Editar Categoría Superior'),
-                Tables\Actions\DeleteAction::make()
-                    ->iconButton()
-                    ->modalHeading('Eliminar Categoría Superior'),
+                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ])
-            ->reorderable('sort_order');
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
+            ]);
     }
 
     public static function getPages(): array

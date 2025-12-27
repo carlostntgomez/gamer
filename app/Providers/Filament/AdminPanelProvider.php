@@ -58,7 +58,6 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Resources\TopCategoryResource::class,
                 \App\Filament\Resources\NewArrivalResource::class,
                 \App\Filament\Resources\OfferResource::class,
-                \App\Filament\Resources\BrandLogoResource::class,
                 \App\Filament\Resources\MainSliderResource::class,
             ])
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')

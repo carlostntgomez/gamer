@@ -3,50 +3,23 @@
         <div class="row">
             <div class="col">
                 <div class="brand-logo-wrap">
-                    <div class="brand-logo-slider owl-carousel owl-theme" id="brand-logo8">
-                        <div class="item" data-animate="animate__fadeInUp">
-                            <a href="javascript:void(0)">
-                                <span class="brand-img">
-                                    <img src="img/brand-logo/home8-brand-logo1.png" class="img-fluid" alt="brand-logo1">
-                                </span>
-                            </a>
+                    @if($brands->isNotEmpty())
+                        <div class="brand-logo-slider owl-carousel owl-theme" id="brand-logo8">
+                            @foreach($brands as $brand)
+                                <div class="item" data-animate="animate__fadeInUp">
+                                    <a href="{{ $brand->slug ? route('brands.show', ['brand' => $brand->slug]) : '#' }}">
+                                        <span class="brand-img">
+                                            <img src="{{ Storage::url($brand->logo_path) }}" class="img-fluid" alt="{{ $brand->name ?? 'Brand Logo' }}">
+                                        </span>
+                                    </a>
+                                </div>
+                            @endforeach
                         </div>
-                        <div class="item" data-animate="animate__fadeInUp">
-                            <a href="javascript:void(0)">
-                                <span class="brand-img">
-                                    <img src="img/brand-logo/home8-brand-logo2.png" class="img-fluid" alt="brand-logo2">
-                                </span>
-                            </a>
+                    @else
+                        <div class="text-center">
+                            <p>No hay logos de marcas para mostrar.</p>
                         </div>
-                        <div class="item" data-animate="animate__fadeInUp">
-                            <a href="javascript:void(0)">
-                                <span class="brand-img">
-                                    <img src="img/brand-logo/home8-brand-logo3.png" class="img-fluid" alt="brand-logo3">
-                                </span>
-                            </a>
-                        </div>
-                        <div class="item" data-animate="animate__fadeInUp">
-                            <a href="javascript:void(0)">
-                                <span class="brand-img">
-                                    <img src="img/brand-logo/home8-brand-logo4.png" class="img-fluid" alt="brand-logo4">
-                                </span>
-                            </a>
-                        </div>
-                        <div class="item" data-animate="animate__fadeInUp">
-                            <a href="javascript:void(0)">
-                                <span class="brand-img">
-                                    <img src="img/brand-logo/home8-brand-logo5.png" class="img-fluid" alt="brand-logo5">
-                                </span>
-                            </a>
-                        </div>
-                        <div class="item" data-animate="animate__fadeInUp">
-                            <a href="javascript:void(0)">
-                                <span class="brand-img">
-                                    <img src="img/brand-logo/home8-brand-logo6.png" class="img-fluid" alt="brand-logo6">
-                                </span>
-                            </a>
-                        </div>
-                    </div>
+                    @endif
                 </div>
             </div>
         </div>
