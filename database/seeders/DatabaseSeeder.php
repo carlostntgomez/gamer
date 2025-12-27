@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call([
+            SettingsSeeder::class, // Seeder para la configuración del sitio
             CategorySeeder::class,
             TopCategorySeeder::class,
             BrandSeeder::class,

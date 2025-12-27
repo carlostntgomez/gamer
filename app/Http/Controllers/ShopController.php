@@ -47,18 +47,23 @@ class ShopController extends Controller
     public function show(Product $product)
     {
         // Carga el producto con sus relaciones para optimizar las consultas a la base de datos (Eager Loading).
-        // Esto es crucial para evitar el problema de N+1 queries y mejorar el rendimiento de la página.
         $product->load([
             'brand',
             'categories',
             'reviews' => function ($query) {
-                // Ordena las reseñas de la más reciente a la más antigua.
                 $query->latest();
             },
-            // Carga también el usuario que escribió cada reseña para poder mostrar su nombre.
             'reviews.user'
         ]);
 
-        return view('pages.shop.show', compact('product'));
+        // Obtener productos relacionados (de la misma categoría)
+        $relatedProducts = Product::whereHas('categories', function ($query) use ($product) {
+            $query->whereIn('id', $product->categories->pluck('id'));
+        })
+        ->where('id', '!=', $product->id) // Excluir el producto actual
+        ->take(8) // Limitar a 8 productos
+        ->get();
+
+        return view('pages.shop.show', compact('product', 'relatedProducts'));
     }
 }

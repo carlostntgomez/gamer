@@ -43,3 +43,35 @@ Route::middleware([
         return view('dashboard');
     })->name('dashboard');
 });
+
+Route::get('/sobre-nosotros', function () {
+    return view('pages.about.index');
+})->name('about');
+
+Route::get('/contacto', function () {
+    return view('pages.contact.index');
+})->name('contact');
+
+Route::get('/faq', function () {
+    return view('pages.faq.index');
+})->name('faq');
+
+Route::get('/politicas-de-pago', function () {
+    return view('pages.payment-policy.index');
+})->name('payment-policy');
+
+Route::get('/politica-de-privacidad', function () {
+    return view('pages.privacy-policy.index');
+})->name('privacy-policy');
+
+Route::get('/politica-de-devoluciones', function () {
+    return view('pages.return-policy.index');
+})->name('return-policy');
+
+Route::get('/politica-de-envios', function () {
+    return view('pages.shipping-policy.index');
+})->name('shipping-policy');
+
+Route::get('/terminos-y-condiciones', function () {
+    return view('pages.terms-condition.index');
+})->name('terms-condition');

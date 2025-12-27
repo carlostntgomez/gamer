@@ -40,6 +40,16 @@ class Category extends Model
             ->saveSlugsTo('slug');
     }
 
+    /**
+     * Get the route key for the model.
+     *
+     * @return string
+     */
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
+
     public function parent()
     {
         return $this->belongsTo(Category::class, 'parent_id');
