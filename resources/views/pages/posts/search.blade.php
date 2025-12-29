@@ -16,7 +16,7 @@
                                     <a class="breadcrumb-link" href="{{ route('posts.index') }}">Blog</a>
                                 </li>
                                 <li class="breadcrumb-li">
-                                    <span class="breadcrumb-text">Búsqueda: {{ request('q') }}</span>
+                                    <span class="breadcrumb-text">Búsqueda: {{ $query }}</span>
                                 </li>
                             </ul>
                             <!-- breadcrumb-list end -->
@@ -33,12 +33,12 @@
                     <div class="col">
                         <div class="section-capture">
                             <div class="section-title">
-                                <h2 data-animate="animate__fadeInUp"><span>Tu búsqueda de "{{ request('q') }}" arrojó los siguientes resultados:</span></h2>
+                                <h2 data-animate="animate__fadeInUp"><span>Tu búsqueda de "{{ $query }}" arrojó los siguientes resultados:</span></h2>
                             </div>
                         </div>
                         <div class="saerch-input" data-animate="animate__fadeInUp">
                             <form action="{{ route('posts.search') }}" method="get">
-                                <input type="text" name="q" placeholder="Buscar en nuestra tienda" value="{{ request('q') }}">
+                                <input type="text" name="q" placeholder="Buscar en nuestra tienda" value="{{ $query }}">
                                 <button type="submit" class="search-btn"><i class="fa-solid fa-magnifying-glass"></i></button>
                             </form>
                         </div>
@@ -79,7 +79,7 @@
                                         @endforelse
                                     </ul>
                                     <div class="paginatoin-area">
-                                        {{ $posts->links() }}
+                                        {{ $posts->appends(['q' => $query])->links() }}
                                     </div>
                                 </div>
                             </div>

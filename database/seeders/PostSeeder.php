@@ -4,97 +4,173 @@ namespace Database\Seeders;
 
 use App\Models\Post;
 use App\Models\Tag;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class PostSeeder extends Seeder
 {
+    private array $sampleImages = [];
+    private string $storagePath = 'public/posts';
+    private $tags;
+    private $users;
+
     public function run(): void
     {
-        $this->command->info('Iniciando el seeder de posts...');
+        $this->command->info('🚀 Iniciando el seeder de Posts, estilo ProductSeeder...');
 
-        $this->command->info('Limpiando tablas y directorios relacionados con los posts...');
+        if (!$this->prepareEnvironment()) return;
+
+        $titles = $this->getPostTitles();
+        $this->command->info('Creando ' . count($titles) . ' posts de alta calidad...');
+        $progressBar = $this->command->getOutput()->createProgressBar(count($titles));
+
+        foreach ($titles as $title) {
+            $postData = $this->generatePostData($title);
+            
+            $post = Post::create($postData);
+
+            $this->attachTagsToPost($post);
+            $this->attachImageToPost($post);
+
+            $progressBar->advance();
+        }
+
+        $progressBar->finish();
+        $this->command->info('\n✅ Seeder de Posts finalizado con éxito.');
+    }
+
+    private function prepareEnvironment(): bool
+    {
+        $this->command->info('🧹 Limpiando el entorno de Posts...');
         Schema::disableForeignKeyConstraints();
         Post::truncate();
-        Tag::truncate();
         DB::table('post_tag')->truncate();
         Schema::enableForeignKeyConstraints();
 
-        $storagePath = storage_path('app/public/posts');
-        $this->clearDirectory($storagePath);
+        Storage::deleteDirectory($this->storagePath);
+        Storage::makeDirectory($this->storagePath);
 
         $sampleImagesPath = public_path('imagenes de muestra/posts');
         if (!File::exists($sampleImagesPath) || count(File::files($sampleImagesPath)) === 0) {
-            $this->command->error('No se encontraron imágenes en la carpeta de muestra: ' . $sampleImagesPath);
-            $this->command->error('El seeder no puede continuar sin imágenes. Por favor, añada imágenes a esa ruta.');
-            return;
+            $this->command->error("La carpeta de imágenes de muestra para posts está vacía o no existe: {$sampleImagesPath}");
+            return false;
         }
-        $sampleImages = File::files($sampleImagesPath);
-        $this->command->info(count($sampleImages) . ' imágenes de muestra encontradas.');
+        $this->sampleImages = File::files($sampleImagesPath);
 
-        $this->command->info('Creando 10 etiquetas de prueba...');
-        $tags = Tag::factory()->count(10)->create();
-        $tagIds = $tags->pluck('id')->toArray();
+        $this->tags = Tag::all();
+        $this->users = User::all();
 
-        $this->command->info('Creando 20 posts de prueba...');
-        Post::factory()->count(20)->create()->each(function (Post $post) use ($tagIds, $sampleImages, $storagePath) {
-            $this->command->line("Post '{$post->title}' creado. Procesando imagen y etiquetas...");
-
-            // Asignar etiquetas
-            $post->tags()->attach(fake()->randomElements($tagIds, rand(1, 3)));
-
-            // Asignar imagen destacada
-            $imageFile = $sampleImages[array_rand($sampleImages)];
-            $sourcePath = $imageFile->getRealPath();
-            $imageType = @exif_imagetype($sourcePath);
-
-            $newFileName = $post->slug . '-' . uniqid() . '.webp';
-            $destinationPath = $storagePath . '/' . $newFileName;
-
-            $image = null;
-            $processed = false;
-
-            switch ($imageType) {
-                case IMAGETYPE_JPEG: $image = imagecreatefromjpeg($sourcePath); break;
-                case IMAGETYPE_PNG: 
-                    $image = imagecreatefrompng($sourcePath);
-                    imagepalettetotruecolor($image); 
-                    imagealphablending($image, true); 
-                    imagesavealpha($image, true); 
-                    break;
-                case IMAGETYPE_GIF: $image = imagecreatefromgif($sourcePath); break;
-                case IMAGETYPE_WEBP: 
-                    File::copy($sourcePath, $destinationPath); 
-                    $processed = true; 
-                    break;
-            }
-
-            if ($image !== null) {
-                imagewebp($image, $destinationPath, 80);
-                imagedestroy($image);
-                $processed = true;
-            }
-
-            if ($processed) {
-                $dbPath = 'posts/' . $newFileName;
-                $post->image_path = $dbPath;
-                $post->save();
-                $this->command->line("  - Imagen destacada: {$dbPath}");
-            }
-        });
-
-        $this->command->info('Seeder de posts finalizado con éxito.');
+        if ($this->tags->isEmpty()) {
+            $this->command->error('No se encontraron tags. Ejecute el TagSeeder primero.');
+            return false;
+        }
+        if ($this->users->isEmpty()) {
+            $this->command->error('No se encontraron usuarios. Asegúrese de que el seeder de usuarios se ejecute primero.');
+            return false;
+        }
+        
+        $this->command->info('Entorno preparado: ' . $this->users->count() . ' usuarios, ' . $this->tags->count() . ' tags, y ' . count($this->sampleImages) . ' imágenes de muestra encontradas.');
+        return true;
     }
 
-    private function clearDirectory(string $path): void
+    private function generatePostData(string $title): array
     {
-        if (File::isDirectory($path)) {
-            File::deleteDirectory($path);
+        $htmlContent = $this->generateHtmlContent($title);
+        return [
+            'user_id' => $this->users->random()->id,
+            'title' => $title,
+            'slug' => Str::slug($title),
+            'content' => $htmlContent,
+            'excerpt' => Str::limit(strip_tags($htmlContent), 150),
+            'is_published' => true,
+            'published_at' => now()->subDays(rand(1, 365)),
+            'seo_title' => 'Guía y Análisis: ' . $title,
+            'seo_description' => 'Todo lo que necesitas saber sobre ' . $title . '. Análisis, comparativas y las mejores ofertas.',
+        ];
+    }
+    
+    private function attachTagsToPost(Post $post): void
+    {
+        $post->tags()->attach(
+            $this->tags->random(rand(2, 5))->pluck('id')->toArray()
+        );
+    }
+    
+    private function attachImageToPost(Post $post): void
+    {
+        if (empty($this->sampleImages)) return;
+
+        $imageFile = fake()->randomElement($this->sampleImages);
+        $imageDbPath = $this->processAndSaveImage($imageFile, $post->slug);
+
+        if($imageDbPath) {
+            $post->image_path = $imageDbPath;
+            $post->save();
         }
-        File::makeDirectory($path, 0755, true, true);
+    }
+
+    private function processAndSaveImage(\SplFileInfo $imageFile, string $slug): ?string
+    {
+        $sourcePath = $imageFile->getRealPath();
+        $newFileName = $slug . '-' . uniqid() . '.webp';
+        $destinationPath = Storage::disk('public')->path('posts/' . $newFileName);
+
+        try {
+            $image = imagecreatefromstring(File::get($sourcePath));
+            if ($image === false) return null;
+
+            imagepalettetotruecolor($image);
+            imagealphablending($image, true);
+            imagesavealpha($image, true);
+            imagewebp($image, $destinationPath, 80);
+            imagedestroy($image);
+            
+            return 'posts/' . $newFileName;
+
+        } catch (\Exception $e) {
+            $this->command->warn("No se pudo procesar la imagen del post: {$sourcePath}. Error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function generateHtmlContent(string $title): string
+    {
+        $faker = \Faker\Factory::create('es_ES');
+        $content = "<h2>Análisis Profundo: {$title}</h2>";
+        $content .= "<p>{$faker->paragraph(5, true)}</p>";
+        $content .= "<h3>Características Clave</h3><ul>";
+        for ($i = 0; $i < 3; $i++) {
+            $content .= "<li><strong>" . ucfirst($faker->words(3, true)) . ":</strong> " . $faker->sentence(12, true) . "</li>";
+        }
+        $content .= "</ul><p>{$faker->paragraph(6, true)}</p>";
+        $content .= "<h3>Veredicto Final y Recomendaciones</h3><p>{$faker->paragraph(4, true)}</p>";
+
+        return $content;
+    }
+    
+    private function getPostTitles(): array
+    {
+        return [
+            'Guía Definitiva para Elegir el Mejor Portátil Gaming en 2024',
+            'Análisis a Fondo del Nuevo Smartphone Insignia: ¿Vale la Pena?',
+            'Cómo Montar tu Propio PC Gamer Paso a Paso: Presupuestos y Consejos',
+            'Los 10 Accesorios Imprescindibles que Todo Gamer Debería Tener',
+            'Comparativa de Monitores: ¿4K, 144Hz o Ultrawide para Jugar y Trabajar?',
+            'El Auge de los Teclados Mecánicos: Todo lo que Necesitas Saber',
+            'Realidad Virtual en 2024: Los Dispositivos que Están Definiendo el Futuro',
+            'Los Mejores Drones para Principiantes: Captura Vistas Aéreas Impresionantes',
+            'Audio de Alta Fidelidad para tu Setup: Auriculares y Altavoces Recomendados',
+            'Las Aplicaciones de Software Esenciales para Optimizar tu Rendimiento',
+            'PlayStation 5 vs. Xbox Series X: La Batalla de las Consolas de Nueva Generación',
+            'Secretos para Encontrar las Mejores Ofertas en Componentes de PC',
+            '¿Es el Fin de las Tarjetas Gráficas Dedicadas? El Futuro de la GPU Integrada',
+            'La Guía Completa para Hacer Overclocking a tu CPU de Forma Segura',
+            'Novedades Tecnológicas que Marcarán la Próxima Década',
+        ];
     }
 }

@@ -11,7 +11,7 @@ class HomeController extends Controller
     /**
      * Handle the incoming request.
      */
-    public function __invoke(Request $request)
+    public function index(Request $request)
     {
         $featuredProducts = Product::where('is_featured', true)
             ->where('is_visible', true)

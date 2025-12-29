@@ -17,9 +17,10 @@ class ReviewFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => \App\Models\User::inRandomOrder()->first()->id,
-            'rating' => $this->faker->numberBetween(1, 5),
-            'content' => $this->faker->paragraph(),
+            'title' => $this->faker->bs(),
+            'rating' => $this->faker->numberBetween(4, 5),
+            'content' => $this->faker->realText(200), // <--- CORREGIDO de 'comment' a 'content'
+            'is_approved' => true,
         ];
     }
 }

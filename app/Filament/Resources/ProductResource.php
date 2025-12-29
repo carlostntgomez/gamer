@@ -93,7 +93,7 @@ PROMPT;
                         try {
                             /** @var Response $response */
                             $response = Http::withHeaders(['Content-Type' => 'application/json'])
-                                ->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey, [
+                                ->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $apiKey, [
                                     'contents' => [
                                         ['parts' => [
                                             ['text' => $prompt]
@@ -181,6 +181,7 @@ PROMPT;
                 Tabs\Tab::make('Multimedia')->icon('heroicon-o-photo')->schema([
                     FileUpload::make('main_image_path')->label('Imagen Principal')->directory('products')->disk('public')->image()->imageEditor()->required()->helperText('La primera imagen que verán los clientes.'),
                     FileUpload::make('gallery_image_paths')->label('Galería de Imágenes')->directory('products')->disk('public')->image()->imageEditor()->multiple()->helperText('Imágenes adicionales para mostrar detalles.'),
+                    Forms\Components\TextInput::make('video_url')->label('URL del Video de YouTube')->url()->helperText('Pega aquí la URL completa de un video de YouTube.')->columnSpanFull(),
                 ])->columns(1),
                 Tabs\Tab::make('SEO')->icon('heroicon-o-magnifying-glass')->schema([
                     Forms\Components\TextInput::make('seo_title')->label('Título SEO')->maxLength(60)->helperText('Recomendado: Máximo 60 caracteres. Se autocompleta con el nombre del producto.'),

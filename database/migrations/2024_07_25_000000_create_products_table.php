@@ -23,6 +23,7 @@ return new class extends Migration
             $table->unsignedInteger('stock_quantity')->default(0);
             $table->string('type')->default('gadget');
             $table->string('condition')->default('new');
+            $table->string('video_url')->nullable();
             $table->boolean('is_visible')->default(true);
             $table->boolean('is_featured')->default(false)->index();
             $table->boolean('is_new')->default(false);

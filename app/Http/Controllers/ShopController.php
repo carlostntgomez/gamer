@@ -57,13 +57,13 @@ class ShopController extends Controller
         ]);
 
         // Obtener productos relacionados (de la misma categoría)
-        $relatedProducts = Product::whereHas('categories', function ($query) use ($product) {
+        $related_products = Product::whereHas('categories', function ($query) use ($product) {
             $query->whereIn('id', $product->categories->pluck('id'));
         })
         ->where('id', '!=', $product->id) // Excluir el producto actual
         ->take(8) // Limitar a 8 productos
         ->get();
 
-        return view('pages.shop.show', compact('product', 'relatedProducts'));
+        return view('pages.shop.show', compact('product', 'related_products'));
     }
 }

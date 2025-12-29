@@ -1,77 +1,64 @@
 <?php
 
-use App\Http\Controllers\BrandController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\PostController;
-use App\Http\Controllers\ShopController;
-use App\Models\Banner;
-use App\Models\Product;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ShopController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\PostController;
+use App\Http\Controllers\ReviewController; // <--- AÑADIDO
 
-Route::get('/', function () {
-    $banners = \App\Models\Banner::where('is_active', true)->orderBy('order', 'asc')->get();
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| contains the "web" middleware group. Now create something great!
+|
+*/
 
-    // Get featured products
-    $featuredProducts = Product::where('is_featured', true)
-        ->orderBy('updated_at', 'desc')
-        ->get();
+// Home Route
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
-    return view('pages.home.index', compact('banners', 'featuredProducts'));
-})->name('home');
+// Shop Routes
+Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
+Route::get('/shop/search', [ShopController::class, 'search'])->name('shop.search');
+Route::get('/product/{product:slug}', [ShopController::class, 'show'])->name('shop.show');
 
-// Rutas de la Tienda
-Route::prefix('tienda')->name('shop.')->group(function () {
-    Route::get('/', [ShopController::class, 'index'])->name('index');
-    Route::get('/buscar', [ShopController::class, 'search'])->name('search');
-    Route::get('/{product:slug}', [ShopController::class, 'show'])->name('show');
-});
+// Blog Post Routes
+Route::get('/blog', [PostController::class, 'index'])->name('posts.index');
+Route::get('/blog/search', [PostController::class, 'search'])->name('posts.search');
+Route::get('/blog/{post:slug}', [PostController::class, 'show'])->name('posts.show');
 
-Route::get("/categorias/{category}", [CategoryController::class, "show"])->name("categories.show");
+// Review Route (Nested within Product)
+Route::post('/product/{product}/reviews', [ReviewController::class, 'store'])->name('reviews.store'); // <--- AÑADIDO
 
-Route::get("/posts", [PostController::class, "index"])->name("posts.index");
-Route::get("/posts/search", [PostController::class, "search"])->name("posts.search");
-Route::get("/posts/{post}", [PostController::class, "show"])->name("posts.show");
+// Static Pages
+Route::view('/about-us', 'pages.about.index')->name('about');
+Route::view('/contact', 'pages.contact.index')->name('contact');
+Route::view('/faq', 'pages.faq.index')->name('faq');
+Route::view('/payment-policy', 'pages.payment-policy.index')->name('payment-policy');
+Route::view('/privacy-policy', 'pages.privacy-policy.index')->name('privacy-policy');
+Route::view('/return-policy', 'pages.return-policy.index')->name('return-policy');
+Route::view('/shipping-policy', 'pages.shipping-policy.index')->name('shipping-policy');
+Route::view('/terms-condition', 'pages.terms-condition.index')->name('terms-condition');
 
-Route::get('marcas/{brand:slug}', [BrandController::class, 'show'])->name('brands.show');
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth'])->name('dashboard');
 
-Route::middleware([
-    'auth:sanctum',
-    config('jetstream.auth_session'),
-    'verified',
-])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-});
+Route::get('/mapa-del-sitio', function () {
+    return view('pages.sitemap.index');
+})->name('sitemap');
 
-Route::get('/sobre-nosotros', function () {
-    return view('pages.about.index');
-})->name('about');
+// Category Route
+Route::get('/category/{category:slug}', [CategoryController::class, 'show'])->name('categories.show');
 
-Route::get('/contacto', function () {
-    return view('pages.contact.index');
-})->name('contact');
+// Brand Route
+Route::get('/brand/{brand:slug}', [BrandController::class, 'show'])->name('brands.show');
 
-Route::get('/faq', function () {
-    return view('pages.faq.index');
-})->name('faq');
-
-Route::get('/politicas-de-pago', function () {
-    return view('pages.payment-policy.index');
-})->name('payment-policy');
-
-Route::get('/politica-de-privacidad', function () {
-    return view('pages.privacy-policy.index');
-})->name('privacy-policy');
-
-Route::get('/politica-de-devoluciones', function () {
-    return view('pages.return-policy.index');
-})->name('return-policy');
-
-Route::get('/politica-de-envios', function () {
-    return view('pages.shipping-policy.index');
-})->name('shipping-policy');
-
-Route::get('/terminos-y-condiciones', function () {
-    return view('pages.terms-condition.index');
-})->name('terms-condition');
+// Cart Routes
+Route::post('/carrito/agregar', [CartController::class, 'add'])->name('cart.add');
