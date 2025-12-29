@@ -55,6 +55,9 @@ $keywords = isset($product) && !empty($product->seo_keywords) ? (is_array($produ
 
         <x-layouts.footer />
 
+        <x-cart-drawer />
+        <div class="bg-screen"></div>
+
         <div class="modal fade deliver-modal" id="deliver-modal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
