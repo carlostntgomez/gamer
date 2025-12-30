@@ -133,6 +133,7 @@ $keywords = isset($product) && !empty($product->seo_keywords) ? (is_array($produ
         <script src="{{ asset('js/counter.js') }}"></script>
         <script src="{{ asset('js/typewriter.js') }}"></script>
         <script src="{{ asset('js/main.js') }}"></script>
+        <script src="{{ asset('js/cart.js') }}"></script>
 
         @stack('scripts')
     </body>

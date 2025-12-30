@@ -214,36 +214,6 @@
         $('.screen-bg').removeClass("active");
     });
 
-    /*====================================
-        cart-drawer js
-    ====================================*/
-    $(".cart-wrapper a.js-cart-drawer,  .bottom-menu-wrapper a.bottom-menu-cart, a.add-to-cart, .bottom-menu-cart").on("click", function() {
-        $("#cart-drawer").addClass('active');
-        $(".bg-screen").addClass('active');
-        $("body").addClass('hidden');
-    });
-    $(".drawer-close button.drawer-close-btn").on("click", function() {
-        $("#cart-drawer").removeClass('active');
-        $(".bg-screen").removeClass('active');
-        $("body").removeClass('hidden');
-    });
-
-    /*====================================
-        bg-screen js
-    ====================================*/
-    $(".bg-screen").on("click", function() {
-        $(this).removeClass('active');
-        $(".main-menu-area").removeClass('active');
-        $("#cart-drawer").removeClass('active');
-        $("body").removeClass('hidden');
-        });
-        $('#trigger-overlay').on('click', function(){
-        $(".overlay").addClass('open'); 
-    });
-
-    $('.overlay-close').on('click', function(){
-        $(".overlay").removeClass('open');  
-    });
     
     /*===================================
         product-short js

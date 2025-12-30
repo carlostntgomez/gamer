@@ -7,7 +7,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\PostController;
-use App\Http\Controllers\ReviewController; // <--- AÑADIDO
+use App\Http\Controllers\ReviewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,7 +34,7 @@ Route::get('/blog/search', [PostController::class, 'search'])->name('posts.searc
 Route::get('/blog/{post:slug}', [PostController::class, 'show'])->name('posts.show');
 
 // Review Route (Nested within Product)
-Route::post('/product/{product}/reviews', [ReviewController::class, 'store'])->name('reviews.store'); // <--- AÑADIDO
+Route::post('/product/{product}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 
 // Static Pages
 Route::view('/about-us', 'pages.about.index')->name('about');
@@ -61,4 +61,4 @@ Route::get('/category/{category:slug}', [CategoryController::class, 'show'])->na
 Route::get('/brand/{brand:slug}', [BrandController::class, 'show'])->name('brands.show');
 
 // Cart Routes
-Route::post('/carrito/agregar', [CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');

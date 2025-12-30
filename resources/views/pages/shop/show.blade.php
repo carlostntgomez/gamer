@@ -144,7 +144,7 @@
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <button type="submit" formaction="{{ route('cart.add', $product) }}" class="btn add-to-cart ajax-spin-cart">
+                                                    <button type="button" class="btn add-to-cart ajax-spin-cart add-to-cart-ajax" data-product-id="{{ $product->id }}">
                                                         <span class="cart-title">Añadir al carrito</span>
                                                     </button>
                                                 </div>
@@ -251,7 +251,7 @@
                                                                 @endif
                                                             @else
                                                                 <span class="spr-summary-actions">
-                                                                    <a href="{{ route('login') }}" class="spr-summary-actions-newreview">Inicia sesión para escribir una reseña</a>
+                                                                    <span class="spr-summary-actions-newreview">Inicia sesión para escribir una reseña</span>
                                                                 </span>
                                                             @endauth
                                                         </div>
