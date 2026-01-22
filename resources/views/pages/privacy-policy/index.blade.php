@@ -15,7 +15,7 @@
                     <div class="breadcrumb-index">
                         <ul class="breadcrumb-ul">
                             <li class="breadcrumb-li">
-                                <a class="breadcrumb-link" href="{{ route('''home''') }}">Inicio</a>
+                                <a class="breadcrumb-link" href="{{ route('home') }}">Inicio</a>
                             </li>
                             <li class="breadcrumb-li">
                                 <span class="breadcrumb-text">Política de Privacidad</span>
@@ -63,9 +63,9 @@
                         </div>
                         <div class="terms-banner-rules">
                             <div class="banner-wrap">
-                                <div class="banner-bgimg" style="background-image: url('''{{ asset('''img/policy/Privacy-policy.jpg''') }}''');"></div>
+                                <div class="banner-bgimg" style="background-image: url('{{ asset('img/policy/Privacy-policy.jpg') }}');"></div>
                                 <div class="banner-img" data-animate="animate__fadeInUp">
-                                    <img src="{{ asset('''img/policy/Privacy-policy.jpg''') }}" class="img-fluid" alt="Política de Privacidad">
+                                    <img src="{{ asset('img/policy/Privacy-policy.jpg') }}" class="img-fluid" alt="Política de Privacidad">
                                 </div>
                             </div>
                             <div class="rules-wrap">

@@ -25,6 +25,7 @@ class OrderItemFactory extends Factory
 
         return [
             'product_id' => $product->id,
+            'name' => $product->name,
             'quantity' => $quantity,
             'price' => $product->price, // Use product's current price
         ];

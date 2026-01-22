@@ -20,12 +20,12 @@ class UserResource extends Resource
     protected static ?string $model = User::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
-    protected static ?string $navigationGroup = 'CRM';
+    protected static ?string $navigationGroup = 'Administration';
     protected static ?string $recordTitleAttribute = 'name';
     protected static ?int $navigationSort = 1;
-    protected static ?string $modelLabel = 'Cliente';
-    protected static ?string $pluralModelLabel = 'Clientes';
-    protected static ?string $navigationLabel = 'Clientes';
+    protected static ?string $modelLabel = 'Usuario';
+    protected static ?string $pluralModelLabel = 'Usuarios';
+    protected static ?string $navigationLabel = 'Usuarios';
 
     public static function form(Form $form): Form
     {
@@ -66,9 +66,9 @@ class UserResource extends Resource
                                 ->tel(),
                             Forms\Components\Toggle::make('marketing_opt_in')
                                 ->label('Suscrito a Marketing')
-                                ->helperText('Indica si el cliente acepta recibir correos de marketing.'),
+                                ->helperText('Indica si el usuario acepta recibir correos de marketing.'),
                             Forms\Components\RichEditor::make('customer_notes')
-                                ->label('Notas Internas del Cliente')
+                                ->label('Notas Internas del Usuario')
                                 ->columnSpanFull(),
                         ])->columns(1),
                 ])->columnSpanFull(),
@@ -108,9 +108,9 @@ class UserResource extends Resource
                     ->label('Suscrito a Marketing'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->iconButton()->color('gray')->tooltip('Ver detalles del cliente'),
-                Tables\Actions\EditAction::make()->iconButton()->color('warning')->tooltip('Editar cliente'),
-                Tables\Actions\DeleteAction::make()->iconButton()->color('danger')->tooltip('Eliminar cliente'),
+                Tables\Actions\ViewAction::make()->iconButton()->color('gray')->tooltip('Ver detalles del usuario'),
+                Tables\Actions\EditAction::make()->iconButton()->color('warning')->tooltip('Editar usuario'),
+                Tables\Actions\DeleteAction::make()->iconButton()->color('danger')->tooltip('Eliminar usuario'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -123,7 +123,7 @@ class UserResource extends Resource
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist->schema([
-            Infolists\Components\Section::make('Información del Cliente')->schema([
+            Infolists\Components\Section::make('Información del Usuario')->schema([
                 Infolists\Components\TextEntry::make('name')->label('Nombre')->weight('bold'),
                 Infolists\Components\TextEntry::make('email')->label('Correo Electrónico')->icon('heroicon-o-envelope'),
                 Infolists\Components\TextEntry::make('phone')->label('Teléfono')->icon('heroicon-o-phone'),

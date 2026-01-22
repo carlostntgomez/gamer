@@ -12,7 +12,6 @@ class TopCategory extends Model
     protected $fillable = [
         'category_id',
         'sort_order',
-        'image',
     ];
 
     public function category()

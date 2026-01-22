@@ -4,70 +4,56 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Review extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
-        'user_id',
-        'product_id',
-        'rating',
-        'title',
-        'comment',
-        'is_approved',
+        'product_id', 
+        'user_id', 
+        'guest_name', 
+        'guest_email', 
+        'rating', 
+        'title', 
+        'comment', 
+        'is_approved'
     ];
 
     /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
+     * Obtiene el producto asociado a la reseña.
      */
-    protected $casts = [
-        'is_approved' => 'boolean',
-    ];
-
-    /**
-     * Get the product that the review belongs to.
-     */
-    public function product(): BelongsTo
+    public function product()
     {
         return $this->belongsTo(Product::class);
     }
 
     /**
-     * Get the user who wrote the review.
+     * Obtiene el usuario que escribió la reseña (si está registrado).
      */
-    public function user(): BelongsTo
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
 
     /**
-     * Generates the HTML for the star rating display.
-     *
-     * @return string
+     * Devuelve el HTML de las estrellas de calificación.
      */
-    public function getStarRatingHtml(): string
+    public function getStarRatingHtml()
     {
-        $html = '<span class="pro-ratting">';
-        $rating = $this->rating;
-
+        $html = '';
         for ($i = 1; $i <= 5; $i++) {
-            if ($i <= $rating) {
-                $html .= '<i class="fas fa-star"></i>';
-            } else {
-                $html .= '<i class="far fa-star"></i>';
-            }
+            $html .= $i <= $this->rating ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
         }
-
-        $html .= '</span>';
         return $html;
+    }
+
+    /**
+     * Accesor para obtener el nombre del autor de la reseña.
+     * Devolverá el nombre del usuario si está registrado, o el nombre de invitado en caso contrario.
+     */
+    public function getAuthorNameAttribute()
+    {
+        return $this->user ? $this->user->name : $this->guest_name;
     }
 }

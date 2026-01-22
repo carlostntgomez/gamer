@@ -9,9 +9,9 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Tabs;
+use Illuminate\Support\Str;
 
 class MainSliderResource extends Resource
 {
@@ -20,88 +20,93 @@ class MainSliderResource extends Resource
     protected static ?string $modelLabel = 'Slider Principal';
     protected static ?string $pluralModelLabel = 'Sliders Principales';
     protected static ?string $navigationLabel = 'Sliders Principales';
-
     protected static ?string $navigationIcon = 'heroicon-o-photo';
-
     protected static ?string $navigationGroup = 'Home';
+    protected static ?int $navigationSort = 1;
+
 
     public static function form(Form $form): Form
     {
-        $saveImageLogic = function ($state): ?string {
-            if (!$state instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
-                return $state; // Keep existing path if not changed
-            }
-
-            $storagePath = storage_path('app/public/main-slider');
-            if (!File::isDirectory($storagePath)) {
-                File::makeDirectory($storagePath, 0755, true, true);
-            }
-
-            $originalName = $state->getClientOriginalName();
-            $newFileName = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '-' . uniqid() . '.webp';
-            $destinationPath = $storagePath . '/' . $newFileName;
-
-            try {
-                $sourcePath = $state->getRealPath();
-                $image = imagecreatefromstring(File::get($sourcePath));
-
-                if ($image === false) return null;
-
-                imagepalettetotruecolor($image);
-                imagealphablending($image, true);
-                imagesavealpha($image, true);
-                imagewebp($image, $destinationPath, 80); // 80 is quality
-                imagedestroy($image);
-
-                return 'main-slider/' . $newFileName;
-
-            } catch (\Exception $e) {
-                // Optionally log the error
-                return null;
-            }
-        };
-
         return $form
             ->schema([
-                Section::make('Contenido de Texto')->schema([
-                    Forms\Components\TextInput::make('title')
-                        ->label('Título')
-                        ->required()
-                        ->maxLength(255),
-                    Forms\Components\RichEditor::make('subtitle')
-                        ->label('Subtítulo')
-                        ->required()
-                        ->maxLength(255),
-                ])->columns(1),
+                Tabs::make('Tabs')
+                    ->tabs([
+                        Tabs\Tab::make('Contenido y Ajustes')
+                            ->icon('heroicon-o-pencil-square')
+                            ->schema([
+                                Section::make('Contenido del Slider')
+                                    ->schema([
+                                        Forms\Components\RichEditor::make('subtitle')
+                                            ->label('Título')
+                                            ->required()
+                                            ->maxLength(65535)
+                                            ->helperText('Recomendación: Usa un título corto y utiliza el formato H2 para una mejor visualización.'),
 
-                Section::make('Imágenes')->schema([
-                    Forms\Components\FileUpload::make('image_path')
-                        ->label('Imagen de Escritorio')
-                        ->required()
-                        ->image()
-                        ->helperText('La imagen debe tener un tamaño mínimo de 1920x930 píxeles. Se convertirá a WebP.')
-                        ->imageEditor()
-                        ->imageEditorAspectRatios(['64:31'])
-                        ->rules(['dimensions:min_width=1920,min_height=930'])
-                        ->dehydrateStateUsing($saveImageLogic),
-                    Forms\Components\FileUpload::make('image_path_mobile')
-                        ->label('Imagen Móvil')
-                        ->image()
-                        ->helperText('La imagen debe tener un tamaño mínimo de 360x430 píxeles. Se convertirá a WebP.')
-                        ->imageEditor()
-                        ->imageEditorAspectRatios(['36:43'])
-                        ->rules(['dimensions:min_width=360,min_height=430'])
-                        ->dehydrateStateUsing($saveImageLogic),
-                ])->columns(2),
+                                        Forms\Components\TextInput::make('title')
+                                            ->label('Subtítulo')
+                                            ->required()
+                                            ->maxLength(255)
+                                            ->helperText('El texto secundario que complementa al título principal.'),
+                                    ])->columns(1),
 
-                Section::make('Botón de Acción')->schema([
-                    Forms\Components\TextInput::make('button_text')
-                        ->label('Texto del Botón')
-                        ->maxLength(255),
-                    Forms\Components\TextInput::make('button_link')
-                        ->label('Enlace del Botón')
-                        ->maxLength(255),
-                ])->columns(2),
+                                Section::make('Botón de Acción')
+                                    ->schema([
+                                        Forms\Components\TextInput::make('button_text')
+                                            ->label('Texto del Botón')
+                                            ->maxLength(255)
+                                            ->helperText('El texto que aparecerá en el botón (ej. \'Ver más\').'),
+
+                                        Forms\Components\TextInput::make('button_link')
+                                            ->label('Enlace del Botón')
+                                            ->maxLength(255)
+                                            ->helperText('La URL a la que redirigirá el botón (ej. \'/productos\').'),
+                                    ])->columns(2),
+
+                                Section::make('Estado')
+                                    ->schema([
+                                        Forms\Components\Toggle::make('is_visible')
+                                            ->label('Visible')
+                                            ->default(true)
+                                            ->helperText('Controla si el slider se muestra en la página principal.'),
+                                    ]),
+                            ]),
+
+                        Tabs\Tab::make('Imágenes')
+                            ->icon('heroicon-o-photo')
+                            ->schema([
+                                Forms\Components\FileUpload::make('image_path')
+                                    ->label('Imagen de Escritorio')
+                                    ->required()
+                                    ->image()
+                                    ->rules(['dimensions:min_width=1920,min_height=930'])
+                                    ->validationMessages([
+                                        'dimensions' => 'La imagen debe tener un tamaño mínimo de 1920x930 píxeles.',
+                                    ])
+                                    ->helperText('Resolución obligatoria: 1920x930px.')
+                                    ->imageEditor()
+                                    ->imageEditorAspectRatios(['1920:930'])
+                                    ->imageEditorViewportWidth('1920')
+                                    ->imageEditorViewportHeight('930')
+                                    ->directory('temp-uploads')
+                                    ->disk('public'),
+
+                                Forms\Components\FileUpload::make('image_path_mobile')
+                                    ->label('Imagen para Móvil')
+                                    ->image()
+                                    ->rules(['dimensions:min_width=600,min_height=470'])
+                                    ->validationMessages([
+                                        'dimensions' => 'La imagen debe tener un tamaño mínimo de 600x470 píxeles.',
+                                    ])
+                                    ->helperText('Resolución obligatoria: 600x470px.')
+                                    ->imageEditor()
+                                    ->imageEditorAspectRatios(['600:470'])
+                                    ->imageEditorViewportWidth('600')
+                                    ->imageEditorViewportHeight('470')
+                                    ->directory('temp-uploads')
+                                    ->disk('public'),
+                            ])->columns(2),
+                    ])->columnSpanFull(),
+
             ]);
     }
 
@@ -109,16 +114,22 @@ class MainSliderResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('title')
-                    ->label('Título')
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('subtitle')
+                    ->label('Título')
+                    ->html()
+                    ->limit(50)
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('title')
                     ->label('Subtítulo')
-                    ->html(),
+                    ->searchable(),
                 Tables\Columns\ImageColumn::make('image_path')
-                    ->label('Imagen de Escritorio'),
+                    ->label('Imagen de Escritorio')
+                    ->height(80),
                 Tables\Columns\ImageColumn::make('image_path_mobile')
-                    ->label('Imagen Móvil'),
+                    ->label('Imagen Móvil')
+                    ->height(80),
+                Tables\Columns\ToggleColumn::make('is_visible')
+                    ->label('Visible'),
             ])
             ->filters([
                 //

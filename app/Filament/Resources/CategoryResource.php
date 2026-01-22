@@ -14,7 +14,6 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Tabs;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Forms\Components\Actions;
@@ -81,9 +80,8 @@ PROMPT;
                         ];
 
                         try {
-                            /** @var \Illuminate\Http\Client\Response $response */
                             $response = Http::withHeaders(['Content-Type' => 'application/json'])
-                                ->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey, [
+                                ->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $apiKey, [
                                     'contents' => [
                                         ['parts' => [
                                             ['text' => $prompt]
@@ -201,17 +199,25 @@ PROMPT;
                         ->schema([
                              FileUpload::make('image_path')
                                 ->label('Imagen Principal')
-                                ->directory('categories')
+                                ->directory('temp-uploads')
                                 ->disk('public')
-                                ->image()->imageEditor()
-                                ->getUploadedFileNameForStorageUsing(self::getFileName('image')),
+                                ->image()
+                                ->imageEditor()
+                                ->imageCropAspectRatio('1:1')
+                                ->imageResizeTargetWidth('512')
+                                ->imageResizeTargetHeight('512')
+                                ->helperText('Requerido. El editor forzará un recorte a 512x512 píxeles.'),
 
                             FileUpload::make('banner_path')
                                 ->label('Banner de la Categoría')
-                                ->directory('categories')
+                                ->directory('temp-uploads')
                                 ->disk('public')
-                                ->image()->imageEditor()
-                                ->getUploadedFileNameForStorageUsing(self::getFileName('banner')),
+                                ->image()
+                                ->imageEditor()
+                                ->imageCropAspectRatio('1410:365')
+                                ->imageResizeTargetWidth('1410')
+                                ->imageResizeTargetHeight('365')
+                                ->helperText('Opcional. El editor forzará un recorte a 1410x365 píxeles.'),
                         ])->columns(2),
                 ])
                 ->columnSpanFull(),
@@ -304,16 +310,6 @@ PROMPT;
         return [
             'index' => Pages\ListCategories::route('/'),
         ];
-    }
-
-    private static function getFileName(string $context): callable
-    {
-        return function (TemporaryUploadedFile $file, callable $get) use ($context): string {
-            $name = $get('name');
-            $slug = !empty($name) ? Str::slug($name) : pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $finalSlug = $context === 'banner' ? $slug . '-banner' : $slug;
-            return (string) str($finalSlug)->append('-' . uniqid() . '.webp');
-        };
     }
     
     public static function getModalWidth(): string

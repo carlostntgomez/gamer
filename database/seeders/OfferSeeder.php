@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Offer;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -13,39 +12,34 @@ class OfferSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Define paths
-        $sourcePath = public_path('imagenes de muestra/offers');
-        $destinationDir = 'offers'; // Relative to the public disk
+        $this->command->info('Iniciando el seeder de Ofertas...');
 
-        // 2. Ensure the destination directory exists and is clean
-        $this->command->info('Limpiando y preparando el directorio de ofertas...');
-        Storage::disk('public')->deleteDirectory($destinationDir);
-        Storage::disk('public')->makeDirectory($destinationDir);
-        $storagePath = Storage::disk('public')->path($destinationDir);
-
-        // 3. Check if the source directory exists
-        if (!File::isDirectory($sourcePath)) {
-            Log::warning('El directorio de imágenes de muestra para ofertas no existe: ' . $sourcePath);
-            $this->command->warn('Source images directory for offers not found. Seeder will not run.');
-            return;
-        }
-
-        // 4. Get image files
-        $images = File::files($sourcePath);
-        if (count($images) < 2) {
-            $this->command->warn('No se encontraron suficientes imágenes en el directorio de muestra de ofertas (se requieren 2). El seeder no se ejecutará.');
-            return;
-        }
-
-        // 5. Truncate the table to start fresh
+        // 1. Limpieza inicial
         Offer::truncate();
+        Storage::disk('public')->deleteDirectory('offers');
+        Storage::disk('public')->makeDirectory('offers');
+        
+        $tempDir = 'temp-uploads/seeder-offers';
+        Storage::disk('public')->deleteDirectory($tempDir);
+        Storage::disk('public')->makeDirectory($tempDir);
 
-        // 6. Define the offers data
-        $offersData = [
+        $sourceImagePath = public_path('imagenes de muestra/offers');
+        if (!File::isDirectory($sourceImagePath)) {
+            $this->command->warn('Directorio de imágenes de muestra para ofertas no encontrado. Seeder omitido.');
+            return;
+        }
+
+        $images = File::files($sourceImagePath);
+        if (count($images) < 2) {
+            $this->command->warn('No se encontraron suficientes imágenes de muestra para las ofertas (se requieren 2).');
+            return;
+        }
+
+        $offers = [
             [
                 'title' => '25% de descuento',
                 'subtitle' => 'En monitores y accesorios seleccionados',
-                'image_file' => $images[0], // Temporary store file info
+                'image_name' => $images[0]->getFilename(),
                 'cta_text' => 'Comprar ahora',
                 'cta_link' => '#/tienda',
                 'is_active' => true,
@@ -53,60 +47,41 @@ class OfferSeeder extends Seeder
             [
                 'title' => 'Audio Inmersivo',
                 'subtitle' => 'Siente cada detalle con nuestros audífonos gamer',
-                'image_file' => $images[1],
+                'image_name' => $images[1]->getFilename(),
                 'cta_text' => 'Descubrir',
                 'cta_link' => '#/tienda',
                 'is_active' => true,
             ],
         ];
 
-        // 7. Process images and create offers
-        $this->command->info('Creando ofertas y procesando imágenes...');
-        foreach ($offersData as $data) {
-            $imageDbPath = $this->processAndSaveImage($data['image_file'], $data['title'], $storagePath);
-
-            if ($imageDbPath) {
-                $offerToCreate = [
-                    'title' => $data['title'],
-                    'subtitle' => $data['subtitle'],
-                    'image' => $imageDbPath,
-                    'cta_text' => $data['cta_text'],
-                    'cta_link' => $data['cta_link'],
-                    'is_active' => $data['is_active'],
-                ];
-                
-                Offer::create($offerToCreate);
-                $this->command->line("  - Oferta '{$data['title']}' creada con imagen '{$imageDbPath}'.");
-            }
-        }
-
-        $this->command->info('Seeder de ofertas ejecutado correctamente.');
-    }
-
-    private function processAndSaveImage(\SplFileInfo $imageFile, string $title, string $storagePath): ?string
-    {
-        $sourcePath = $imageFile->getRealPath();
-        $newFileName = Str::slug($title) . '-' . uniqid() . '.webp';
-        $destinationPath = $storagePath . '/' . $newFileName;
-
-        try {
-            $image = imagecreatefromstring(File::get($sourcePath));
-            if ($image === false) {
-                $this->command->warn("No se pudo crear el recurso de imagen desde: {$sourcePath}.");
-                return null;
+        foreach ($offers as $offerData) {
+            // 2. Simular la subida de archivos copiando la imagen de muestra a una ruta temporal
+            $sourceFile = $sourceImagePath . '/' . $offerData['image_name'];
+            if (!File::exists($sourceFile)) {
+                $this->command->warn("No se encontró la imagen de muestra: {$sourceFile}");
+                continue;
             }
 
-            imagepalettetotruecolor($image);
-            imagealphablending($image, true);
-            imagesavealpha($image, true);
-            imagewebp($image, $destinationPath, 80);
-            imagedestroy($image);
+            $tempFileName = Str::random(40) . '.' . pathinfo($offerData['image_name'], PATHINFO_EXTENSION);
+            $tempFilePath = $tempDir . '/' . $tempFileName;
             
-            return 'offers/' . $newFileName;
+            Storage::disk('public')->put($tempFilePath, File::get($sourceFile));
+            
+            // Prepara los datos para la creación, usando la ruta temporal
+            $dataToCreate = [
+                'title' => $offerData['title'],
+                'subtitle' => $offerData['subtitle'],
+                'image_path' => $tempFilePath, // <-- La clave es usar la ruta temporal
+                'cta_text' => $offerData['cta_text'],
+                'cta_link' => $offerData['cta_link'],
+                'is_active' => $offerData['is_active'],
+            ];
 
-        } catch (\Exception $e) {
-            $this->command->warn("No se pudo procesar la imagen: {$sourcePath}. Error: " . $e->getMessage());
-            return null;
+            // 3. Crear el modelo. El Observer se encargará del resto.
+            Offer::create($dataToCreate);
+            $this->command->info("Oferta '{$offerData['title']}' creada. El observer procesará la imagen.");
         }
+
+        $this->command->info('Seeder de Ofertas finalizado con éxito.');
     }
 }

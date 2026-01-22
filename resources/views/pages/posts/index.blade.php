@@ -51,7 +51,7 @@
                                         <div class="sidbar-inner sidbar-inner-wrap">
                                             <div class="post-image">
                                                 <a href="{{ route('posts.show', $recentPost) }}" class="banner-img">
-                                                    <img src="{{ Storage::url($recentPost->image_path) }}" class="img-fluid" alt="{{ $recentPost->title }}">
+                                                    <img src="{{ $recentPost->main_image_url }}" class="img-fluid" alt="{{ $recentPost->title }}">
                                                 </a>
                                             </div>
                                             <div class="recent-blog-content">
@@ -88,7 +88,7 @@
                                             <div class="blog-post">
                                                 <div class="blog-img">
                                                     <a href="{{ route('posts.show', $post) }}" class="banner-img">
-                                                        <img src="{{ Storage::url($post->image_path) }}" class="img-fluid" alt="{{ $post->title }}">
+                                                        <img src="{{ $post->main_image_url }}" class="img-fluid" alt="{{ $post->title }}">
                                                         <span class="blog-icon">
                                                             <i class="fas fa-paperclip"></i>
                                                         </span>

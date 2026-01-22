@@ -2,55 +2,100 @@
 
 namespace Database\Seeders;
 
-use App\Models\Product;
-use App\Models\Review;
-use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Schema; // <--- AÑADIDO
+use App\Models\Product;
+use App\Models\User;
+use App\Models\Review;
+use Faker\Factory as Faker;
+use Illuminate\Support\Facades\DB;
 
 class ReviewSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $this->command->info('Iniciando el seeder de reseñas mejorado...');
+        $this->command->info('--- Iniciando Seeder de Reseñas (Versión Corregida) ---');
 
-        // 1. Limpieza inicial de la tabla de reseñas (de forma agnóstica a la BD)
-        Schema::disableForeignKeyConstraints();
-        Review::truncate();
-        Schema::enableForeignKeyConstraints();
-        $this->command->info('Tabla de reseñas limpiada.');
+        $this->command->comment('Limpiando la tabla de reseñas...');
+        // Usar DB::table para asegurar que funciona aunque el modelo tenga inconsistencias
+        DB::table('reviews')->truncate();
 
-        // 2. Obtener todos los productos y usuarios
         $products = Product::all();
-        $userIds = User::pluck('id')->all();
+        $users = User::all();
+        $faker = Faker::create('es_ES'); // Usar Faker en español para más realismo
 
-        if ($products->isEmpty() || empty($userIds)) {
-            $this->command->error('No se puede ejecutar el ReviewSeeder. No se encontraron productos o usuarios.');
+        if ($products->isEmpty()) {
+            $this->command->error('No hay productos en la base de datos para asignar reseñas. Abortando.');
             return;
         }
 
-        $this->command->info("Se encontraron {" . $products->count() . "} productos y " . count($userIds) . " usuarios. Generando 1-2 reseñas para cada producto.");
+        $reviewCount = 150;
+        $this->command->comment("Creando {$reviewCount} reseñas falsas...");
 
-        // 3. Crear reseñas para cada producto con una barra de progreso
-        $this->command->withProgressBar($products, function ($product) use ($userIds) {
-            // Número aleatorio de reseñas a crear (entre 1 y 2)
-            $numberOfReviews = rand(1, 2);
-            
-            // Mezcla los usuarios y toma un grupo único para este producto
-            $shuffledUserIds = collect($userIds)->shuffle();
-            $reviewers = $shuffledUserIds->take($numberOfReviews);
+        for ($i = 0; $i < $reviewCount; $i++) {
+            $product = $products->random();
+            $isGuest = rand(0, 2) === 0; // 33% de probabilidad de ser un invitado
 
-            foreach ($reviewers as $userId) {
-                Review::factory()->create([
-                    'product_id' => $product->id,
-                    'user_id' => $userId,
-                ]);
+            $rating = $this->generateRealisticRating();
+            [$title, $content] = $this->generateReviewContent($rating, $faker, $product->name);
+
+            $reviewData = [
+                'product_id' => $product->id,
+                'rating' => $rating,
+                'title' => $title,
+                'content' => $content, // <-- CORRECCIÓN: 'content' en lugar de 'comment'
+                'is_approved' => rand(0, 5) !== 0, // ~83% de probabilidad de ser aprobada
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+            if ($isGuest || $users->isEmpty()) {
+                $reviewData['guest_name'] = $faker->name;
+                $reviewData['guest_email'] = $faker->safeEmail;
+            } else {
+                $reviewData['user_id'] = $users->random()->id;
             }
-        });
+            
+            // Insertar directamente en la tabla para evitar problemas con el modelo Fillable
+            DB::table('reviews')->insert($reviewData);
+        }
 
-        $this->command->info('\n\nSeeder de reseñas mejorado finalizado con éxito. Cada producto ahora tiene 1 o 2 reseñas.');
+        $this->command->info("--- Seeder de Reseñas finalizado con éxito. Se crearon {$reviewCount} reseñas. ---");
+    }
+
+    private function generateRealisticRating(): int
+    {
+        $rand = rand(1, 100);
+        if ($rand <= 5) return 1;      // 5% de 1 estrella
+        if ($rand <= 10) return 2;     // 5% de 2 estrellas
+        if ($rand <= 25) return 3;     // 15% de 3 estrellas
+        if ($rand <= 60) return 4;     // 35% de 4 estrellas
+        return 5;                      // 40% de 5 estrellas
+    }
+
+    private function generateReviewContent(int $rating, \Faker\Generator $faker, string $productName): array
+    {
+        switch ($rating) {
+            case 1:
+                $title = $faker->randomElement(['Decepcionante', 'Producto defectuoso', 'No funciona', 'Mala calidad', 'No lo recomiendo']);
+                $content = "No estoy nada contento con {$productName}. " . $faker->sentence(20, true);
+                break;
+            case 2:
+                $title = $faker->randomElement(['Podría ser mejor', 'No cumple expectativas', 'Calidad regular']);
+                $content = "Esperaba más de {$productName}. " . $faker->sentence(25, true);
+                break;
+            case 3:
+                $title = $faker->randomElement(['Aceptable', 'Regular', 'Cumple su función', 'Ni fu ni fa']);
+                $content = "Es un producto promedio. Ni bueno ni malo, simplemente cumple. " . $faker->sentence(30, true);
+                break;
+            case 4:
+                $title = $faker->randomElement(['Muy bueno', 'Recomendado', 'Buena compra', 'Satisfecho con el producto']);
+                $content = "Estoy muy satisfecho con la compra de {$productName}. Lo recomiendo sin dudarlo. " . $faker->sentence(35, true);
+                break;
+            default:
+                $title = $faker->randomElement(['¡Excelente!', '¡Fantástico!', 'La mejor compra que he hecho', 'Superó todas mis expectativas']);
+                $content = "¡Una maravilla! {$productName} es simplemente increíble. ¡Totalmente recomendado a todo el mundo! " . $faker->sentence(30, true);
+                break;
+        }
+        return [$title, $content];
     }
 }

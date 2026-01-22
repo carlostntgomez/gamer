@@ -13,7 +13,7 @@
                             <ul class="ftlist-ul">
                                 <li class="ftlist-li">
                                     <div class="footer-logo">
-                                        <a href="/" class="theme-logo">
+                                        <a href="{{ route('home') }}" class="theme-logo">
                                             <img src="{{ asset('img/logo/footer8-logo.png') }}" class="img-fluid" alt="footer-logo">
                                         </a>
                                     </div>
@@ -106,28 +106,28 @@
                                     </a>
                                     <ul class="ftlink-ul collapse" id="footer-extras">
                                         <li class="ftlink-li">
-                                            <a href="{{ route('contact') }}">Contáctanos</a>
+                                            <a href="{{ route('contact.index') }}">Contáctanos</a>
                                         </li>
                                         <li class="ftlink-li">
-                                            <a href="{{ route('about') }}">Sobre nosotros</a>
+                                            <a href="{{ route('about.index') }}">Sobre nosotros</a>
                                         </li>
                                         <li class="ftlink-li">
-                                            <a href="{{ route('faq') }}">Preguntas frecuentes</a>
+                                            <a href="{{ route('faq.index') }}">Preguntas frecuentes</a>
                                         </li>
                                         <li class="ftlink-li">
-                                            <a href="{{ route('payment-policy') }}">Políticas de Pago</a>
+                                            <a href="{{ route('payment-policy.index') }}">Políticas de Pago</a>
                                         </li>
                                         <li class="ftlink-li">
-                                            <a href="{{ route('privacy-policy') }}">Política de Privacidad</a>
+                                            <a href="{{ route('privacy-policy.index') }}">Política de Privacidad</a>
                                         </li>
                                         <li class="ftlink-li">
-                                            <a href="{{ route('return-policy') }}">Política de Devoluciones</a>
+                                            <a href="{{ route('return-policy.index') }}">Política de Devoluciones</a>
                                         </li>
                                         <li class="ftlink-li">
-                                            <a href="{{ route('shipping-policy') }}">Política de Envíos</a>
+                                            <a href="{{ route('shipping-policy.index') }}">Política de Envíos</a>
                                         </li>
                                         <li class="ftlink-li">
-                                            <a href="{{ route('terms-condition') }}">Términos y Condiciones</a>
+                                            <a href="{{ route('terms-condition.index') }}">Términos y Condiciones</a>
                                         </li>
                                     </ul>
                                 </li>
@@ -174,30 +174,6 @@
                     <ul class="ft-copryright-ul">
                         <li class="ft-copryright-li ft-copyright-text">
                              <p>{{ $settings['copyright_text']->value ?? 'Copyright 2025 ecommerce by spacingtech' }}</p>
-                        </li>
-                        <li class="ft-copryright-li ft-payment">
-                            <ul class="payment-icon">
-                               <li>
-                                    <a href="/">
-                                        <img src="{{ asset('img/payment/home5-pay1.png') }}" class="img-fluid" alt="pay6">
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="/">
-                                        <img src="{{ asset('img/payment/home5-pay2.png') }}" class="img-fluid" alt="pay5">
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="/">
-                                        <img src="{{ asset('img/payment/home5-pay3.png') }}" class="img-fluid" alt="pay4">
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="/">
-                                        <img src="{{ asset('img/payment/home5-pay4.png') }}" class="img-fluid" alt="pay2">
-                                    </a>
-                                </li>
-                            </ul>
                         </li>
                     </ul>
                 </div>

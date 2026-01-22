@@ -7,25 +7,21 @@
                 <div class="row">
                     <div class="col">
                         <div class="breadcrumb-index">
-                            <!-- breadcrumb-list start -->
                             <ul class="breadcrumb-ul">
                                 <li class="breadcrumb-li">
-                                    <a class="breadcrumb-link" href="/">Inicio</a>
-                                </li>
-                                <li class="breadcrumb-li">
-                                    <a class="breadcrumb-link" href="{{ route('shop.index') }}">Tienda</a>
+                                    <a class="breadcrumb-link" href="{{ route('home') }}">Inicio</a>
                                 </li>
                                 <li class="breadcrumb-li">
                                     <span class="breadcrumb-text">Búsqueda</span>
                                 </li>
                             </ul>
-                            <!-- breadcrumb-list end -->
                         </div>
                     </div>
                 </div>
             </div>
         </section>
         <!-- breadcrumb end -->
+        
         <!-- search section start -->
         <section class="search-page bg-color section-ptb">
             <div class="container">
@@ -42,6 +38,7 @@
                                 <button type="submit" class="search-btn"><i class="fa-solid fa-magnifying-glass"></i></button>
                             </form>
                         </div>
+                        
                         <!-- special-product start -->
                         <div class="special-product grid-3">
                             <div class="collection-category">
@@ -49,19 +46,21 @@
                                     <div class="col">
                                         <div class="collection-wrap">
                                             @if($products->count() > 0)
-                                            <ul class="product-view-ul">
-                                                @foreach($products as $product)
-                                                    <x-product-card :product="$product" />
-                                                @endforeach
-                                            </ul>
+                                                <ul class="product-view-ul">
+                                                    @foreach($products as $product)
+                                                        <li class="pro-item-li" data-animate="animate__fadeInUp">
+                                                            <x-product-card :product="$product" />
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
                                             @else
-                                            <div class="text-center">
-                                                <p>No se encontraron productos que coincidan con tu búsqueda.</p>
-                                            </div>
+                                                <div class="text-center py-5">
+                                                    <p>No se encontraron productos que coincidan con tu búsqueda.</p>
+                                                </div>
                                             @endif
                                         </div>
                                         <div class="paginatoin-area">
-                                             {{ $products->appends(['query' => $query])->links('vendor.pagination.bootstrap-5') }}
+                                            {{ $products->appends(['query' => $query])->links('vendor.pagination.bootstrap-5') }}
                                         </div>
                                     </div>
                                 </div>

@@ -73,6 +73,11 @@
                                 <div class="pro-nprist">
                                     <div class="product-info">
                                         <div class="product-title"><h2>{{ $product->name }}</h2></div>
+                                        @if($product->brand)
+                                        <div class="product-brand mt-1">
+                                            <span style="font-size: 14px;">Marca: <a href="{{ route('brands.show', $product->brand) }}" class="text-primary">{{ $product->brand->name }}</a></span>
+                                        </div>
+                                        @endif
                                     </div>
                                     <div class="product-info">
                                         <div class="product-ratting">
@@ -155,18 +160,6 @@
                                         </form>
                                     </div>
                                     <div class="product-info">
-                                        <div class="product-actions">
-                                            <div class="pro-aff-che">
-                                                <a href="#" class="wishlist">
-                                                    <span class="wishlist-icon action-wishlist tile-actions--btn wishlist-btn">
-                                                        <span class="add-wishlist"><i class="bi bi-heart"></i></span>
-                                                    </span>
-                                                    <span class="wishlist-text">Lista de deseos</span>
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="product-info">
                                         <div class="form-group">
                                             <a href="#" data-bs-toggle="modal" data-bs-target="#deliver-modal">Envío y devoluciones</a>
                                             <a href="#" data-bs-toggle="modal" data-bs-target="#que-modal">Haz una pregunta</a>
@@ -201,10 +194,10 @@
                                                 <table>
                                                     <tbody>
                                                         @if(is_array($product->specifications))
-                                                            @foreach($product->specifications as $specKey => $specValue)
+                                                            @foreach($product->specifications as $spec)
                                                                 <tr class="product-info">
-                                                                    <th>{{ $specKey }}</th>
-                                                                    <td>{{ $specValue }}</td>
+                                                                    <th>{{ $spec['key'] }}</th>
+                                                                    <td>{{ $spec['value'] }}</td>
                                                                 </tr>
                                                             @endforeach
                                                         @endif
@@ -221,48 +214,20 @@
                                         <div class="collapse" id="collapse-reviews" data-bs-parent="#collapse-tab">
                                             <div id="product-reviews">
                                                 <div class="spr-container">
-                                                    <div class="spr-header">
+                                                    <div class="spr-content">
                                                         <h2 class="spr-header-title">Opiniones de clientes</h2>
-                                                         @if(session('success'))
+                                                        @if(session('success'))
                                                             <div class="alert alert-success mt-3">{{ session('success') }}</div>
                                                         @endif
                                                         @if(session('error'))
                                                             <div class="alert alert-danger mt-3">{{ session('error') }}</div>
                                                         @endif
-                                                        <div class="spr-summary rte">
-                                                            @if ($reviewCount > 0)
-                                                                <span class="spr-summary-starrating">
-                                                                    {!! $product->getStarRatingHtml() !!}
-                                                                </span>
-                                                                <span class="spr-summary-caption">
-                                                                    Basado en {{ $reviewCount }} {{ Str::plural('reseña', $reviewCount) }}
-                                                                </span>
-                                                            @else
-                                                                <span class="spr-summary-caption">Aún no hay reseñas</span>
-                                                            @endif
-                                                            
-                                                            @auth
-                                                                @if(!$hasUserReviewed)
-                                                                <span class="spr-summary-actions">
-                                                                    <a href="#add-review" data-bs-toggle="collapse" class="spr-summary-actions-newreview">
-                                                                        @if($reviewCount > 0) Escribir una reseña @else Sé el primero en escribir una reseña @endif
-                                                                    </a>
-                                                                </span>
-                                                                @endif
-                                                            @else
-                                                                <span class="spr-summary-actions">
-                                                                    <span class="spr-summary-actions-newreview">Inicia sesión para escribir una reseña</span>
-                                                                </span>
-                                                            @endauth
-                                                        </div>
-                                                    </div>
-                                                    <div class="spr-content">
                                                         <div class="spr-reviews">
                                                             @forelse($approvedReviews as $review)
                                                                 <div class="spr-review">
                                                                     <div class="spr-review-header">
                                                                         <h3 class="spr-review-header-title">{{ $review->title }}</h3>
-                                                                        <span class="spr-review-header-byline"><strong>{{ $review->user->name }}</strong> el <strong>{{ $review->created_at->format('d M. Y') }}</strong></span>
+                                                                        <span class="spr-review-header-byline"><strong>{{ $review->user?->name ?? 'Usuario Anónimo' }}</strong> el <strong>{{ $review->created_at->format('d M. Y') }}</strong></span>
                                                                     </div>
                                                                     <div class="spr-review-content">
                                                                         <div class="product-ratting mb-2">{!! $review->getStarRatingHtml() !!}</div>
@@ -270,16 +235,47 @@
                                                                     </div>
                                                                 </div>
                                                             @empty
-                                                                {{-- No reviews message is now in spr-header --}}
+                                                                {{-- This part is left empty as the summary will now handle the 'no reviews' case --}}
                                                             @endforelse
                                                         </div>
-                                                        
+
+                                                        <div class="spr-summary-bottom-wrapper mt-5 text-center">
+                                                            <div class="spr-summary rte">
+                                                                @if ($reviewCount > 0)
+                                                                    <div class="mb-3">
+                                                                        <span class="spr-summary-starrating">
+                                                                            {!! $product->getStarRatingHtml() !!}
+                                                                        </span>
+                                                                        <span class="spr-summary-caption">
+                                                                            Basado en {{ $reviewCount }} {{ Str::plural('reseña', $reviewCount) }}
+                                                                        </span>
+                                                                    </div>
+                                                                @else
+                                                                    <p class="spr-summary-caption">Aún no hay reseñas</p>
+                                                                @endif
+                                                                
+                                                                @auth
+                                                                    @if(!$hasUserReviewed)
+                                                                    <span class="spr-summary-actions">
+                                                                        <button type="button" class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#add-review">
+                                                                            @if($reviewCount > 0) Escribir una reseña @else Sé el primero en escribir una reseña @endif
+                                                                        </button>
+                                                                    </span>
+                                                                    @endif
+                                                                @else
+                                                                    <div class="spr-summary-actions">
+                                                                        {{-- <p>Para escribir una reseña, por favor <a href="{{ route('login') }}">inicia sesión</a>.</p> --}}
+                                                                    </div>
+                                                                @endauth
+                                                            </div>
+                                                        </div>
+
                                                         @auth
                                                             @if(!$hasUserReviewed)
                                                                 <div class="spr-form collapse" id="add-review">
                                                                     <form method="post" action="{{ route('reviews.store', $product) }}" class="new-review-form">
                                                                         @csrf
-                                                                        <h3 class="spr-form-title">Escribe una reseña</h3>
+                                                                        <h3 class="spr-form-title mt-4">Escribe una reseña</h3>
                                                                         <fieldset class="spr-form-review">
                                                                             <div class="spr-form-review-rating">
                                                                                 <label class="spr-form-label">Puntuación</label>
@@ -347,58 +343,60 @@
     </section>
     <!-- pro-detail-page-tab end -->
 
-    <!-- product-tranding start -->
-    @if (isset($related_products) && $related_products->count() > 0)
-    <section class="Trending-product bg-color section-ptb">
-        <div class="collection-category">
-            <div class="container">
-                <div class="row">
-                    <div class="col">
-                        <div class="section-capture">
-                            <div class="section-title">
-                                <span class="sub-title" data-animate="animate__fadeInUp">Explora más</span>
-                                <h2><span data-animate="animate__fadeInUp">Productos Relacionados</span></h2>
-                            </div>
+    <!-- additional-product-section start -->
+    @if (isset($additional_products) && $additional_products->count() > 0)
+    <section class="additional-product bg-color section-ptb">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <div class="section-capture">
+                        <div class="section-title">
+                            <span class="sub-title" data-animate="animate__fadeInUp">Explora más</span>
+                            <h2><span data-animate="animate__fadeInUp">Productos Adicionales</span></h2>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="container">
-                <div class="row">
-                    <div class="col">
-                        <div class="collection-wrap">
-                            <div class="collection-slider swiper" id="Trending-product">
-                                <div class="swiper-wrapper">
-                                    @foreach ($related_products as $related)
-                                    <div class="swiper-slide" data-animate="animate__fadeInUp">
-                                        <x-product-card :product="$related" />
-                                    </div>
-                                    @endforeach
-                                </div>
-                                <div class="collection-button">
-                                    <a href="{{-- Debería ser una ruta a la categoría o tienda --}}" class="btn btn-style2" data-animate="animate__fadeInUp">Ver todos</a>
-                                </div>
-                            </div>
-                            <div class="swiper-buttons">
-                                <div class="swiper-buttons-wrap">
-                                    <button class="swiper-prev swiper-prev-Trending">
-                                        <span><i class="feather-arrow-left"></i></span>
-                                    </button>
-                                    <button class="swiper-next swiper-next-Trending">
-                                        <span><i class="feather-arrow-right"></i></span>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="swiper-dots">
-                                <div class="swiper-pagination swiper-pagination-Trending"></div>
-                            </div>
+                <div class="row gy-4">
+                    @foreach ($additional_products as $additional_product)
+                        <div class="col-lg-4 col-md-6 col-12">
+                            <x-product-card :product="$additional_product" />
                         </div>
-                    </div>
+                    @endforeach
                 </div>
             </div>
         </div>
     </section>
     @endif
-    <!-- product-tranding end -->
+    <!-- additional-product-section end -->
+
+    <!-- related-product-tranding start -->
+    @if (isset($related_products) && $related_products->count() > 0)
+    <section class="Trending-product bg-color section-ptb">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <div class="section-capture">
+                        <div class="section-title">
+                            <span class="sub-title" data-animate="animate__fadeInUp">No te lo pierdas</span>
+                            <h2><span data-animate="animate__fadeInUp">Productos Relacionados</span></h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row gy-4">
+                    @foreach ($related_products as $related)
+                        <div class="col-lg-4 col-md-6 col-12">
+                            <x-product-card :product="$related" />
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </section>
+    @endif
+    <!-- related-product-tranding end -->
 
 </x-layouts.app>

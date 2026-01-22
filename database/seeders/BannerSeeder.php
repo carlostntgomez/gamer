@@ -7,86 +7,116 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class BannerSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->command->info('Starting Banner Seeder with WebP conversion...');
+        $this->command->info('--- Iniciando Seeder de Banners ---');
 
-        // 1. Check for GD library
-        if (!extension_loaded('gd')) {
-            $this->command->error('The GD library extension is required, but it is not enabled.');
+        $this->cleanup();
+
+        $sampleImages = $this->getSampleImages();
+        if (count($sampleImages) < 3) { // Necesitamos al menos 3 imágenes para el caso ideal
+            $this->command->error('Se necesitan al menos 3 imágenes en \'public/imagenes de muestra/banners\'. Abortando.');
             return;
         }
+        $this->command->info(count($sampleImages) . ' imágenes de muestra encontradas.');
 
-        // 2. Cleanup
-        Banner::query()->truncate();
-        $storagePath = storage_path('app/public/banners');
-        if (File::isDirectory($storagePath)) {
-            File::deleteDirectory($storagePath);
-        }
-        File::makeDirectory($storagePath, 0755, true, true);
-        $this->command->info('Cleaned up banners table and directory.');
+        // 3 banners activos (recomendado) + banners inactivos para pruebas.
+        $bannersData = [
+            // --- 3 Banners Activos Recomendados ---
+            [
+                'name' => 'Promoción Especial de Verano',
+                'order' => 10,
+                'is_active' => true, // ACTIVO 1
+                'url' => '/promociones',
+                'starts_at' => Carbon::now()->subWeek(),
+                'expires_at' => Carbon::now()->addMonth(),
+            ],
+            [
+                'name' => 'Nuevos Ingresos: Colección Otoño',
+                'order' => 20,
+                'is_active' => true, // ACTIVO 2
+                'url' => '/novedades',
+                'starts_at' => null,
+                'expires_at' => null,
+            ],
+            [
+                'name' => 'Envío Gratis por 48hs',
+                'order' => 30,
+                'is_active' => true, // ACTIVO 3
+                'url' => '/carrito',
+                'starts_at' => Carbon::now(),
+                'expires_at' => Carbon::now()->addDays(2),
+            ],
 
-        // 3. Get sample images
-        $sampleImagesPath = public_path('imagenes de muestra/banners');
-        if (!File::exists($sampleImagesPath)) {
-            $this->command->error('Sample images directory not found: ' . $sampleImagesPath);
-            return;
-        }
-        $sampleImages = File::files($sampleImagesPath);
-        if (empty($sampleImages)) {
-            $this->command->warn('No sample images found in ' . $sampleImagesPath);
-            return; // Salir si no hay imágenes
-        }
-
-        // 4. Create Banner entries with specific images
-        $bannerData = [
-            ['name' => 'Banner Principal 1', 'order' => 1],
-            ['name' => 'Banner Secundario 2', 'order' => 2],
-            ['name' => 'Banner de Promoción 3', 'order' => 3],
+            // --- Banners Inactivos Adicionales para Pruebas ---
+            [
+                'name' => 'Liquidación de Invierno (Inactiva)',
+                'order' => 40,
+                'is_active' => false, // Inactivo por toggle
+                'url' => '/liquidacion',
+                'starts_at' => null,
+                'expires_at' => null,
+            ],
+            [
+                'name' => 'Próximamente: Black Friday (Inactivo)',
+                'order' => 50,
+                'is_active' => false, // Inactivo, para ser activado en el futuro
+                'url' => '#',
+                'starts_at' => Carbon::now()->addMonth(),
+                'expires_at' => Carbon::now()->addMonth()->addDays(5),
+            ],
+            [
+                'name' => 'Oferta Flash (Expirada y Archivada)',
+                'order' => 60,
+                'is_active' => false, // Inactivo porque ya terminó
+                'url' => '/archivo-ofertas',
+                'starts_at' => Carbon::now()->subMonths(2),
+                'expires_at' => Carbon::now()->subMonth(),
+            ],
         ];
 
-        foreach ($sampleImages as $index => $sampleImage) {
-            if (!isset($bannerData[$index])) continue; // Evita errores si hay más imágenes que datos
+        $this->command->info('Creando ' . count($bannersData) . ' banners de prueba (3 activos y 3 inactivos).');
 
-            $data = $bannerData[$index];
-            $imagePath = null;
-            $sourcePath = $sampleImage->getPathname();
-            $originalFileName = $sampleImage->getFilename();
-
-            $newWebpFileName = pathinfo($originalFileName, PATHINFO_FILENAME) . '-' . uniqid() . '.webp';
-            $destinationPath = $storagePath . '/' . $newWebpFileName;
-
-            try {
-                $image = @imagecreatefromstring(File::get($sourcePath));
-
-                if ($image !== false) {
-                    imagepalettetotruecolor($image);
-                    imagealphablending($image, true);
-                    imagesavealpha($image, true);
-                    imagewebp($image, $destinationPath, 85); // 85% quality
-                    imagedestroy($image);
-
-                    $imagePath = 'banners/' . $newWebpFileName;
-                    $this->command->info("Converted image for banner '{$data['name']}' -> {$imagePath}");
-                } else {
-                    $this->command->warn("Could not create image from string for banner '{$data['name']}'. File: " . $originalFileName);
-                }
-            } catch (\Exception $e) {
-                $this->command->error("Failed to process image for banner '{$data['name']}': " . $e->getMessage());
+        foreach ($bannersData as $index => $data) {
+            if (!isset($sampleImages[$index])) {
+                $this->command->warn('No hay suficientes imágenes de muestra. Reutilizando imágenes para los banners restantes.');
             }
+            $image = $sampleImages[$index % count($sampleImages)];
+            
+            $tempImageName = Str::random(10) . '.' . $image->getExtension();
+            $tempPath = 'temp-uploads/' . $tempImageName;
+            
+            Storage::disk('public')->put($tempPath, file_get_contents($image->getRealPath()));
 
-            Banner::create([
-                'name' => $data['name'],
-                'order' => $data['order'],
-                'url' => '#',
-                'is_active' => true,
-                'image_path' => $imagePath,
-            ]);
+            Banner::create(array_merge($data, ['image_path' => $tempPath]));
         }
 
-        $this->command->info('Banner seeder finished successfully.');
+        $this->command->info('Seeder de Banners finalizado con éxito.');
+        $this->command->info('--- Seeder de Banners finalizado ---');
+    }
+
+    private function cleanup(): void
+    {
+        $this->command->info('Limpiando datos y archivos de banners antiguos...');
+        Banner::query()->delete();
+        $directoriesToClean = ['banners', 'temp-uploads'];
+        foreach ($directoriesToClean as $dir) {
+            Storage::disk('public')->deleteDirectory($dir);
+            Storage::disk('public')->makeDirectory($dir);
+        }
+        $this->command->info('Tabla de banners y directorios de imágenes limpiados.');
+    }
+
+    private function getSampleImages(): array
+    {
+        $sourceDirectory = public_path('imagenes de muestra/banners');
+        if (!File::isDirectory($sourceDirectory)) {
+            return [];
+        }
+        return File::files($sourceDirectory);
     }
 }

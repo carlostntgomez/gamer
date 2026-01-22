@@ -2,37 +2,55 @@
 
 namespace App\Models;
 
-use App\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use App\Enums\PaymentMethod;
+use Illuminate\Support\Str; // Añadido: Importación de la clase Str
 
 class Order extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
-        'uuid',
         'user_id',
-        'status',
         'subtotal',
+        'shipping_cost',
         'total',
-        'shipping_address_id',
-        'billing_address_id',
+        'payment_method',
         'notes',
+        'uuid', // Añadido: 'uuid' a los atributos rellenables
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
+        'payment_method' => PaymentMethod::class,
         'subtotal' => 'decimal:2',
+        'shipping_cost' => 'decimal:2',
         'total' => 'decimal:2',
-        'status' => OrderStatus::class,
     ];
 
+    /**
+     * The "booting" method of the model.
+     *
+     * @return void
+     */
     protected static function boot()
     {
         parent::boot();
-        static::creating(function ($model) {
-            $model->uuid = (string) Str::uuid();
+
+        static::creating(function ($order) {
+            if (empty($order->uuid)) {
+                $order->uuid = (string) Str::uuid();
+            }
         });
     }
 
@@ -41,18 +59,28 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function shippingAddress()
-    {
-        return $this->belongsTo(Address::class, 'shipping_address_id');
-    }
-
     public function billingAddress()
     {
-        return $this->belongsTo(Address::class, 'billing_address_id');
+        return $this->hasOne(BillingAddress::class);
+    }
+
+    public function shippingAddress()
+    {
+        return $this->hasOne(ShippingAddress::class);
     }
 
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function statusHistories()
+    {
+        return $this->hasMany(OrderStatusHistory::class)->orderBy('created_at', 'desc');
+    }
+
+    public function latestStatusHistory()
+    {
+        return $this->hasOne(OrderStatusHistory::class)->latestOfMany();
     }
 }

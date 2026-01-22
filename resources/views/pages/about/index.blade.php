@@ -12,7 +12,7 @@
                     <div class="breadcrumb-index">
                         <ul class="breadcrumb-ul">
                             <li class="breadcrumb-li">
-                                <a class="breadcrumb-link" href="{{ route('''home''') }}">Inicio</a>
+                                <a class="breadcrumb-link" href="{{ route('home') }}">Inicio</a>
                             </li>
                             <li class="breadcrumb-li">
                                 <span class="breadcrumb-text">Sobre Nosotros</span>
@@ -38,20 +38,20 @@
                         </div>
                         <div class="about-banner section-pb" data-animate="animate__fadeInUp">
                             {{-- Usamos asset() para generar la URL correcta a la imagen --}}
-                            <img src="{{ asset('''img/about/about-home.jpg''') }}" class="img-fluid" alt="Sobre TecnnyGames">
+                            <img src="{{ asset('img/about/about-home.jpg') }}" class="img-fluid" alt="Sobre TecnnyGames">
                         </div>
                         <div class="abt-vision">
                             <ul class="abt-vision-ul">
                                 <li class="abt-vision-li">
                                     <div class="abt-vision-content">
-                                        <img src="{{ asset('''img/about/our-mission.png''') }}" class="img-fluid" data-animate="animate__fadeInUp" alt="Nuestra Misión">
+                                        <img src="{{ asset('img/about/our-mission.png') }}" class="img-fluid" data-animate="animate__fadeInUp" alt="Nuestra Misión">
                                         <h6 data-animate="animate__fadeInUp">Nuestra Misión</h6>
                                         <p data-animate="animate__fadeInUp">Nuestra misión es ser el epicentro de la cultura gamer, ofreciendo un catálogo inigualable de videojuegos, consolas y accesorios, respaldado por un servicio al cliente que entiende y comparte tu pasión.</p>
                                     </div>
                                 </li>
                                 <li class="abt-vision-li">
                                     <div class="abt-vision-content">
-                                        <img src="{{ asset('''img/about/our-idea.png''') }}" class="img-fluid"  data-animate="animate__fadeInUp" alt="Nuestra Visión">
+                                        <img src="{{ asset('img/about/our-idea.png') }}" class="img-fluid"  data-animate="animate__fadeInUp" alt="Nuestra Visión">
                                         <h6 data-animate="animate__fadeInUp">Nuestra Visión</h6>
                                         <p data-animate="animate__fadeInUp">Aspiramos a construir la comunidad de videojuegos más grande y vibrante de Latinoamérica, un espacio donde cada gamer se sienta en casa, descubra nuevas aventuras y comparta sus experiencias.</p>
                                     </div>
@@ -81,7 +81,7 @@
                                     <h6>Años en el Mercado</h6>
                                 </div>
                                 <div class="counter-icon">
-                                    <img src="{{ asset('''img/about/years.png''') }}" class="img-fluid" alt="Años">
+                                    <img src="{{ asset('img/about/years.png') }}" class="img-fluid" alt="Años">
                                 </div>
                             </li>
                             <li class="count-wrap" data-animate="animate__fadeInUp">
@@ -93,7 +93,7 @@
                                     <h6>Clientes Felices</h6>
                                 </div>
                                 <div class="counter-icon">
-                                    <img src="{{ asset('''img/about/clients.png''') }}" class="img-fluid" alt="Clientes">
+                                    <img src="{{ asset('img/about/clients.png') }}" class="img-fluid" alt="Clientes">
                                 </div>
                             </li>
                             <li class="count-wrap" data-animate="animate__fadeInUp">
@@ -105,7 +105,7 @@
                                     <h6>Productos en Catálogo</h6>
                                 </div>
                                 <div class="counter-icon">
-                                    <img src="{{ asset('''img/about/shops.png''') }}" class="img-fluid" alt="Productos">
+                                    <img src="{{ asset('img/about/shops.png') }}" class="img-fluid" alt="Productos">
                                 </div>
                             </li>
                             <li class="count-wrap" data-animate="animate__fadeInUp">
@@ -117,7 +117,7 @@
                                     <h6>Ventas Totales</h6>
                                 </div>
                                 <div class="counter-icon">
-                                    <img src="{{ asset('''img/about/sales.png''') }}" class="img-fluid" alt="Ventas">
+                                    <img src="{{ asset('img/about/sales.png') }}" class="img-fluid" alt="Ventas">
                                 </div>
                             </li>
                         </ul>
@@ -143,7 +143,7 @@
                             <li class="team-li">
                                 <div class="team-content">
                                     <a href="javascript:void(0)" data-animate="animate__fadeInUp">
-                                        <img src="{{ asset('''img/team/team-1.jpg''') }}" class="img-fluid" alt="Foto del CEO">
+                                        <img src="{{ asset('img/team/team-1.jpg') }}" class="img-fluid" alt="Foto del CEO">
                                     </a>
                                     <div class="team-info">
                                         <h6 data-animate="animate__fadeInUp">Carlos Mendoza</h6>
@@ -155,11 +155,11 @@
                             <li class="team-li">
                                 <div class="team-content">
                                     <a href="javascript:void(0)" data-animate="animate__fadeInUp">
-                                        <img src="{{ asset('''img/team/team-2.jpg''') }}" class="img-fluid" alt="Foto de la Jefa de Comunidad">
+                                        <img src="{{ asset('img/team/team-2.jpg') }}" class="img-fluid" alt="Foto de la Jefa de Comunidad">
                                     </a>
                                     <div class="team-info">
                                         <h6 data-animate="animate__fadeInUp">Laura Fernández</h6>
-                                        <span data-animate="animate__fadeInUp">Jefa de Comunidad</span>
+                                        <span data-animate__fadeInUp">Jefa de Comunidad</span>
                                         <p data-animate="animate__fadeInUp">Laura es el puente entre TecnnyGames y nuestros clientes. Organiza torneos, gestiona las redes y se asegura de que todos se sientan escuchados.</p>
                                     </div>
                                 </div>
@@ -167,7 +167,7 @@
                             <li class="team-li">
                                 <div class="team-content">
                                     <a href="javascript:void(0)" data-animate="animate__fadeInUp">
-                                        <img src="{{ asset('''img/team/team-3.jpg''') }}" class="img-fluid" alt="Foto del Director de Logística">
+                                        <img src="{{ asset('img/team/team-3.jpg') }}" class="img-fluid" alt="Foto del Director de Logística">
                                     </a>
                                     <div class="team-info">
                                         <h6 data-animate="animate__fadeInUp">Javier "Rápido" Ríos</h6>
@@ -179,7 +179,7 @@
                             <li class="team-li">
                                 <div class="team-content">
                                     <a href="javascript:void(0)" data-animate="animate__fadeInUp">
-                                        <img src="{{ asset('''img/team/team-4.jpg''') }}" class="img-fluid" alt="Foto de la Curadora de Contenido">
+                                        <img src="{{ asset('img/team/team-4.jpg') }}" class="img-fluid" alt="Foto de la Curadora de Contenido">
                                     </a>
                                     <div class="team-info">
                                         <h6 data-animate="animate__fadeInUp">Valeria Soto</h6>

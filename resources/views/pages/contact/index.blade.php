@@ -1,44 +1,46 @@
 <x-layouts.app>
-    {{-- Título de la página para el navegador --}}
     <x-slot name="title">
         Contacto | TecnnyGames
     </x-slot>
 
-    <!-- Breadcrumb (Migas de Pan) -->
+    <!-- breadcrumb start -->
     <section class="breadcrumb-area">
         <div class="container">
             <div class="row">
                 <div class="col">
                     <div class="breadcrumb-index">
+                        <!-- breadcrumb-list start -->
                         <ul class="breadcrumb-ul">
                             <li class="breadcrumb-li">
-                                <a class="breadcrumb-link" href="{{ route('''home''') }}">Inicio</a>
+                                <a class="breadcrumb-link" href="{{ route('home') }}">Inicio</a>
                             </li>
                             <li class="breadcrumb-li">
                                 <span class="breadcrumb-text">Contacto</span>
                             </li>
                         </ul>
+                        <!-- breadcrumb-list end -->
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    <!-- Fin del Breadcrumb -->
+    <!-- breadcrumb end -->
 
-    <!-- Mapa de Google -->
+    <!-- google-map  start -->
     <section class="google-map contact-us-page section-ptb">
         <div class="container">
             <div class="row">
                 <div class="col">
+                    <!-- contact title start -->
                     <div class="section-capture">
                         <div class="section-title">
                             <h2 data-animate="animate__fadeInUp"><span>Ponte en Contacto</span></h2>
                         </div>
                     </div>
+                    <!-- contact title end -->
                     <div class="map-wrap">
                         <div class="map-wrapper" data-animate="animate__fadeInUp">
                             <div class="map-info" id="map">
-                                {{-- Aquí puedes insertar el iframe de tu ubicación en Google Maps --}}
                                 <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3901.988031294674!2d-77.03023888518737!3d-12.042426991472535!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9105c8b5d3a2d3a9%3A0x1da55a1d56f5b8c!2sPlaza%20de%20Armas%20de%20Lima!5e0!3m2!1ses!2spe!4v1678886543210!5m2!1ses!2spe" allowfullscreen="" loading="lazy"></iframe>
                             </div>
                         </div>
@@ -47,21 +49,20 @@
             </div>
         </div>
     </section>
-    <!-- Fin del Mapa -->
+    <!-- google-map  end -->
 
-    <!-- Formulario y Datos de Contacto -->
+    <!-- drop-detail  start -->
     <section class="form-contact section-ptb">
         <div class="container">
             <div class="row">
                 <div class="col">
                     <div class="contact-content">
-                        <!-- Formulario de Contacto -->
+                        <!-- contact us from start -->
                         <div class="contact-detail form-warp">
                             <div class="form-title">
                                 <h6 data-animate="animate__fadeInUp">Envíanos un Mensaje</h6>
                             </div>
                             <div class="contact-form-list">
-                                {{-- Este formulario debería apuntar a una ruta POST en el futuro --}}
                                 <form method="post" action="#">
                                     @csrf
                                     <ul class="form-fill">
@@ -90,9 +91,8 @@
                                 </form>
                             </div>
                         </div>
-                        <!-- Fin del Formulario -->
-
-                        <!-- Información de Contacto -->
+                        <!-- contact us from start -->
+                        <!-- contact get info. start -->
                         <div class="contact-detail get-info">
                             <div class="form-title">
                                 <h6 data-animate="animate__fadeInUp">Nuestros Datos</h6>
@@ -121,12 +121,11 @@
                                 </li>
                             </ul>
                         </div>
-                        <!-- Fin de la Información de Contacto -->
+                        <!-- contact get info. end -->
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    <!-- Fin del Formulario y Datos -->
-
+    <!-- drop-detail  end  -->
 </x-layouts.app>

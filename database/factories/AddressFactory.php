@@ -26,11 +26,10 @@ class AddressFactory extends Factory
             'first_name' => $this->faker->firstName(),
             'last_name' => $this->faker->lastName(),
             'phone' => $this->faker->phoneNumber(),
-            'address_line_1' => $this->faker->streetAddress(),
-            'address_line_2' => $this->faker->optional()->secondaryAddress(),
+            'address' => $this->faker->streetAddress(),
+            'apartment' => $this->faker->optional()->secondaryAddress(),
             'city' => $this->faker->city(),
             'state' => $this->faker->state(),
-            'zip_code' => $this->faker->postcode(),
             'country' => $this->faker->country(),
         ];
     }

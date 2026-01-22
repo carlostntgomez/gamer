@@ -19,7 +19,7 @@ class HomeController extends Controller
             ->take(8)
             ->get();
             
-        $banners = Banner::all();
+        $banners = Banner::where('is_active', true)->get();
         return view('pages.home.index', compact('featuredProducts', 'banners'));
     }
 }

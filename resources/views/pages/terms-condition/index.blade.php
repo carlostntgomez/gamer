@@ -15,7 +15,7 @@
                     <div class="breadcrumb-index">
                         <ul class="breadcrumb-ul">
                             <li class="breadcrumb-li">
-                                <a class="breadcrumb-link" href="{{ route('''home''') }}">Inicio</a>
+                                <a class="breadcrumb-link" href="{{ route('home') }}">Inicio</a>
                             </li>
                             <li class="breadcrumb-li">
                                 <span class="breadcrumb-text">Términos y Condiciones</span>
@@ -62,9 +62,9 @@
                         </div>
                         <div class="terms-banner-rules">
                             <div class="banner-wrap" data-animate="animate__fadeInUp">
-                                <div class="banner-bgimg" style="background-image: url('''{{ asset('''img/team/terms.jpg''') }}''');"></div>
+                                <div class="banner-bgimg" style="background-image: url('{{ asset('img/team/terms.jpg') }}');"></div>
                                 <div class="banner-img">
-                                    <img src="{{ asset('''img/team/terms.jpg''') }}" class="img-fluid" alt="Términos y Condiciones">
+                                    <img src="{{ asset('img/team/terms.jpg') }}" class="img-fluid" alt="Términos y Condiciones">
                                 </div>
                             </div>
                             <div class="rules-wrap">
@@ -115,7 +115,7 @@
                                     <h6>Limitación de Responsabilidad</h6>
                                     <p>{{ $settings['company_name']->value ?? 'TecnnyGames' }} no será responsable por daños directos, indirectos, incidentales o consecuentes que resulten del uso o la incapacidad de usar este sitio web.</p>
                                 </li>
-                                <li data-animate="animate__fadeInUp">
+                                <li data-animate__animate__fadeInUp">
                                     <h6>Ley Aplicable</h6>
                                     <p>Estos términos se rigen por las leyes de {{ $settings['legal_country']->value ?? 'la República del Perú' }}. Cualquier disputa será sometida a la jurisdicción de los tribunales de {{ $settings['legal_jurisdiction_city']->value ?? 'Lima, Perú' }}.</p>
                                 </li>

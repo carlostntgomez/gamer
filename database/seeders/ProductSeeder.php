@@ -2,257 +2,185 @@
 
 namespace Database\Seeders;
 
-use App\Models\Product;
-use App\Models\Brand;
-use App\Models\Category;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
+use App\Models\Product;
+use App\Models\Category;
+use App\Models\Brand;
 use App\Enums\ProductType;
 use App\Enums\ProductCondition;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class ProductSeeder extends Seeder
 {
-    private const PRODUCT_COUNT = 40;
-    private array $sampleImages = [];
-    private string $storagePath = '';
-
     public function run(): void
     {
-        $this->command->info('🚀 Iniciando el seeder de productos mejorado...');
+        $this->command->info('--- Iniciando Seeder de Productos Realistas (Versión Corregida) ---');
+        $this->cleanup();
 
-        if (!$this->prepareEnvironment()) return;
+        $sampleImageFiles = $this->getSampleImages();
+        $categories = Category::all()->keyBy('slug');
+        $brands = Brand::all()->keyBy('name');
 
-        $brands = Brand::all();
-        $categories = Category::all();
-
-        if ($brands->isEmpty() || $categories->isEmpty()) {
-            $this->command->error('No se encontraron marcas o categorías. Ejecute los seeders de Brand y Category primero.');
+        if ($sampleImageFiles->isEmpty() || $categories->isEmpty() || $brands->isEmpty()) {
+            $this->command->error('CRÍTICO: No se encontraron imágenes, categorías o marcas. Abortando seeder.');
             return;
         }
 
-        $this->command->info('Creando ' . self::PRODUCT_COUNT . ' productos de prueba realistas...');
-        $progressBar = $this->command->getOutput()->createProgressBar(self::PRODUCT_COUNT);
+        $productsData = $this->getProductsData();
 
-        for ($i = 0; $i < self::PRODUCT_COUNT; $i++) {
-            $category = $categories->random();
-            $brand = $brands->random();
-
-            $productData = $this->generateProductData($category, $brand);
-
-            $product = Product::create($productData);
-            $product->categories()->attach($category->id);
-            $this->addImagesToProduct($product);
-
-            $progressBar->advance();
+        foreach ($productsData as $data) {
+            $this->createProduct($data, $categories, $brands, $sampleImageFiles);
         }
 
-        $progressBar->finish();
-        $this->command->info('\n✅ Seeder de productos finalizado con éxito.');
+        $this->command->info('--- Seeder de Productos finalizado con éxito ---');
     }
 
-    private function prepareEnvironment(): bool
+    private function cleanup(): void
     {
-        $this->command->info('🧹 Limpiando tablas y directorios antiguos...');
-        Schema::disableForeignKeyConstraints();
-        Product::truncate();
+        $this->command->comment('Limpiando datos y directorios antiguos...');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        }
         DB::table('category_product')->truncate();
-        Schema::enableForeignKeyConstraints();
-
-        $this->storagePath = storage_path('app/public/products');
-        if (File::isDirectory($this->storagePath)) {
-            File::deleteDirectory($this->storagePath);
+        Product::truncate();
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
         }
-        File::makeDirectory($this->storagePath, 0755, true, true);
-
-        $sampleImagesPath = public_path('imagenes de muestra/products');
-        if (!File::exists($sampleImagesPath) || count(File::files($sampleImagesPath)) === 0) {
-            $this->command->error("La carpeta de imágenes de muestra está vacía o no existe: {$sampleImagesPath}");
-            $this->command->error("El seeder no puede continuar. Añada imágenes a esa ruta para generar los productos.");
-            return false;
-        }
-        $this->sampleImages = File::files($sampleImagesPath);
-        return true;
+        Storage::disk('public')->deleteDirectory('products');
+        Storage::disk('public')->makeDirectory('products');
+        Storage::disk('public')->makeDirectory('temp-uploads');
     }
 
-    private function generateProductData(Category $category, Brand $brand): array
+    private function getSampleImages(): \Illuminate\Support\Collection
     {
-        $name = $this->generateProductName($category);
-        $basePrice = $this->generatePriceForCategory($category);
-        $specifications = $this->generateSpecificationsForCategory($category);
-        $longDescription = $this->generateLongDescription($name, $specifications);
+        $path = public_path('imagenes de muestra/products');
+        return File::isDirectory($path) ? collect(File::files($path)) : collect();
+    }
 
+    private function getProductsData(): array
+    {
+        // Valores corregidos según la definición de los Enums
         return [
-            'name' => $name,
-            'slug' => Str::slug($name),
-            'brand_id' => $brand->id,
-            'sku' => 'SKU-' . strtoupper(Str::random(8)),
-            'short_description' => fake()->sentence(20),
-            'long_description' => $longDescription,
-            'specifications' => $specifications,
-            'price' => $basePrice,
-            'sale_price' => fake()->boolean(40) ? round(($basePrice * (1 - fake()->numberBetween(10, 35) / 100)) / 1000) * 1000 : null,
-            'stock_quantity' => fake()->numberBetween(0, 200),
-            'is_visible' => fake()->boolean(95),
-            'is_featured' => fake()->boolean(25),
-            'is_new' => fake()->boolean(30),
-            'type' => fake()->randomElement(ProductType::cases())->value,
-            'condition' => fake()->randomElement(ProductCondition::cases())->value,
-            'colors' => fake()->randomElements(['Rojo', 'Azul', 'Verde', 'Negro', 'Blanco', 'Gris', 'Plata', 'Dorado'], rand(1, 4)),
-            'video_url' => fake()->boolean(20) ? 'https://www.youtube.com/watch?v=0Aja_yP93PY' : null,
-            'delivery_info' => $this->getSampleDeliveryInfo(),
-            'return_policy' => $this->getSampleReturnPolicy(),
-            'seo_title' => Str::limit($name . ' | ' . $brand->name, 60, ''),
-            'seo_description' => Str::limit(fake()->sentence(25), 160, '...'),
-            'seo_keywords' => array_values(array_unique([$brand->name, $category->name, ...array_values($specifications), ...fake()->words(2)])),
+            // Videojuegos Modernos
+            ['name' => 'God of War Ragnarök', 'cat' => 'playstation-5', 'brand' => 'Sony', 'price' => 280000, 'cond' => 'nuevo', 'type' => 'videojuego'],
+            ['name' => 'Starfield', 'cat' => 'xbox-series-x', 'brand' => 'Microsoft', 'price' => 300000, 'cond' => 'nuevo', 'type' => 'videojuego'],
+            ['name' => 'The Legend of Zelda: Tears of the Kingdom', 'cat' => 'nintendo-switch', 'brand' => 'Nintendo', 'price' => 290000, 'cond' => 'nuevo', 'type' => 'videojuego'],
+            ['name' => "Baldur's Gate 3", 'cat' => 'pc', 'brand' => 'Valve', 'price' => 250000, 'cond' => 'nuevo', 'type' => 'videojuego'],
+            ['name' => 'Cyberpunk 2077: Phantom Liberty', 'cat' => 'pc', 'brand' => 'Valve', 'price' => 150000, 'cond' => 'nuevo', 'type' => 'videojuego'],
+
+            // Consolas Modernas
+            ['name' => 'Consola PlayStation 5 Edición Disco', 'cat' => 'playstation', 'brand' => 'Sony', 'price' => 2800000, 'cond' => 'nuevo', 'type' => 'gadget'],
+            ['name' => 'Consola Xbox Series X 1TB', 'cat' => 'xbox', 'brand' => 'Microsoft', 'price' => 2700000, 'cond' => 'nuevo', 'type' => 'gadget'],
+            ['name' => 'Consola Nintendo Switch OLED', 'cat' => 'nintendo', 'brand' => 'Nintendo', 'price' => 1600000, 'cond' => 'nuevo', 'type' => 'gadget'],
+
+            // Juegos Retro
+            ['name' => 'Super Metroid - Cartucho SNES', 'cat' => 'super-nintendo-snes', 'brand' => 'Nintendo', 'price' => 350000, 'cond' => 'usado', 'type' => 'videojuego'],
+            ['name' => 'Sonic the Hedgehog 2 - Cartucho Genesis', 'cat' => 'sega-genesis-mega-drive', 'brand' => 'Sega', 'price' => 200000, 'cond' => 'usado', 'type' => 'videojuego'],
+            ['name' => 'The Legend of Zelda: Ocarina of Time - Cartucho N64', 'cat' => 'nintendo-64-n64', 'brand' => 'Nintendo', 'price' => 400000, 'cond' => 'usado', 'type' => 'videojuego'],
+            ['name' => 'Final Fantasy VII - Discos PSX', 'cat' => 'playstation-1-psx', 'brand' => 'Sony', 'price' => 250000, 'cond' => 'usado', 'type' => 'videojuego'],
+            ['name' => 'Chrono Trigger - Cartucho SNES', 'cat' => 'super-nintendo-snes', 'brand' => 'Nintendo', 'price' => 600000, 'cond' => 'usado', 'type' => 'videojuego'], // Cambiado de refurbished a usado
+
+            // Consolas Retro
+            ['name' => 'Consola Super Nintendo (SNES) Classic Edition', 'cat' => 'consolas-super-nintendo', 'brand' => 'Nintendo', 'price' => 800000, 'cond' => 'usado', 'type' => 'gadget'], // Cambiado de refurbished a usado
+            ['name' => 'Consola Sega Genesis Mini', 'cat' => 'consolas-sega-genesis', 'brand' => 'Sega', 'price' => 750000, 'cond' => 'usado', 'type' => 'gadget'], // Cambiado de refurbished a usado
+
+            // Celulares y Wearables
+            ['name' => 'Samsung Galaxy S24 Ultra', 'cat' => 'smartphones', 'brand' => 'Samsung', 'price' => 5500000, 'cond' => 'nuevo', 'type' => 'gadget'],
+            ['name' => 'iPhone 15 Pro Max', 'cat' => 'smartphones', 'brand' => 'Apple', 'price' => 6200000, 'cond' => 'nuevo', 'type' => 'gadget'],
+            ['name' => 'Xiaomi Redmi Note 13 Pro', 'cat' => 'smartphones', 'brand' => 'Xiaomi', 'price' => 1800000, 'cond' => 'nuevo', 'type' => 'gadget'],
+            ['name' => 'Google Pixel 8 Pro', 'cat' => 'smartphones', 'brand' => 'Google', 'price' => 4800000, 'cond' => 'nuevo', 'type' => 'gadget'],
+            ['name' => 'Apple Watch Series 9', 'cat' => 'smartwatches', 'brand' => 'Apple', 'price' => 2100000, 'cond' => 'nuevo', 'type' => 'gadget'],
+            ['name' => 'Samsung Galaxy Watch 6', 'cat' => 'smartwatches', 'brand' => 'Samsung', 'price' => 1500000, 'cond' => 'nuevo', 'type' => 'gadget'],
+            ['name' => 'Sony WH-1000XM5 Audífonos Inalámbricos', 'cat' => 'audifonos-inalambricos', 'brand' => 'Sony', 'price' => 1800000, 'cond' => 'nuevo', 'type' => 'gadget'],
+
+            // Accesorios y Componentes
+            ['name' => 'Mouse Gamer Logitech G Pro X Superlight', 'cat' => 'accesorios-gamer', 'brand' => 'Logitech', 'price' => 650000, 'cond' => 'nuevo', 'type' => 'accesorio'],
+            ['name' => 'Teclado Mecánico Razer Huntsman V2', 'cat' => 'accesorios-gamer', 'brand' => 'Razer', 'price' => 900000, 'cond' => 'nuevo', 'type' => 'accesorio'],
+            ['name' => 'Monitor Gamer Alienware 27" QD-OLED', 'cat' => 'monitores', 'brand' => 'Sony', 'price' => 3500000, 'cond' => 'nuevo', 'type' => 'gadget'],
+            ['name' => 'Tarjeta Gráfica NVIDIA GeForce RTX 4080', 'cat' => 'componentes-de-pc', 'brand' => 'Nvidia', 'price' => 5200000, 'cond' => 'nuevo', 'type' => 'accesorio'],
+            ['name' => 'Procesador AMD Ryzen 9 7950X', 'cat' => 'componentes-de-pc', 'brand' => 'AMD', 'price' => 2600000, 'cond' => 'nuevo', 'type' => 'accesorio'],
+            ['name' => 'Diadema Gamer Corsair HS80 RGB Wireless', 'cat' => 'accesorios-gamer', 'brand' => 'Corsair', 'price' => 750000, 'cond' => 'nuevo', 'type' => 'accesorio'],
+            ['name' => 'Control DualSense Edge para PS5', 'cat' => 'accesorios-gamer', 'brand' => 'Sony', 'price' => 950000, 'cond' => 'nuevo', 'type' => 'accesorio'],
+            ['name' => 'SSD NVMe Samsung 990 Pro 2TB', 'cat' => 'componentes-de-pc', 'brand' => 'Samsung', 'price' => 900000, 'cond' => 'nuevo', 'type' => 'accesorio'],
         ];
-    }
-
-    private function generateProductName(Category $category): string
-    {
-        $catName = strtolower($category->name);
-        $prefix = '';
-
-        if (str_contains($catName, 'laptop')) $prefix = 'Laptop Gamer';
-        elseif (str_contains($catName, 'monitor')) $prefix = 'Monitor Curvo';
-        elseif (str_contains($catName, 'juego')) $prefix = 'Juego PS5';
-        elseif (str_contains($catName, 'audifono')) $prefix = 'Auriculares Inalámbricos';
-        elseif (str_contains($catName, 'smartphone')) $prefix = 'Teléfono Inteligente';
-        else $prefix = 'Producto';
-
-        return fake()->unique()->words(rand(1, 2), true) . ' ' . $prefix . ' ' . fake()->lastName;
-    }
-
-    private function generatePriceForCategory(Category $category): int
-    {
-        $catName = strtolower($category->name);
-        $priceRange = [100000, 800000]; // Default
-
-        if (str_contains($catName, 'laptop') || str_contains($catName, 'computaci')) $priceRange = [2500000, 8000000];
-        elseif (str_contains($catName, 'monitor')) $priceRange = [800000, 3000000];
-        elseif (str_contains($catName, 'juego')) $priceRange = [150000, 350000];
-        elseif (str_contains($catName, 'consola')) $priceRange = [1800000, 3500000];
-        elseif (str_contains($catName, 'smartphone')) $priceRange = [900000, 4500000];
-
-        return round(fake()->numberBetween(...$priceRange) / 1000) * 1000;
-    }
-
-    private function generateSpecificationsForCategory(Category $category): array
-    {
-        $catName = strtolower($category->name);
-        $specs = [];
-
-        $commonSpecs = [
-            'Conectividad' => ['Wi-Fi 6E', 'Bluetooth 5.3', 'USB-C', 'HDMI 2.1'],
-            'Garantía' => ['1 año con fabricante', '2 años extendida', '6 meses']
-        ];
-
-        if (str_contains($catName, 'laptop') || str_contains($catName, 'computaci')) {
-            $specs = [
-                'Procesador' => ['Intel Core i9-13900K', 'AMD Ryzen 9 7950X', 'Intel Core i7-13700K'],
-                'Tarjeta Gráfica' => ['NVIDIA GeForce RTX 4090', 'AMD Radeon RX 7900 XTX', 'NVIDIA GeForce RTX 4070 Ti'],
-                'Memoria RAM' => ['32GB DDR5 6000MHz', '16GB DDR5 5200MHz', '64GB DDR5 5600MHz'],
-                'Almacenamiento' => ['1TB NVMe SSD Gen4', '2TB NVMe SSD Gen4', '4TB SATA SSD'],
-            ];
-        } elseif (str_contains($catName, 'juego')) {
-            $specs = [
-                'Plataforma' => ['PlayStation 5', 'Xbox Series X/S', 'Nintendo Switch', 'PC'],
-                'Género' => ['Acción/Aventura', 'RPG', 'Estrategia', 'Deportes', 'Shooter'],
-                'Clasificación' => ['E (Everyone)', 'T (Teen)', 'M (Mature 17+)'],
-            ];
-        } elseif (str_contains($catName, 'audifono')) {
-            $specs = [
-                'Tipo' => ['Over-ear', 'In-ear', 'On-ear'],
-                'Cancelación de Ruido' => ['Activa (ANC)', 'Pasiva', 'No aplica'],
-                'Duración Batería' => ['20 horas', '30 horas con estuche', '8 horas'],
-            ];
-        } else {
-             $specs = [
-                'Dimensión' => ['15 x 10 x 5 cm', '25 x 18 x 12 cm'],
-                'Peso' => ['250g', '1.2kg', '5kg'],
-            ];
-        }
-
-        $finalSpecs = [];
-        $allSpecs = array_merge($specs, $commonSpecs);
-        foreach ($allSpecs as $key => $values) {
-            $finalSpecs[$key] = fake()->randomElement($values);
-        }
-        return $finalSpecs;
-    }
-
-    private function generateLongDescription(string $name, array $specifications): string
-    {
-        $description = "<h3>Descubre el " . $name . "</h3><p>" . fake()->paragraph(4) . "</p>";
-        $description .= "<h4>Características Principales:</h4><ul>";
-        foreach ($specifications as $key => $value) {
-            $description .= "<li><strong>" . $key . ":</strong> " . $value . "</li>";
-        }
-        $description .= "</ul><p>" . fake()->paragraph(3) . "</p>";
-        return $description;
     }
     
-    private function getSampleDeliveryInfo(): string
+    private function createProduct(array $data, $categories, $brands, $sampleImageFiles): void
     {
-        return fake()->randomElement([
-            'Envío estándar gratuito (3-5 días hábiles). Opciones express disponibles.',
-            'Procesamiento en 24h. Envío rápido por Servientrega (2-4 días hábiles).',
-            '¡Recíbelo mañana! Pedidos antes de las 2 PM. Costo adicional.',
-        ]);
-    }
-
-    private function getSampleReturnPolicy(): string
-    {
-        return fake()->randomElement([
-            'Devoluciones hasta 30 días después de la compra. Producto en estado original.',
-            '15 días para devolución o cambio. No se aceptan productos en oferta.',
-            'Devoluciones gratuitas los primeros 10 días. El producto debe estar sin usar.',
-        ]);
-    }
-
-    private function addImagesToProduct(Product $product): void
-    {
-        if (empty($this->sampleImages)) return;
-
-        $mainImageDbPath = $this->processAndSaveImage(fake()->randomElement($this->sampleImages), $product);
-
-        $galleryImageDbPaths = [];
-        $numGalleryImages = rand(2, 5);
-        for ($i=0; $i < $numGalleryImages; $i++) { 
-             $dbPath = $this->processAndSaveImage(fake()->randomElement($this->sampleImages), $product);
-             if ($dbPath) {
-                 $galleryImageDbPaths[] = $dbPath;
-             }
+        $category = $categories->get($data['cat']);
+        $brand = $brands->get($data['brand']);
+        if (!$category || !$brand) {
+            $this->command->warn("Saltando producto '{$data['name']}': categoría o marca no encontrada.");
+            return;
         }
-
-        $product->main_image_path = $mainImageDbPath;
-        $product->gallery_image_paths = array_unique($galleryImageDbPaths);
-        $product->save();
-    }
-
-    private function processAndSaveImage(\SplFileInfo $imageFile, Product $product): ?string
-    {
-        $sourcePath = $imageFile->getRealPath();
-        $newFileName = Str::slug($product->name) . '-' . uniqid() . '.webp';
-        $destinationPath = $this->storagePath . '/' . $newFileName;
 
         try {
-            $image = imagecreatefromstring(File::get($sourcePath));
-            if ($image === false) return null;
-
-            imagepalettetotruecolor($image);
-            imagealphablending($image, true);
-            imagesavealpha($image, true);
-            imagewebp($image, $destinationPath, 80);
-            imagedestroy($image);
-            
-            return 'products/' . $newFileName;
-
-        } catch (\Exception $e) {
-            $this->command->warn("No se pudo procesar la imagen: {$sourcePath}. Error: " . $e->getMessage());
-            return null;
+            $condition = ProductCondition::from($data['cond']);
+            $type = ProductType::from($data['type']);
+        } catch (\ValueError $e) {
+            $this->command->error("Error fatal en Enum para '{$data['name']}': " . $e->getMessage());
+            return;
         }
+
+        $onSale = rand(0, 3) === 0;
+        $salePrice = $onSale ? round($data['price'] * (1 - rand(10, 30) / 100), -3) : null;
+
+        $product = Product::create([
+            'name' => $data['name'],
+            'slug' => Str::slug($data['name']),
+            'short_description' => "La mejor opción para {$type->value}. Calidad {$brand->name} garantizada.",
+            'long_description' => "<h3>Descripción de {$data['name']}</h3><p>Disfruta de la experiencia que solo <strong>{$brand->name}</strong> puede ofrecer.</p>",
+            'price' => $data['price'],
+            'sale_price' => $salePrice,
+            'specifications' => $this->generateSpecifications($type, $brand->name, $category->name, $condition->getLabel()),
+            'stock_quantity' => rand(5, 100),
+            'sku' => 'SKU-' . Str::upper(Str::random(8)),
+            'is_visible' => true,
+            'is_featured' => rand(0, 4) === 0,
+            'is_new' => $condition === ProductCondition::New,
+            'type' => $type,
+            'condition' => $condition,
+            'brand_id' => $brand->id,
+            'main_image_path' => $this->stageImage($sampleImageFiles->random()),
+            'gallery_image_paths' => $this->stageImage($sampleImageFiles->random(rand(2, 4))->all()),
+            'video_url' => 'https://www.youtube.com/watch?v=ScMzIvxBSi4',
+            'seo_title' => "Comprar {$data['name']} | {$brand->name}",
+            'seo_description' => "La mejor oferta en {$data['name']}. Compra online en nuestra tienda.",
+            'seo_keywords' => [$type->value, $category->name, $brand->name, 'comprar', 'oferta'],
+        ]);
+
+        $product->categories()->attach($category->id);
+        $this->command->line("Creado: {$product->name} en '{$category->name}'" . ($onSale ? " (¡EN OFERTA!)" : ""));
+    }
+
+    private function stageImage($files): array|string
+    {
+        $tempDir = 'temp-uploads';
+        $stage = function ($file) use ($tempDir) {
+            $tempFileName = Str::random(20) . '.' . $file->getExtension();
+            $tempPath = $tempDir . '/' . $tempFileName;
+            Storage::disk('public')->put($tempPath, file_get_contents($file->getPathname()));
+            return $tempPath;
+        };
+        return is_array($files) ? array_map($stage, $files) : $stage($files);
+    }
+
+    private function generateSpecifications(ProductType $type, string $brand, string $category, string $condition): array
+    {
+        $specs = [
+            ['key' => 'Marca', 'value' => $brand],
+            ['key' => 'Categoría', 'value' => $category],
+            ['key' => 'Condición', 'value' => $condition],
+            ['key' => 'Garantía', 'value' => '12 meses'],
+        ];
+        $extra = match ($type) {
+            ProductType::Videogame => [['key' => 'Formato', 'value' => 'Físico'], ['key' => 'Género', 'value' => 'Aventura']],
+            ProductType::Gadget => [['key' => 'Conectividad', 'value' => 'Bluetooth 5.3'], ['key' => 'Puertos', 'value' => 'USB-C']],
+            ProductType::Accessory => [['key' => 'Compatibilidad', 'value' => 'Multiplataforma']],
+        };
+        return array_merge($specs, $extra);
     }
 }

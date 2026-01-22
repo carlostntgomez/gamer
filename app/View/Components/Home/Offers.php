@@ -17,13 +17,11 @@ class Offers extends Component
      */
     public function __construct()
     {
-        // Cache the result for 1 hour to avoid unnecessary database queries
-        $this->offers = Cache::remember('home_offers', 3600, function () {
-            return Offer::where('is_active', true)
-                ->latest()
-                ->take(2)
-                ->get();
-        });
+        // Get the latest 2 active offers directly from the database
+        $this->offers = Offer::where('is_active', true)
+            ->latest()
+            ->take(2)
+            ->get();
     }
 
     /**

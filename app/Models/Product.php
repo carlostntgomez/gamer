@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
@@ -24,6 +25,8 @@ class Product extends Model
         'is_new' => 'boolean',
         'type' => ProductType::class,
         'condition' => ProductCondition::class,
+        'price' => 'float',
+        'sale_price' => 'float',
     ];
 
     protected $fillable = [
@@ -72,7 +75,6 @@ class Product extends Model
             return null;
         }
 
-        // This regex handles various YouTube URL formats.
         $regex = '~^(?:https?://)?(?:www\.)?(?:m\.)?(?:youtu\.be/|youtube\.com(?:/embed/|/v/|/watch\?v=|/watch\?.+&v=))([\w-]{11})(?:\S*)?$~';
 
         if (preg_match($regex, $this->video_url, $matches)) {
@@ -82,31 +84,16 @@ class Product extends Model
         return null;
     }
 
-    /**
-     * Calcula la calificación promedio de las reseñas aprobadas.
-     *
-     * @return float
-     */
     public function averageRating(): float
     {
         return $this->reviews()->where('is_approved', true)->avg('rating') ?? 0;
     }
 
-    /**
-     * Convierte la calificación promedio a un porcentaje.
-     *
-     * @return float
-     */
     public function averageRatingInPercent(): float
     {
         return ($this->averageRating() / 5) * 100;
     }
 
-    /**
-     * Generates the HTML for the star rating display.
-     *
-     * @return string
-     */
     public function getStarRatingHtml(): string
     {
         $rating = $this->averageRating();
@@ -118,24 +105,57 @@ class Product extends Model
             $emptyStars = 5 - $fullStars - ($halfStar ? 1 : 0);
 
             for ($i = 0; $i < $fullStars; $i++) {
-                $html .= '<i class="fas fa-star"></i>';
+                $html .= '<i class="fa-solid fa-star"></i>';
             }
 
             if ($halfStar) {
-                $html .= '<i class="fas fa-star-half-alt"></i>';
+                $html .= '<i class="fa-solid fa-star-half-alt"></i>';
             }
 
             for ($i = 0; $i < $emptyStars; $i++) {
-                $html .= '<i class="far fa-star"></i>';
+                $html .= '<i class="fa-regular fa-star"></i>';
             }
         } else {
-            // If no rating, show 5 empty stars
             for ($i = 0; $i < 5; $i++) {
-                $html .= '<i class="far fa-star"></i>';
+                $html .= '<i class="fa-regular fa-star"></i>';
             }
         }
 
         $html .= '</span>';
         return $html;
+    }
+
+    /**
+     * Determine if the product is on sale.
+     *
+     * @return bool
+     */
+    public function isOnSale(): bool
+    {
+        return $this->sale_price !== null && $this->sale_price > 0 && $this->sale_price < $this->price;
+    }
+
+    /**
+     * Get the full URL for the main image.
+     *
+     * @return string
+     */
+    public function getMainImageUrlAttribute(): string
+    {
+        return $this->main_image_path ? Storage::url($this->main_image_path) : url('/images/placeholder-product.png');
+    }
+
+    /**
+     * Get the full URLs for the gallery images.
+     *
+     * @return array
+     */
+    public function getGalleryImageUrlsAttribute(): array
+    {
+        if (empty($this->gallery_image_paths)) {
+            return [];
+        }
+
+        return array_map(fn($path) => Storage::url($path), $this->gallery_image_paths);
     }
 }

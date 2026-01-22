@@ -71,11 +71,6 @@ class User extends Authenticatable
         return $this->hasMany(Address::class);
     }
 
-    public function wishlists()
-    {
-        return $this->hasMany(Wishlist::class);
-    }
-
     public function tickets()
     {
         return $this->hasMany(Ticket::class);

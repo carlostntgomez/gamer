@@ -5,7 +5,7 @@
                 <div class="col">
                     <div class="section-capture">
                         <div class="section-title">
-                            <h2 data-animate="animate__fadeInUp"><span>Top categories</span></h2>
+                            <h2 data-animate="animate__fadeInUp"><span>Categorías Destacadas</span></h2>
                         </div>
                     </div>
                     <div class="category-wrap">
@@ -16,7 +16,7 @@
                                     <div class="cat-info">
                                         <div class="cat-img">
                                             <a href="{{ route('categories.show', $topCategory->category->slug) }}">
-                                                <img src="{{ asset('storage/' . $topCategory->image) }}" class="img-fluid" alt="{{ $topCategory->category->name }}">
+                                                <img src="{{ asset('storage/' . $topCategory->category->image_path) }}" class="img-fluid" alt="{{ $topCategory->category->name }}">
                                                 <span class="cat-title">{{ $topCategory->category->name }}</span>
                                             </a>
                                         </div>

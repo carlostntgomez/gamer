@@ -12,7 +12,7 @@
                     <div class="breadcrumb-index">
                         <ul class="breadcrumb-ul">
                             <li class="breadcrumb-li">
-                                <a class="breadcrumb-link" href="{{ route('''home''') }}">Inicio</a>
+                                <a class="breadcrumb-link" href="{{ route('home') }}">Inicio</a>
                             </li>
                             <li class="breadcrumb-li">
                                 <span class="breadcrumb-text">Preguntas Frecuentes</span>
@@ -37,7 +37,7 @@
                     </div>
                     <div class="content-qa-banner">
                         <div class="banner-image banner-hover" data-animate="animate__fadeInUp">
-                            <img src="{{ asset('''img/other-pages/faq.jpg''') }}" class="img-fluid" alt="FAQ TecnnyGames">
+                            <img src="{{ asset('img/other-pages/faq.jpg') }}" class="img-fluid" alt="FAQ TecnnyGames">
                         </div>
                         <div class="que-ans">
                             <ul class="accordian-ul">

@@ -52,7 +52,7 @@
                                             <div class="blog-post">
                                                 <div class="blog-img">
                                                     <a href="{{ route('posts.show', $post) }}" class="banner-img">
-                                                        <img src="{{ Storage::url($post->image_path) }}" class="img-fluid" alt="{{ $post->title }}">
+                                                        <img src="{{ $post->main_image_url }}" class="img-fluid" alt="{{ $post->title }}">
                                                         <span class="blog-icon">
                                                             <i class="fas fa-paperclip"></i>
                                                         </span>

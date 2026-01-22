@@ -31,6 +31,9 @@ class Banner extends Model
         'image_url',
     ];
 
+    /**
+     * Get the full URL for the banner image.
+     */
     protected function imageUrl(): Attribute
     {
         return Attribute::make(

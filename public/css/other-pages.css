@@ -56,7 +56,7 @@
 .about-content .about-banner .about-banner-area ul.about-ul li.about-company {
     text-align: center;
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .about-content .about-banner .about-banner-area ul.about-ul {
         margin: -30px 0px 0px -12px;
     }
@@ -119,7 +119,7 @@
         width: calc(50% - 30px);
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .abt-vision ul.abt-vision-ul {
         margin: -60px 0px 0px -12px;
     }
@@ -187,7 +187,7 @@
         width: calc(50% - 30px);
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .project-count .single-count ul {
         margin: -60px 0px 0px -12px;
     }
@@ -315,7 +315,7 @@
         width: calc(50% - 30px);
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .about-team .our-team .team-wrap ul.team-ul {
         margin: -30px 0px 0px -12px;
     }
@@ -487,7 +487,7 @@
         border-right: none;
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .project-count-area .single-count ul.count-ul li.count-li {
         padding: 30px 15px;
     }
@@ -593,7 +593,7 @@
         margin: 80px 0px 0px 30px;
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .our-team ul.team-ul {
         margin: -60px 0px 0px -12px;
     }
@@ -672,7 +672,7 @@
         margin: 80px 0px 0px 30px;
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .about-vision2 .abt-vision ul.abt-vision-ul {
         margin: -60px 0px 0px -12px;
     }
@@ -702,7 +702,7 @@
         width: calc(50% - 30px);
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .about-team-3 .our-team ul.team-ul {
         margin: -30px 0px 0px -12px;
     }
@@ -778,7 +778,7 @@
 .billing-area .billing-button button.btn-style2 {
     padding: 12px 50px;
 }  
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .billing-area .billing-address-1 ul.add-name {
         margin: -15px 0px 0px -12px;
     }
@@ -845,7 +845,7 @@
         width: calc(50% - 30px);
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .get-info-area ul.get-info-ul {
         margin: -30px 0px 0px -12px;
     }
@@ -936,7 +936,7 @@ ul.get-info-ul li.get-info-li a.get-add:first-child {
     width: 100%;
     border-radius: var(--border-radius);
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .google-map .map-wrap .map-info iframe {
         height: 320px;
     }
@@ -956,7 +956,7 @@ ul.get-info-ul li.get-info-li a.get-add:first-child {
         max-width: 75%;
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .drop-detail .form-warp {
         max-width: 100%;
     }
@@ -999,7 +999,7 @@ ul.get-info-ul li.get-info-li a.get-add:first-child {
         width: calc(100% - 30px);
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .form-contact .contact-content {
         margin: -60px 0px 0px -12px;
     }
@@ -1024,7 +1024,7 @@ ul.get-info-ul li.get-info-li a.get-add:first-child {
         margin: 0px 0px 40px;
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .form-contact .contact-content .form-title {
          margin: 0px 0px 30px;
     }
@@ -1060,7 +1060,7 @@ ul.get-info-ul li.get-info-li a.get-add:first-child {
         max-width: 75%;
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .customer-page .log-acc-page {
         max-width: 100%;
     }
@@ -1240,7 +1240,7 @@ ul.get-info-ul li.get-info-li a.get-add:first-child {
         margin: 30px 0px 0px 30px;
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .faq-page .content-qa-banner {
         margin: -30px 0px 0px -12px;
     }
@@ -1325,7 +1325,7 @@ ul.help-wrap li.desk-wrap {
         margin: 80px 0px 0px 30px;
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     ul.help-wrap {
         margin: -60px 0px 0px -12px;
     }
@@ -1493,7 +1493,7 @@ ul.help-wrap li.desk-wrap .help-desk-info .help-desk-text p {
     align-items: center;
     justify-content: space-between;
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .order-area .order-delivery ul.delivery-payment {
         margin: -15px 0px 0px -12px;
     }
@@ -1634,7 +1634,7 @@ ul.sit-map-ul li.site-map-li .site-main-title ul.site-sub-link li.site-title a::
     height: 8px;
     background-color: var(--primary-font-color);
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     ul.sit-map-ul {
         margin: -30px 0px 0px -12px;
     }
@@ -2024,7 +2024,7 @@ ul.sit-map-ul li.site-map-li .site-main-title ul.site-sub-link li.site-title a::
 .wishlist-page .wishlist-area .wishlist-all-pro .all-pro-price span.wishalist-icon i {
     font-size: 20px;
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .wishlist-product .wishlist-page {
         padding: 30px 12px;
     }
@@ -2090,7 +2090,7 @@ ul.sit-map-ul li.site-map-li .site-main-title ul.site-sub-link li.site-title a::
         width: calc(100% - 30px);
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .terms-banner-rules {
         margin: -30px 0px 0px -12px;
     }
@@ -2188,7 +2188,7 @@ ul.sit-map-ul li.site-map-li .site-main-title ul.site-sub-link li.site-title a::
         border-top: 1px solid var(--border-color);
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .temrs-condition .t-condition-block ul.condition-ul {
         margin: -22px 0px 0px -12px;
     }
@@ -2254,7 +2254,7 @@ ul.sit-map-ul li.site-map-li .site-main-title ul.site-sub-link li.site-title a::
         border-radius: var(--border-radius) var(--border-radius) 0px 0px;
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .need-wrap ul.need-ul {
         margin: -30px 0px 0px -12px;
     }
@@ -2373,7 +2373,7 @@ ul.sit-map-ul li.site-map-li .site-main-title ul.site-sub-link li.site-title a::
     }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .paymen-policy-wrap {
         margin: -30px 0px 0px -12px;
     }
@@ -2411,7 +2411,7 @@ ul.sit-map-ul li.site-map-li .site-main-title ul.site-sub-link li.site-title a::
     font-size: 18px;
     padding: 0px 0px 0px 15px;
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .pay-policy .paymen-policy-wrap .pay-icon ul.pay-policy-ul li {
         padding: 30px 15px;
     }
@@ -2492,7 +2492,7 @@ ul.sit-map-ul li.site-map-li .site-main-title ul.site-sub-link li.site-title a::
         padding: 40px 30px 32px;
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .method-wrap ul.method-ul li.method-li {
         width: 100%;
         padding: 30px 12px 22px;
@@ -2526,7 +2526,7 @@ ul.sit-map-ul li.site-map-li .site-main-title ul.site-sub-link li.site-title a::
         padding: 30px 0px;
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .breadcrumb-area {
         padding: 15px 0px;
     }
@@ -2573,7 +2573,7 @@ ul.sit-map-ul li.site-map-li .site-main-title ul.site-sub-link li.site-title a::
         padding: 80px 0px 0px;
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .paginatoin-area {
         padding: 60px 0px 0px;
     }
@@ -2688,7 +2688,7 @@ ul.sit-map-ul li.site-map-li .site-main-title ul.site-sub-link li.site-title a::
     font-weight: 600;
     border-bottom: 1px solid var(--border-color);
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .cart-page .cart-item-wrap .cart-item-wrap {
         padding: 30px 12px;
     }
@@ -2891,7 +2891,7 @@ ul.sit-map-ul li.site-map-li .site-main-title ul.site-sub-link li.site-title a::
     margin: 0px 0px 10px 0px;
     line-height: 1;
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .cart-page .cart-info-wrap .cart-calculator {
         padding: 30px 12px;
     }
@@ -2935,7 +2935,7 @@ ul.sit-map-ul li.site-map-li .site-main-title ul.site-sub-link li.site-title a::
 .cart-page .cart-info-wrap .cart-total .cart-payment-icon ul.payment-icon {
     justify-content: center;
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .cart-page .cart-total-wrap {
         padding: 30px 12px;
     }
@@ -3007,7 +3007,7 @@ ul.sit-map-ul li.site-map-li .site-main-title ul.site-sub-link li.site-title a::
         width: calc(100% - 30px);
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .password-block {
         margin: -30px 0px 0px -12px;
     }
@@ -3238,7 +3238,7 @@ ul.pro-submit li.label-info label.box-area input.cust-checkbox:checked ~ span.cu
         width: calc(50% - 30px);
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .checkout-area {
         margin: 0px 0px 0px -12px;
     }
@@ -3307,7 +3307,7 @@ ul.pro-submit li.label-info label.box-area input.cust-checkbox:checked ~ span.cu
         width: calc(50% - 15px);
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .billing-area form .billing-form ul.input-2 {
         margin: -15px 0px 0px -12px; 
     }
@@ -3511,7 +3511,7 @@ ul.pro-submit li.label-info label.box-area input.cust-checkbox:checked ~ span.cu
         margin: 0px 0px 60px;
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .checkout-tab ul.nav.nav-tabs {
         margin: 0px 0px 40px;
     }
@@ -3545,7 +3545,7 @@ ul.pro-submit li.label-info label.box-area input.cust-checkbox:checked ~ span.cu
     margin: 0px 0px 0px 30px;
     border: none;
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .checkout-style-2 .checkout-area .order-area {
         width: calc(100% - 12px);
         margin: 0px 0px 0px 12px;
@@ -3567,7 +3567,7 @@ ul.pro-submit li.label-info label.box-area input.cust-checkbox:checked ~ span.cu
 .checkout-style-2 .checkout-area .order-area .check-pro ul.check-ul li:last-child {
     border: none;
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .checkout-style-2 .checkout-area .order-area .check-pro h2 {
         font-size: 18px;
     }
@@ -3622,7 +3622,7 @@ ul.pro-submit li.label-info label.box-area input.cust-checkbox:checked ~ span.cu
         border-top: 1px solid var(--border-color);
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .check-3 ul.check-3-ul {
         margin: 0px 0px 0px -12px;
     }
@@ -3915,7 +3915,7 @@ ul.pro-submit li.label-info label.box-area input.cust-checkbox:checked ~ span.cu
         margin: 30px 0px 0px;
     }
 }
-@media (max-width: 767px) {
+@media (max-width: 479px) {
     .coming-soon-area .customer-area .customer-content .acc-form h2 {
         font-size: 40px;
         margin: 24px 0px 0px;

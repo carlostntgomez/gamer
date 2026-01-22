@@ -41,21 +41,22 @@ class BrandResource extends Resource
                             ->maxLength(255)
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Forms\Set $set, ?string $state) {
+                                if (!$state) return;
                                 $set('slug', Str::slug($state));
                                 $set('seo_title', $state);
                             }),
 
                         FileUpload::make('logo_path')
                             ->label('Logo')
-                            ->directory('brands')
+                            ->directory('temp-uploads')
                             ->disk('public')
                             ->image()
                             ->imageEditor()
+                            ->imageCropAspectRatio('1:1')
+                            ->imageResizeTargetWidth('200')
+                            ->imageResizeTargetHeight('200')
                             ->imagePreviewHeight('150')
-                            ->getUploadedFileNameForStorageUsing(
-                                fn (TemporaryUploadedFile $file, callable $get): string => Str::slug($get('name')) . '-' . uniqid() . '.' . $file->guessExtension()
-                            )
-                            ->helperText('Sube el logo de la marca. Se recomienda un formato cuadrado (ej: 200x200px).'),
+                            ->helperText('El logo se recortará a 200x200 y se convertirá a formato WebP.'),
                     ]),
                     Forms\Components\RichEditor::make('description')
                         ->label('Descripción')

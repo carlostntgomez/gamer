@@ -5,6 +5,7 @@
     pkgs.php83
     pkgs.php83Packages.composer
     pkgs.git
+    pkgs.sqlite # <-- Añadido el paquete que faltaba
   ];
 
   idx.extensions = [

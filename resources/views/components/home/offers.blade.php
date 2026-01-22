@@ -6,7 +6,7 @@
             <li class="offer-li">
                 <div class="offer-wrap">
                     <a href="{{ $offer->cta_link }}" class="banner-img">
-                        <img src="{{ Illuminate\Support\Facades\Storage::url($offer->image) }}" class="img-fluid" alt="{{ $offer->title }}">
+                        <img src="{{ Illuminate\Support\Facades\Storage::url($offer->image_path) }}" class="img-fluid" alt="{{ $offer->title }}">
                     </a>
                     <div class="offer-text-content">
                         <div class="offer-text-info">

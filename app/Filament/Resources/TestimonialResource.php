@@ -60,13 +60,16 @@ class TestimonialResource extends Resource
                             FileUpload::make('image_path')
                                 ->label('Foto del Autor')
                                 ->directory('testimonials')->disk('public')->image()->imageEditor()
+                                ->imageCropAspectRatio('1:1')
+                                ->imageResizeTargetWidth('200')
+                                ->imageResizeTargetHeight('200')
                                 ->getUploadedFileNameForStorageUsing(
                                     fn (TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
                                         ->beforeLast('.')
                                         ->slug()
                                         ->append('-' . uniqid() . '.webp')
                                 )
-                                ->helperText('Opcional. La foto se mostrará junto al testimonio.')
+                                ->helperText('Opcional. La foto se recortará a 200x200px y se mostrará en formato circular.')
                                 ->columnSpanFull(),
                             Select::make('rating')
                                 ->label('Calificación')

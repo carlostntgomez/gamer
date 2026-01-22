@@ -10,98 +10,94 @@ use Illuminate\Support\Str;
 
 class BrandSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $this->command->info('Starting Brand seeder...');
+        $this->command->info('--- Iniciando Seeder de Marcas ---');
 
-        $storagePath = storage_path('app/public/brands');
+        // Definir rutas
+        $finalStoragePath = storage_path('app/public/brands');
+        $tempStoragePath = storage_path('app/public/temp-uploads/seeder');
         $sampleImagesPath = public_path('imagenes de muestra/brand-logo');
 
-        // 1. Cleanup operations
-        $this->command->comment('Performing cleanup...');
+        // 1. Operaciones de limpieza
+        $this->command->comment('Realizando limpieza de datos antiguos...');
         Schema::disableForeignKeyConstraints();
         Brand::truncate();
         Schema::enableForeignKeyConstraints();
 
-        if (File::isDirectory($storagePath)) {
-            File::deleteDirectory($storagePath);
-        }
-        File::makeDirectory($storagePath, 0755, true);
-        $this->command->comment('Cleanup complete.');
+        File::deleteDirectory($finalStoragePath);
+        File::makeDirectory($finalStoragePath, 0755, true);
+        File::deleteDirectory($tempStoragePath);
+        File::makeDirectory($tempStoragePath, 0755, true);
+        $this->command->comment('Limpieza completada.');
 
-        // 2. Define Brand Data with specific logos
-        $brandsData = [
-            ['name' => 'Sony', 'file' => 'home8-brand-logo1.png'],
-            ['name' => 'Microsoft', 'file' => 'home8-brand-logo2.png'],
-            ['name' => 'Nintendo', 'file' => 'home8-brand-logo3.png'],
-            ['name' => 'Valve', 'file' => 'home8-brand-logo4.png'],
-            ['name' => 'Logitech', 'file' => 'home8-brand-logo5.png'],
-            ['name' => 'Razer', 'file' => 'home8-brand-logo6.png'],
-        ];
-        
-        $moreBrands = [
-            'Corsair', 'HyperX', 'Alienware', 'HP Omen', 'Samsung', 'Apple',
-            'Google', 'OnePlus', 'Xiaomi'
+        // 2. Definir las marcas a crear
+        $brands = [
+            // Videojuegos (Moderno y PC)
+            'Sony', 'Microsoft', 'Nintendo', 'Valve',
+            // Videojuegos (Retro)
+            'Sega',
+            // Accesorios y Componentes
+            'Logitech', 'Razer', 'Corsair', 'AMD', 'Nvidia',
+            // Celulares y Wearables
+            'Samsung', 'Apple', 'Xiaomi', 'Google'
         ];
 
-        // 3. Verify sample images directory
-        if (!File::exists($sampleImagesPath)) {
-            $this->command->error('Sample images directory not found: ' . $sampleImagesPath);
-            $this->command->info('Creating brands without logos.');
-            foreach (array_merge($brandsData, array_map(fn($name) => ['name' => $name, 'file' => null], $moreBrands)) as $brandData) {
-                Brand::create(['name' => $brandData['name']]);
+        // 3. Obtener logos de muestra disponibles
+        if (!File::isDirectory($sampleImagesPath)) {
+            $this->command->error('Directorio de imágenes de muestra no encontrado: ' . $sampleImagesPath);
+            $this->command->info('Como alternativa, se crearán las marcas sin logos.');
+            foreach ($brands as $name) {
+                Brand::create(['name' => $name]);
             }
             return;
         }
 
-        // 4. Create Brands and Process Logos
-        $this->command->info('Creating brands and processing logos...');
-        foreach ($brandsData as $brandData) {
-            $logoPath = $this->copyLogo($sampleImagesPath, $storagePath, $brandData['file'], $brandData['name']);
+        $availableLogos = array_map(fn($file) => $file->getFilename(), File::files($sampleImagesPath));
+
+        if (empty($availableLogos)) {
+            $this->command->warn('No se encontraron logos de muestra. Se crearán las marcas sin logos.');
+            foreach ($brands as $name) {
+                Brand::create(['name' => $name]);
+            }
+            return;
+        }
+
+        // 4. Crear las marcas con logos aleatorios
+        $this->command->info('Creando ' . count($brands) . ' marcas y asignando logos aleatorios...');
+        foreach ($brands as $brandName) {
+            $randomLogoFile = $availableLogos[array_rand($availableLogos)];
+            $tempLogoPath = $this->copyToTemp($sampleImagesPath, $tempStoragePath, $randomLogoFile, $brandName);
             
             Brand::create([
-                'name' => $brandData['name'],
-                'logo_path' => $logoPath,
+                'name' => $brandName,
+                'logo_path' => $tempLogoPath,
             ]);
         }
         
-        // Create additional brands without logos
-        foreach ($moreBrands as $brandName) {
-            Brand::create(['name' => $brandName]);
-            $this->command->line("Created brand '{$brandName}' without a logo.");
-        }
-
-        $this->command->info('Brand seeding completed successfully.');
+        $this->command->info('Seeder de Marcas finalizado con éxito.');
+        $this->command->comment('El BrandObserver ha procesado, convertido (WebP) y movido los logos automáticamente.');
+        $this->command->info('--- Seeder de Marcas finalizado ---');
     }
 
-    /**
-     * Copies a logo image.
-     */
-    private function copyLogo(string $samplePath, string $storagePath, ?string $fileName, string $brandName): ?string
+    private function copyToTemp(string $samplePath, string $tempPath, ?string $fileName, string $brandName): ?string
     {
-        if (!$fileName) {
-            return null;
-        }
+        if (!$fileName) return null;
 
         $sourceFile = $samplePath . '/' . $fileName;
         if (!File::exists($sourceFile)) {
-            $this->command->warn("  - Logo file not found for '{$brandName}': {$fileName}");
+            $this->command->warn("  - Archivo de logo no encontrado para '{$brandName}': {$fileName}");
             return null;
         }
 
-        $newFileName = Str::slug($brandName) . '-' . uniqid() . '.png';
-        $destinationFile = $storagePath . '/' . $newFileName;
-        
-        try {
-            File::copy($sourceFile, $destinationFile);
-            $this->command->line("  - Copied logo for '{$brandName}'.");
-            return 'brands/' . $newFileName;
-        } catch (\Exception $e) {
-            $this->command->error("  - Failed to copy logo for '{$brandName}': " . $e->getMessage());
-            return null;
-        }
+        $tempFileName = Str::random(20) . '.' . File::extension($sourceFile);
+        $destinationFile = $tempPath . '/' . $tempFileName;
+
+        File::copy($sourceFile, $destinationFile);
+        $relativePath = 'temp-uploads/seeder/' . $tempFileName;
+
+        $this->command->line("  - Logo '{$fileName}' preparado para '{$brandName}' en ubicación temporal: {$relativePath}");
+
+        return $relativePath;
     }
 }

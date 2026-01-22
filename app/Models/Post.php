@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,9 +16,10 @@ class Post extends Model
 
     protected $fillable = [
         'user_id',
+        'author_id',
         'title',
         'slug',
-        'image_path',
+        'main_image_path',
         'content',
         'excerpt',
         'published_at',
@@ -33,9 +33,13 @@ class Post extends Model
         'seo_keywords' => 'array',
     ];
 
-    protected $appends = [
-        'image_url',
-    ];
+    /**
+     * Get the full URL for the main image.
+     */
+    public function getMainImageUrlAttribute(): ?string
+    {
+        return $this->main_image_path ? Storage::disk('public')->url($this->main_image_path) : null;
+    }
 
     /**
      * Get the options for generating the slug.
@@ -62,15 +66,13 @@ class Post extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(Author::class);
+    }
+
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class);
-    }
-
-    protected function imageUrl(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => $this->image_path ? Storage::url($this->image_path) : null,
-        );
     }
 }

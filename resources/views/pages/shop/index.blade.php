@@ -7,22 +7,21 @@
                 <div class="row">
                     <div class="col">
                         <div class="breadcrumb-index">
-                            <!-- breadcrumb-list start -->
                             <ul class="breadcrumb-ul">
                                 <li class="breadcrumb-li">
-                                    <a class="breadcrumb-link" href="/">Inicio</a>
+                                    <a class="breadcrumb-link" href="{{ route('home') }}">Inicio</a>
                                 </li>
                                 <li class="breadcrumb-li">
                                     <span class="breadcrumb-text">Tienda</span>
                                 </li>
                             </ul>
-                            <!-- breadcrumb-list end -->
                         </div>
                     </div>
                 </div>
             </div>
         </section>
         <!-- breadcrumb end -->
+
         <!-- collection section start -->
         <section class="collection-page bg-color section-ptb">
             <div class="container">
@@ -33,32 +32,38 @@
                                 <h2 data-animate="animate__fadeInUp"><span>Nuestra Colección</span></h2>
                             </div>
                         </div>
-                        <!-- special-product start -->
-                        <div class="special-product grid-3">
-                            <div class="collection-category">
-                                <div class="row">
-                                    <div class="col">
-                                        <div class="collection-wrap">
-                                            @if($products->count() > 0)
-                                            <ul class="product-view-ul">
-                                                @foreach($products as $product)
-                                                    <x-product-card :product="$product" />
-                                                @endforeach
-                                            </ul>
-                                            @else
-                                            <div class="text-center">
-                                                <p>No hay productos en nuestra colección en este momento.</p>
+                        
+                        <!-- product-area start: Modificado para coincidir con la plantilla collection.html -->
+                        <div class="product-area">
+                            @if($products->count() > 0)
+                                <div class="special-product grid-3">
+                                    <div class="collection-category">
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="collection-wrap">
+                                                    <ul class="product-view-ul">
+                                                        @foreach($products as $product)
+                                                            <li class="pro-item-li" data-animate="animate__fadeInUp">
+                                                                <x-product-card :product="$product" />
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
                                             </div>
-                                            @endif
-                                        </div>
-                                        <div class="paginatoin-area">
-                                             {{ $products->links('vendor.pagination.bootstrap-5') }}
                                         </div>
                                     </div>
                                 </div>
+                            @else
+                                <div class="text-center">
+                                    <p>No hay productos en nuestra colección en este momento.</p>
+                                </div>
+                            @endif
+                            <div class="paginatoin-area">
+                                {{ $products->links('vendor.pagination.bootstrap-5') }}
                             </div>
                         </div>
-                        <!-- special-product end -->
+                        <!-- product-area end -->
+
                     </div>
                 </div>
             </div>

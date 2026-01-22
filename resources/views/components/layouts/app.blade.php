@@ -1,9 +1,29 @@
+@props([
+    'settings' => \App\Models\Setting::all()->keyBy('key'),
+    'product' => null, // Hacemos que el producto sea opcional
+])
 <?php
 
-// Determine SEO values based on whether a product is passed
-$title = isset($product) && $product->seo_title ? $product->seo_title : 'Electon - The Electronics eCommerce Bootstrap Template';
-$description = isset($product) && $product->seo_description ? $product->seo_description : 'A best stylish, creative, modern responsive template for different eCommerce business or industries.';
-$keywords = isset($product) && !empty($product->seo_keywords) ? (is_array($product->seo_keywords) ? implode(', ', $product->seo_keywords) : $product->seo_keywords) : 'food template, bakery products, html, eCommerce html template,plants, organic food, restaurant, live tree, responsive, pizza, burger, furniture, mobile, watches, electronics, computers accessories, toys, jewellery, restaurant accessories';
+    // Valores SEO por defecto desde la configuración
+    $defaultTitle = $settings['seo_title']->value ?? 'TecnnyGames';
+    $defaultDesc = $settings['seo_description']->value ?? 'La mejor plantilla moderna y responsive para diferentes negocios o industrias de eCommerce.';
+    $defaultKeywords = $settings['seo_keywords']->value ?? 'plantilla de comida, productos de panadería, html, plantilla html de comercio electrónico, plantas, comida orgánica, restaurante, árbol vivo, responsive, pizza, hamburguesa, muebles, móviles, relojes, electrónica, accesorios de computadoras, juguetes, joyería, accesorios de restaurante';
+
+    // Valores específicos de la página
+    $title = $defaultTitle;
+    $description = $defaultDesc;
+    $keywords = $defaultKeywords;
+    $ogType = 'website';
+    $ogImage = asset('img/favicon/favicon8.png'); // Imagen Open Graph por defecto
+
+    if (isset($product)) {
+        // --- SEO específico del producto ---
+        $title = $product->seo_title ?: $product->name . ' | ' . $defaultTitle;
+        $description = $product->seo_description ?: $product->short_description;
+        $keywords = !empty($product->seo_keywords) ? (is_array($product->seo_keywords) ? implode(', ', $product->seo_keywords) : $product->seo_keywords) : $defaultKeywords;
+        $ogType = 'product';
+        $ogImage = $product->main_image_url; // Asumimos que existe un accesor 'main_image_url'
+    }
 
 ?>
 
@@ -13,19 +33,33 @@ $keywords = isset($product) && !empty($product->seo_keywords) ? (is_array($produ
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <!-- SEO Meta Tags -->
+        <!-- Metaetiquetas SEO -->
         <title>{{ $title }}</title>
         <meta name="description" content="{{ $description }}" />
         <meta name="keywords" content="{{ $keywords }}" />
         <meta name="author" content="spacingtech_webify">
 
-        <!-- CSRF Token -->
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="{{ $ogType }}">
+        <meta property="og:url" content="{{ url()->current() }}">
+        <meta property="og:title" content="{{ $title }}">
+        <meta property="og:description" content="{{ $description }}">
+        <meta property="og:image" content="{{ $ogImage }}">
+
+        <!-- Twitter -->
+        <meta property="twitter:card" content="summary_large_image">
+        <meta property="twitter:url" content="{{ url()->current() }}">
+        <meta property="twitter:title" content="{{ $title }}">
+        <meta property="twitter:description" content="{{ $description }}">
+        <meta property="twitter:image" content="{{ $ogImage }}">
+
+        <!-- Token CSRF -->
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <!-- Favicon -->
         <link rel="icon" type="image/x-icon" href="{{ asset('img/favicon/favicon8.png') }}">
         
-        <!-- Styles -->
+        <!-- Estilos -->
         <link rel="stylesheet" type="text/css" href="{{ asset('css/bootstrap.min.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ asset('css/bootstrap-icons.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ asset('css/magnific-popup.css') }}">
@@ -39,13 +73,15 @@ $keywords = isset($product) && !empty($product->seo_keywords) ? (is_array($produ
         <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/themes/base/jquery-ui.min.css">
         <link rel="stylesheet" type="text/css" href="{{ asset('css/collection.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ asset('css/blog.css') }}">
-        <link rel="stylesheet" type="text/css" href="{{ asset('css/other-pages.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ asset('css/product-page.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ asset('css/style3.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ asset('css/other-pages.css') }}">
 
         @stack('styles')
     </head>
     <body>
+
+        <x-layouts.mobile-menu />
 
         <x-layouts.header />
 
@@ -56,6 +92,9 @@ $keywords = isset($product) && !empty($product->seo_keywords) ? (is_array($produ
         <x-layouts.footer />
 
         <x-cart-drawer />
+        
+        <x-product-quick-view />
+
         <div class="bg-screen"></div>
 
         <div class="modal fade deliver-modal" id="deliver-modal" tabindex="-1" aria-hidden="true">
@@ -83,10 +122,10 @@ $keywords = isset($product) && !empty($product->seo_keywords) ? (is_array($produ
                                 <h4>Ayuda</h4>
                                 <p>Ponte en contacto si tienes otras preguntas y/o inquietudes.</p>
                                 <p>
-                                    Correo Electrónico:<a href="mailto:contact@domain.com">demo@gmail.com</a>
+                                    Correo Electrónico:<a href="mailto:{{ $settings['email']->value ?? 'demo@gmail.com' }}">{{ $settings['email']->value ?? 'demo@gmail.com' }}</a>
                                 </p>
                                 <p>
-                                    Teléfono:<a href="tel:+1(23)456789">+1 (23) 456 789</a>
+                                    Teléfono:<a href="tel:{{ $settings['phone']->value ?? '+1(23)456789' }}">{{ $settings['phone']->value ?? '+1 (23) 456 789' }}</a>
                                 </p>
                             </div>
                         </div>
@@ -102,18 +141,21 @@ $keywords = isset($product) && !empty($product->seo_keywords) ? (is_array($produ
                         <button type="button" class="pop-close" data-bs-dismiss="modal" aria-label="Close">
                             <i class="feather-x"></i>
                         </button>
-                        <div class="ask-form">
-                            <h6>Haz una pregunta</h6>
-                            <form method="post" class="contact-form">
-                                <div class="form-grp">
-                                    <input type="text" name="contact[name]" required="" placeholder="Tu nombre*">
-                                    <input type="text" name="contact[phone]" placeholder="Tu número de teléfono">
-                                    <input type="email" name="contact[email]" required="" placeholder="Tu correo electrónico*">
-                                    <textarea name="contact[question]" rows="4" required="" placeholder="Tu mensaje*"></textarea>
-                                    <p>* Campos obligatorios</p>
-                                    <button type="submit" class="btn-style2">Enviar ahora</button>
-                                </div>
-                            </form>
+                        <div id="ask-question-modal-content">
+                            <div class="ask-form">
+                                <h6>Haz una pregunta</h6>
+                                <form id="ask-question-form" action="{{ route('contact.ask-question') }}" method="post" class="contact-form">
+                                    @csrf
+                                    <div class="form-grp">
+                                        <input type="text" name="name" required placeholder="Tu nombre*">
+                                        <input type="text" name="phone" placeholder="Tu número de teléfono">
+                                        <input type="email" name="email" required placeholder="Tu correo electrónico*">
+                                        <textarea name="question" rows="4" required placeholder="Tu mensaje*"></textarea>
+                                        <p>* Campos obligatorios</p>
+                                        <button type="submit" class="btn-style2">Enviar ahora</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -136,5 +178,104 @@ $keywords = isset($product) && !empty($product->seo_keywords) ? (is_array($produ
         <script src="{{ asset('js/cart.js') }}"></script>
 
         @stack('scripts')
+
+        <script>
+        $(document).ready(function() {
+
+            // =========================================================================
+            // LÓGICA DE VISTA RÁPIDA (QUICK VIEW) - MÉTODO ROBUSTO CON EVENTOS DE BOOTSTRAP
+            // =========================================================================
+            var quickViewModal = document.getElementById('quickview');
+            quickViewModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget; // Botón que disparó el modal
+                var productSlug = button.getAttribute('data-product-slug');
+                var modalBody = quickViewModal.querySelector('.modal-body');
+
+                // 1. Inmediatamente muestra un spinner de carga en el modal
+                modalBody.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="min-height: 300px;"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
+
+                // 2. Realiza la llamada AJAX para obtener el contenido del producto
+                $.ajax({
+                    url: '/shop/quick-view/' + productSlug,
+                    type: 'GET',
+                    success: function(response) {
+                        // 3. Cuando la llamada tiene éxito, inyecta el HTML recibido en el modal
+                        modalBody.innerHTML = response;
+                    },
+                    error: function(xhr) {
+                        // 4. Si hay un error, muestra un mensaje de error
+                        console.error("Error al cargar la vista rápida:", xhr.responseText);
+                        modalBody.innerHTML = '<div class="text-center p-5"><p class="text-danger">Error al cargar el producto. Por favor, inténtelo de nuevo más tarde.</p></div>';
+                    }
+                });
+            });
+
+            // =========================================================================
+            // LÓGICA PARA AÑADIR AL CARRITO DESDE TARJETAS DE PRODUCTO
+            // =========================================================================
+            $(document).on('click', '.add-to-cart-btn', function(e) {
+                e.preventDefault();
+                var $button = $(this);
+                var productId = $button.data('product-id');
+
+                $.ajax({
+                    url: '{{ route("cart.store") }}',
+                    type: 'POST',
+                    data: {
+                        '_token': '{{ csrf_token() }}',
+                        'product_id': productId,
+                        'quantity': 1 // Se añade 1 por defecto desde la tarjeta
+                    },
+                    beforeSend: function() {
+                        $button.addClass('loading'); // Muestra feedback visual
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('.cart-count').text(response.cart_count); // Actualiza el contador del header
+                            window.refreshCartDrawer(window.openCartDrawer); // Refresca y abre el panel
+                        } else {
+                            alert(response.message || 'No se pudo añadir el producto.');
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error("Error al añadir al carrito:", xhr.responseText);
+                        alert('Hubo un problema de comunicación. Por favor, inténtalo de nuevo.');
+                    },
+                    complete: function() {
+                        $button.removeClass('loading'); // Limpia el feedback visual
+                    }
+                });
+            });
+
+            // =========================================================================
+            // LÓGICA PARA FORMULARIO "HAZ UNA PREGUNTA" (se mantiene intacta)
+            // =========================================================================
+            $('#ask-question-form').on('submit', function(e) {
+                e.preventDefault();
+                var form = $(this);
+                var modalContent = $('#ask-question-modal-content');
+
+                $.ajax({
+                    url: form.attr('action'),
+                    type: 'POST',
+                    data: form.serialize(),
+                    success: function(response) {
+                        if (response.success) {
+                            modalContent.html('<div class="text-center p-4"><i class="fas fa-check-circle fa-3x text-success mb-3"></i><p>' + response.message + '</p></div>');
+                        }
+                    },
+                    error: function(xhr) {
+                        var errors = xhr.responseJSON.errors;
+                        var errorHtml = '<div class="alert alert-danger"><ul>';
+                        $.each(errors, function(key, value) {
+                            errorHtml += '<li>' + value + '</li>';
+                        });
+                        errorHtml += '</ul></div>';
+                        modalContent.find('.form-grp').prepend(errorHtml);
+                    }
+                });
+            });
+        });
+        </script>
     </body>
 </html>

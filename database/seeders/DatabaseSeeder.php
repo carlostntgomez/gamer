@@ -3,8 +3,6 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,35 +11,44 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Reducir a 5 usuarios de prueba
-        User::factory(5)->create();
-
-        // Solo crear el usuario administrador si no existe
-        if (!User::where('email', 'admin@tecnnygames.com')->exists()) {
-            User::factory()->create([
-                'name' => 'Admin',
-                'email' => 'admin@tecnnygames.com',
-                'password' => Hash::make('password'),
-            ]);
-        }
+        $this->command->info('======================================================================');
+        $this->command->info('    Iniciando el proceso de siembra de la base de datos completa    ');
+        $this->command->info('======================================================================');
 
         $this->call([
-            SettingsSeeder::class, // Seeder para la configuración del sitio
+            // 1. Configuración Base y Esencial
+            SettingsSeeder::class,
+
+            // 2. Estructura del E-commerce
             CategorySeeder::class,
             TopCategorySeeder::class,
             BrandSeeder::class,
-            TagSeeder::class,      // <--- AÑADIDO
-            ProductSeeder::class,
-            OfferSeeder::class,
+            ShippingZoneSeeder::class,
+
+            // 3. Contenido del Blog
+            AuthorSeeder::class,
+            TagSeeder::class,
             PostSeeder::class,
-            OrderSeeder::class,
-            TicketSeeder::class,
-            DiscountSeeder::class,
-            BannerSeeder::class,
-            WishlistSeeder::class,
-            TestimonialSeeder::class,
-            ReviewSeeder::class,
+
+            // 4. Contenido de la Página de Inicio (Homepage)
             MainSliderSeeder::class,
+            BannerSeeder::class,
+            OfferSeeder::class,
+
+            // 5. Productos y Datos Relacionados
+            ProductSeeder::class,
+            DiscountSeeder::class,
+            ReviewSeeder::class,
+
+            // 6. Datos Específicos de Usuario
+            OrderSeeder::class, // Depende de productos y usuarios
+
+            // 7. Otros
+            TestimonialSeeder::class,
         ]);
+
+        $this->command->info('======================================================================');
+        $this->command->info('     Siembra de la base de datos completada exitosamente     ');
+        $this->command->info('======================================================================');
     }
 }

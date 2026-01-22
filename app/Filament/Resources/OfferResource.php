@@ -9,10 +9,8 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Str;
-use Intervention\Image\Laravel\Facades\Image;
-use Illuminate\Support\Facades\Storage;
 use Filament\Forms\Components\Section;
+use Filament\Tables\Columns\ToggleColumn;
 
 class OfferResource extends Resource
 {
@@ -32,50 +30,47 @@ class OfferResource extends Resource
                     Forms\Components\TextInput::make('title')
                         ->label('Título')
                         ->required()
-                        ->maxLength(255),
+                        ->maxLength(255)
+                        ->helperText('El texto principal que capta la atención en la oferta.'),
                     Forms\Components\TextInput::make('subtitle')
                         ->label('Subtítulo')
-                        ->maxLength(255),
+                        ->maxLength(255)
+                        ->helperText('Un texto secundario que complementa o describe la oferta.'),
                 ])->columnSpan(2),
 
                 Section::make('Imagen de la Oferta')->schema([
-                    Forms\Components\FileUpload::make('image')
+                    Forms\Components\FileUpload::make('image_path')
                         ->label('Imagen')
-                        ->image()
-                        ->directory('offers')
                         ->required()
-                        ->mutateDehydratedStateUsing(function ($state, $get) {
-                            if (!$state) {
-                                return null;
-                            }
-
-                            $title = $get('title');
-                            $filename = Str::slug($title) . '-' . uniqid() . '.webp';
-                            $path = 'offers/' . $filename;
-
-                            $image = Image::read(storage_path('app/public/' . $state));
-                            $image->encode(new \Intervention\Image\Encoders\WebpEncoder(quality: 80));
-                            Storage::disk('public')->put($path, (string) $image);
-                            
-                            // Eliminar el archivo temporal
-                            Storage::disk('public')->delete($state);
-
-                            return $path;
-                        }),
+                        ->image()
+                        ->rules(['dimensions:min_width=960,min_height=600'])
+                        ->validationMessages([
+                            'dimensions' => 'La imagen debe tener un tamaño mínimo de 960x600 píxeles para poder recortarla.',
+                        ])
+                        ->helperText('Resolución obligatoria: 960x600px. La imagen se recortará a esta proporción.')
+                        ->imageEditor()
+                        ->imageEditorAspectRatios(['960:600'])
+                        ->imageEditorViewportWidth('960')
+                        ->imageEditorViewportHeight('600')
+                        ->disk('public')
+                        ->directory('temp-uploads'),
                 ])->columnSpan(2),
 
                 Section::make('Llamada a la Acción (CTA)')->schema([
                     Forms\Components\TextInput::make('cta_text')
                         ->label('Texto del Botón (CTA)')
                         ->required()
-                        ->maxLength(255),
+                        ->maxLength(255)
+                        ->helperText('El texto que se mostrará dentro del botón (ej. "Comprar Ahora", "Ver Oferta").'),
                     Forms\Components\TextInput::make('cta_link')
                         ->label('Enlace del Botón (CTA)')
                         ->required()
-                        ->maxLength(255),
+                        ->maxLength(255)
+                        ->helperText('La URL a la que redirigirá el botón (ej. "/productos/descuentos").'),
                     Forms\Components\Toggle::make('is_active')
                         ->label('Activo')
-                        ->required(),
+                        ->required()
+                        ->helperText('Controla si esta oferta se muestra en la página principal.'),
                 ])->columns(2),
             ]);
     }
@@ -84,7 +79,7 @@ class OfferResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('image')
+                Tables\Columns\ImageColumn::make('image_path')
                     ->label('Imagen'),
                 Tables\Columns\TextColumn::make('title')
                     ->label('Título')
@@ -92,9 +87,8 @@ class OfferResource extends Resource
                 Tables\Columns\TextColumn::make('subtitle')
                     ->label('Subtítulo')
                     ->searchable(),
-                Tables\Columns\IconColumn::make('is_active')
-                    ->label('Activo')
-                    ->boolean(),
+                ToggleColumn::make('is_active')
+                    ->label('Activo'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creado el')
                     ->dateTime()

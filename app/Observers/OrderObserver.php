@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Order;
+// use Illuminate\Support\Facades\Log; // Uncomment if Log is needed elsewhere
 
 class OrderObserver
 {
@@ -16,25 +17,32 @@ class OrderObserver
     public function saved(Order $order): void
     {
         // Recalculate subtotal from the persisted order items
-        $subtotal = $order->orderItems->reduce(function ($carry, $item) {
-            // Ensure item and its properties exist to prevent errors
-            if ($item && isset($item->quantity) && isset($item->unit_price)) {
-                return $carry + ($item->quantity * $item->unit_price);
-            }
-            return $carry;
-        }, 0);
+        // $recalculatedSubtotal = $order->orderItems->reduce(function ($carry, $item) {
+        //     // Ensure item and its properties exist to prevent errors
+        //     // Usar $item->price en lugar de $item->unit_price, consistente con OrderItem model
+        //     if ($item && isset($item->quantity) && isset($item->price)) {
+        //         return $carry + ($item->quantity * $item->price);
+        //     }
+        //     return $carry;
+        // }, 0);
 
-        // Create a numeric representation of current and new totals for a reliable comparison.
-        $currentTotal = (float) $order->total;
-        $newTotal = (float) $subtotal;
+        // // Calculate the full new total including shipping cost
+        // $recalculatedTotal = $recalculatedSubtotal + $order->shipping_cost; // AHORA INCLUYE EL COSTO DE ENVÍO
 
-        // Only update and save if the total has actually changed.
-        if ($currentTotal !== $newTotal) {
-            $order->subtotal = $newTotal;
-            $order->total = $newTotal; // In the future, this could include shipping, taxes, etc.
+        // // Create a numeric representation of current and new totals for a reliable comparison.
+        // $currentSubtotal = (float) $order->subtotal;
+        // $currentTotal = (float) $order->total;
 
-            // Save the model without triggering the 'saved' event again, preventing an infinite loop.
-            $order->saveQuietly();
-        }
+        // // Only update and save if the subtotal or total has actually changed.
+        // // Comparar con una pequeña tolerancia para flotantes
+        // $tolerance = 0.0001; // Para evitar problemas de precisión con flotantes
+
+        // if (abs($currentSubtotal - $recalculatedSubtotal) > $tolerance || abs($currentTotal - $recalculatedTotal) > $tolerance) {
+        //     $order->subtotal = $recalculatedSubtotal;
+        //     $order->total = $recalculatedTotal;
+
+        //     // Save the model without triggering the 'saved' event again, preventing an infinite loop.
+        //     $order->saveQuietly();
+        // }
     }
 }

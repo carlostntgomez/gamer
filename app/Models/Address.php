@@ -11,52 +11,46 @@ class Address extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
-        'type',
+        'order_id',
         'first_name',
         'last_name',
         'phone',
-        'address_line_1',
-        'address_line_2',
+        'email',
+        'address',
+        'apartment',
         'city',
         'state',
-        'zip_code',
         'country',
+        'neighborhood',
     ];
 
     protected $casts = [
         'type' => AddressType::class,
     ];
 
-    public function user()
+    public function order()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Order::class);
     }
 
-    public function ordersAsShipping()
-    {
-        return $this->hasMany(Order::class, 'shipping_address_id');
-    }
-
-    public function ordersAsBilling()
-    {
-        return $this->hasMany(Order::class, 'billing_address_id');
-    }
-
-    // Accessor for full name
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
     }
 
-    // Accessor for full address
+    /**
+     * Accessor for a complete, formatted string of the address.
+     */
     public function getFullAddressAttribute(): string
     {
-        $address = "{$this->address_line_1}";
-        if ($this->address_line_2) {
-            $address .= ", {$this->address_line_2}";
-        }
-        $address .= ", {$this->city}, {$this->state}, {$this->zip_code}, {$this->country}";
-        return $address;
+        $addressParts = [
+            $this->address,
+            $this->apartment,
+            $this->neighborhood,
+            $this->city,
+            $this->state,
+            $this->country,
+        ];
+        return implode(', ', array_filter($addressParts));
     }
 }

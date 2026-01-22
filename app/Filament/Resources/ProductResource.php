@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Storage;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Illuminate\Http\Client\Response;
+use Filament\Tables\Columns\IconColumn;
 
 class ProductResource extends Resource
 {
@@ -91,7 +92,6 @@ PROMPT;
                         ];
 
                         try {
-                            /** @var Response $response */
                             $response = Http::withHeaders(['Content-Type' => 'application/json'])
                                 ->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $apiKey, [
                                     'contents' => [
@@ -123,7 +123,7 @@ PROMPT;
                                     if (mb_strlen($seoDescription) > 160) {
                                         $truncated = mb_substr($seoDescription, 0, 157);
                                         $lastSpace = mb_strrpos($truncated, ' ');
-                                        $seoDescription = ($lastSpace !== false) ? mb_substr($truncated, 0, $lastSpace) . '...' : $truncated . '...';
+                                        $seoDescription = ($lastSpace !== false) ? mb_substr($truncated, 0, $lastSpace) . '...' : $truncated . '...' ;
                                     }
                                     $set('seo_description', $seoDescription);
                                     
@@ -155,14 +155,14 @@ PROMPT;
                             $set('slug', Str::slug($state));
                         }
                     }),
-                    Forms\Components\TextInput::make('slug')->label('Slug')->required()->unique(Product::class, 'slug', ignoreRecord: true)->live()->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))->helperText('URL amigable. Se genera del nombre, pero puedes editarla manually.'),
+                    Forms\Components\TextInput::make('slug')->label('Slug')->required()->unique(Product::class, 'slug', ignoreRecord: true)->live()->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))->helperText('URL amigable. Se genera del nombre, pero puedes editarla manualmente.'),
                     Forms\Components\Select::make('brand_id')->relationship('brand', 'name')->searchable()->required()->label('Marca'),
                     Forms\Components\Select::make('categories')->relationship('categories', 'name')->multiple()->searchable()->required()->label('Categorías'),
                 ])->columns(2),
                 Tabs\Tab::make('Contenido')->icon('heroicon-o-pencil-square')->schema([
-                    Textarea::make('short_description')->label('Descripción Corta')->rows(3)->columnSpanFull()->helperText('Un resumen breve para listados y vistas previas.'),
-                    RichEditor::make('long_description')->label('Descripción Larga')->columnSpanFull(),
-                    KeyValue::make('specifications')->label('Especificaciones')->keyLabel('Característica')->valueLabel('Valor')->columnSpanFull()->helperText('Añade las especificaciones técnicas del producto.'),
+                    Forms\Components\Textarea::make('short_description')->label('Descripción Corta')->rows(3)->columnSpanFull()->helperText('Un resumen breve para listados y vistas previas.'),
+                    Forms\Components\RichEditor::make('long_description')->label('Descripción Larga')->columnSpanFull(),
+                    Forms\Components\KeyValue::make('specifications')->label('Especificaciones')->keyLabel('Característica')->valueLabel('Valor')->columnSpanFull()->helperText('Añade las especificaciones técnicas del producto.'),
                 ]),
                 Tabs\Tab::make('Detalles y Stock')->icon('heroicon-o-archive-box')->schema([
                     Forms\Components\TextInput::make('sku')->label('SKU (Stock Keeping Unit)')->unique(Product::class, 'sku', ignoreRecord: true)->helperText('Código único para identificar el producto. Ej: CAM-ROJ-L-001'),
@@ -179,19 +179,45 @@ PROMPT;
                     Forms\Components\Toggle::make('is_new')->label('Marcar como Nuevo')->helperText('Añade una insignia de \'Nuevo\'.'),
                 ])->columns(2),
                 Tabs\Tab::make('Multimedia')->icon('heroicon-o-photo')->schema([
-                    FileUpload::make('main_image_path')->label('Imagen Principal')->directory('products')->disk('public')->image()->imageEditor()->required()->helperText('La primera imagen que verán los clientes.'),
-                    FileUpload::make('gallery_image_paths')->label('Galería de Imágenes')->directory('products')->disk('public')->image()->imageEditor()->multiple()->helperText('Imágenes adicionales para mostrar detalles.'),
-                    Forms\Components\TextInput::make('video_url')->label('URL del Video de YouTube')->url()->helperText('Pega aquí la URL completa de un video de YouTube.')->columnSpanFull(),
-                ])->columns(1),
+                    Forms\Components\FileUpload::make('main_image_path')
+                        ->label('Imagen Principal')
+                        ->directory('temp-uploads')
+                        ->disk('public')
+                        ->image()
+                        ->imageEditor()
+                        ->imageCropAspectRatio('1:1')
+                        ->imageResizeTargetWidth('800')
+                        ->imageResizeTargetHeight('800')
+                        ->required()
+                        ->columnSpanFull()
+                        ->helperText('Obligatoria. El editor forzará un recorte a 800x800. La imagen se convertirá a WebP.'),
+                    Forms\Components\FileUpload::make('gallery_image_paths')
+                        ->label('Galería de Imágenes')
+                        ->directory('temp-uploads')
+                        ->disk('public')
+                        ->image()
+                        ->multiple()
+                        ->reorderable()
+                        ->appendFiles()
+                        ->imageEditor()
+                        ->imageCropAspectRatio('1:1')
+                        ->imageResizeTargetWidth('800')
+                        ->imageResizeTargetHeight('800')
+                        ->maxFiles(10)
+                        ->columnSpanFull()
+                        ->helperText('Opcional. Sube hasta 10 imágenes. Recorte a 800x800 y conversión a WebP.'),
+                    Forms\Components\TextInput::make('video_url')->label('URL del Video de YouTube')->url()->helperText('Pega aquí la URL completa de un video de YouTube.'),
+                ]),
                 Tabs\Tab::make('SEO')->icon('heroicon-o-magnifying-glass')->schema([
                     Forms\Components\TextInput::make('seo_title')->label('Título SEO')->maxLength(60)->helperText('Recomendado: Máximo 60 caracteres. Se autocompleta con el nombre del producto.'),
                     Forms\Components\Textarea::make('seo_description')->label('Descripción SEO')->maxLength(160)->rows(3)->live(onBlur: true)->afterStateUpdated(function (Forms\Set $set, ?string $state) {
-                        if ($state && mb_strlen($state) > 160) {
-                            $truncated = mb_substr($state, 0, 157);
+                        $seoDescription = $state ?? '';
+                        if (mb_strlen($seoDescription) > 160) {
+                            $truncated = mb_substr($seoDescription, 0, 157);
                             $lastSpace = mb_strrpos($truncated, ' ');
-                            $seoDescription = ($lastSpace !== false) ? mb_substr($truncated, 0, $lastSpace) . '...' : $truncated . '...';
-                            $set('seo_description', $seoDescription);
+                            $seoDescription = ($lastSpace !== false) ? mb_substr($truncated, 0, $lastSpace) . '...' : $truncated . '...' ;
                         }
+                        $set('seo_description', $seoDescription);
                     })->helperText('Recomendado: Máximo 160 caracteres. Un resumen para Google.'),
                     Forms\Components\TagsInput::make('seo_keywords')->label('Palabras Clave SEO')->placeholder('Añadir etiqueta'),
                 ]),
@@ -203,26 +229,72 @@ PROMPT;
     {
         return $table
             ->columns([
-                ImageColumn::make('main_image_path')->label('Imagen')->disk('public')->defaultImageUrl(url('/images/product-placeholder.png'))->square(),
-                Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable()->sortable()->weight('bold')->description(fn (Product $record): string => $record->sku ? "SKU: {$record->sku}" : 'SKU no definido'),
-                Tables\Columns\TextColumn::make('brand.name')->label('Marca')->searchable()->sortable()->badge(),
-                Tables\Columns\TextColumn::make('categories.name')->label('Categorías')->badge()->color('primary'),
-                Tables\Columns\TextColumn::make('price')->label('Precio')->sortable()->html()->formatStateUsing(function (Product $record) {
-                    $price = number_format($record->price, 0, ',', '.');
-                    if ($record->sale_price && $record->sale_price < $record->price) {
-                        $salePrice = number_format($record->sale_price, 0, ',', '.');
-                        return "<s class='text-gray-400'>$ {$price}</s><br><strong class='text-success-600'>$ {$salePrice}</strong>";
-                    }
-                    return "$ {$price}";
-                })->alignRight(),
-                Tables\Columns\TextColumn::make('stock_quantity')->label('Stock')->numeric()->sortable()->badge()->color(fn (int $state): string => match (true) {
-                    $state === 0 => 'danger',
-                    $state < 10 => 'warning',
-                    default => 'success',
-                })->alignCenter(),
-                ToggleColumn::make('is_visible')->label('Visible'),
-                ToggleColumn::make('is_featured')->label('Destacado'),
-                ToggleColumn::make('is_new')->label('Nuevo'),
+                ImageColumn::make('main_image_path')
+                    ->label('Imagen')
+                    ->disk('public')
+                    ->defaultImageUrl(url('/images/product-placeholder.png'))
+                    ->square()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Nombre')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold')
+                    ->description(fn (Product $record): string => $record->sku ? "SKU: {$record->sku}" : 'SKU no definido')
+                    ->wrap()
+                    ->toggleable()
+                    ->grow(),
+                Tables\Columns\TextColumn::make('brand.name')
+                    ->label('Marca')
+                    ->searchable()
+                    ->sortable()
+                    ->badge()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('categories.name')
+                    ->label('Categorías')
+                    ->badge()
+                    ->color('primary')
+                    ->toggleable()
+                    ->limit(2)
+                    ->wrap(),
+                Tables\Columns\TextColumn::make('price')
+                    ->label('Precio')
+                    ->sortable()
+                    ->html()
+                    ->formatStateUsing(function (Product $record) {
+                        $price = number_format($record->price, 0, ',', '.');
+                        if ($record->sale_price && $record->sale_price < $record->price) {
+                            $salePrice = number_format($record->sale_price, 0, ',', '.');
+                            return "<s class='text-gray-400'>$ {$price}</s><br><strong class='text-success-600'>$ {$salePrice}</strong>";
+                        }
+                        return "$ {$price}";
+                    })
+                    ->alignRight()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('stock_quantity')
+                    ->label('Stock')
+                    ->numeric()
+                    ->sortable()
+                    ->badge()
+                    ->color(fn (int $state): string => match (true) {
+                        $state === 0 => 'danger',
+                        $state < 10 => 'warning',
+                        default => 'success',
+                    })
+                    ->alignCenter()
+                    ->toggleable(),
+                ToggleColumn::make('is_visible')
+                    ->label('Visible')
+                    ->sortable()
+                    ->toggleable(),
+                ToggleColumn::make('is_featured')
+                    ->label('Destacado')
+                    ->sortable()
+                    ->toggleable(),
+                ToggleColumn::make('is_new')
+                    ->label('Nuevo')
+                    ->sortable()
+                    ->toggleable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('categories')->relationship('categories', 'name')->label('Categoría'),
@@ -251,8 +323,18 @@ PROMPT;
     {
         return $infolist->schema([
             Infolists\Components\Section::make('Imágenes del Producto')->schema([
-                Infolists\Components\ImageEntry::make('main_image_path')->label('Imagen Principal')->hiddenLabel()->width('100%')->height('auto')->disk('public'),
-                Infolists\Components\ImageEntry::make('gallery_image_paths')->label('Galería de Imágenes')->hiddenLabel()->width('100%')->height('auto')->disk('public'),
+                Infolists\Components\ImageEntry::make('main_image_path')
+                    ->label('Imagen Principal')
+                    ->hiddenLabel()
+                    ->width('100%')
+                    ->height('auto')
+                    ->disk('public'),
+                Infolists\Components\ImageEntry::make('gallery_image_paths')
+                    ->label('Galería de Imágenes')
+                    ->hiddenLabel()
+                    ->width('100%')
+                    ->height('auto')
+                    ->disk('public'),
             ])->columnSpan(1),
 
             Infolists\Components\Group::make([
@@ -296,7 +378,9 @@ PROMPT;
 
     public static function getRelations(): array
     {
-        return [ RelationManagers\ReviewsRelationManager::class ];
+        return [
+            RelationManagers\ReviewsRelationManager::class
+        ];
     }
 
     public static function getPages(): array

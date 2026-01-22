@@ -26,9 +26,20 @@ class OrderSeeder extends Seeder
                     ->count(fake()->numberBetween(1, 3)) // 1 to 3 items per order
                     ->create(['order_id' => $order->id]);
 
-                // Calculate total based on order items
-                $total = $order->orderItems->sum(fn ($item) => $item->quantity * $item->price);
-                $order->update(['total' => $total]);
+                // Calculate subtotal based on order items
+                $subtotal = $order->orderItems->sum(fn ($item) => $item->quantity * $item->price);
+                
+                // Generate a random shipping cost for demonstration
+                $shippingCost = fake()->randomFloat(2, 5000, 20000); // Example: between 5,000 and 20,000 COP
+
+                // Calculate total
+                $total = $subtotal + $shippingCost;
+
+                $order->update([
+                    'subtotal' => $subtotal,
+                    'shipping_cost' => $shippingCost,
+                    'total' => $total,
+                ]);
             });
     }
 }

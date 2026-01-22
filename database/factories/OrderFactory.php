@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Enums\PaymentMethod;
 use App\Models\Order;
 use App\Models\User;
-use App\Models\Address;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -22,15 +22,13 @@ class OrderFactory extends Factory
      */
     public function definition(): array
     {
-        $status = $this->faker->randomElement(['pending', 'processing', 'completed', 'cancelled']);
-
         return [
             'uuid' => (string) Str::uuid(),
             'user_id' => $this->faker->boolean(70) ? User::factory() : null,
-            'status' => $status,
+            'payment_method' => $this->faker->randomElement(PaymentMethod::class),
+            'subtotal' => 0, // Initial value, will be calculated in seeder
+            'shipping_cost' => 0, // Initial value, will be calculated in seeder
             'total' => 0, // Will be calculated after order items are attached
-            'shipping_address_id' => Address::factory()->shipping(),
-            'billing_address_id' => Address::factory()->billing(),
             'notes' => $this->faker->optional()->paragraph(),
         ];
     }

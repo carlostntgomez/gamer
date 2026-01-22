@@ -13,12 +13,7 @@ class ListBanners extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()
-                ->label('Nuevo Banner')
-                ->icon('heroicon-o-plus-circle')
-                ->modalHeading('Crear Nuevo Banner')
-                ->modalDescription('Sube y configura un nuevo banner para la página de inicio.')
-                ->modalWidth('4xl'),
+            Actions\CreateAction::make(),
         ];
     }
 }

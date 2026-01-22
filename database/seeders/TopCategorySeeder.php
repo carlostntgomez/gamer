@@ -5,9 +5,7 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\TopCategory;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class TopCategorySeeder extends Seeder
 {
@@ -16,76 +14,37 @@ class TopCategorySeeder extends Seeder
      */
     public function run(): void
     {
-        $this->command->info('Starting Top Category Seeder with WebP conversion...');
+        $this->command->info('Starting Top Category Seeder...');
 
-        // 1. Check for GD library
-        if (!extension_loaded('gd')) {
-            $this->command->error('The GD library extension is required, but it is not enabled.');
-            return;
-        }
-
-        // 2. Cleanup
+        // 1. Cleanup
         TopCategory::query()->truncate();
-        $storagePath = storage_path('app/public/top-categories');
-        if (File::isDirectory($storagePath)) {
-            File::deleteDirectory($storagePath);
+        
+        // The observer doesn't manage files anymore, but it's good practice to ensure the directory exists.
+        // We no longer clean it up because it's not the owner of the images.
+        if (!Storage::disk('public')->exists('top-categories')) {
+            Storage::disk('public')->makeDirectory('top-categories');
         }
-        File::makeDirectory($storagePath, 0755, true, true);
-        $this->command->info('Cleaned up top_categories table and directory.');
 
-        // 3. Get sample images
-        $sampleImagesPath = public_path('imagenes de muestra/top-categories');
-        if (!File::exists($sampleImagesPath)) {
-            $this->command->error('Sample images directory not found: ' . $sampleImagesPath);
+        $this->command->info('Cleaned up top_categories table.');
+
+        // 2. Get the first 6 categories that have an image
+        $categories = Category::query()->whereNotNull('image_path')->take(6)->get();
+
+        if ($categories->count() < 1) {
+            $this->command->warn('Warning: No categories with images found. Cannot seed Top Categories.');
             return;
         }
-        $sampleImages = File::files($sampleImagesPath);
-        if (empty($sampleImages)) {
-            $this->command->warn('No sample images found in ' . $sampleImagesPath);
-        }
 
-        // 4. Get categories
-        $categories = Category::query()->take(count($sampleImages))->get();
-
-        // 5. Create TopCategory entries with images
+        // 3. Create TopCategory entries
+        // The TopCategoryObserver will automatically copy the category's image path.
+        $this->command->info('Creating Top Categories... The observer will copy the image paths.');
         foreach ($categories as $index => $category) {
-            $imagePath = null;
-            if (isset($sampleImages[$index])) {
-                $sampleImage = $sampleImages[$index];
-                $sourcePath = $sampleImage->getPathname();
-                $originalFileName = $sampleImage->getFilename();
-
-                $newWebpFileName = pathinfo($originalFileName, PATHINFO_FILENAME) . '-' . uniqid() . '.webp';
-                $destinationPath = $storagePath . '/' . $newWebpFileName;
-
-                try {
-                    $image = @imagecreatefromstring(File::get($sourcePath));
-
-                    if ($image !== false) {
-                        imagepalettetotruecolor($image);
-                        imagealphablending($image, true);
-                        imagesavealpha($image, true);
-
-                        imagewebp($image, $destinationPath, 80); // 80 is quality
-                        imagedestroy($image);
-
-                        $imagePath = 'top-categories/' . $newWebpFileName;
-                        $this->command->info("Converted image for '{$category->name}' -> {$imagePath}");
-                    } else {
-                        $this->command->warn("Could not create image from string for '{$category->name}'. The file might be corrupt or an unsupported format: " . $originalFileName);
-                    }
-                } catch (\Exception $e) {
-                    $this->command->error("Failed to process image for '{$category->name}': " . $e->getMessage());
-                }
-            }
-
             TopCategory::create([
                 'category_id' => $category->id,
                 'sort_order' => $index + 1,
-                'image' => $imagePath,
             ]);
         }
 
-        $this->command->info('Top Category Seeder finished successfully.');
+        $this->command->info('Top Category Seeder finished successfully. Created ' . $categories->count() . ' top categories.');
     }
 }

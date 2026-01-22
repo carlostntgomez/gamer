@@ -7,63 +7,63 @@ use Illuminate\Http\Request;
 
 class ShopController extends Controller
 {
-    /**
-     * Muestra la página principal de la tienda con todos los productos.
-     *
-     * @return \Illuminate\Contracts\View\View
-     */
     public function index()
     {
-        $products = Product::with('brand')->paginate(12);
-
+        $products = Product::where('is_visible', true)->paginate(12);
         return view('pages.shop.index', compact('products'));
     }
 
-    /**
-     * Busca productos en la base de datos y muestra los resultados.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Contracts\View\View
-     */
     public function search(Request $request)
     {
-        $query = $request->input('query');
-
-        $products = Product::where('name', 'like', "%{$query}%")
-            ->orWhere('description', 'like', "%{$query}%")
-            ->orWhere('short_description', 'like', "%{$query}%")
-            ->with('brand')
-            ->paginate(12);
-
-        return view('pages.shop.search', compact('products', 'query'));
+        // La lógica de búsqueda puede implementarse aquí en el futuro
+        return redirect()->route('shop.index');
     }
 
-    /**
-     * Muestra la página de un producto específico.
-     *
-     * @param  \App\Models\Product  $product
-     * @return \Illuminate\Contracts\View\View
-     */
     public function show(Product $product)
     {
-        // Carga el producto con sus relaciones para optimizar las consultas a la base de datos (Eager Loading).
-        $product->load([
-            'brand',
-            'categories',
-            'reviews' => function ($query) {
-                $query->latest();
-            },
-            'reviews.user'
-        ]);
+        // Asegurarse de que el producto sea visible antes de mostrarlo
+        if (!$product->is_visible) {
+            abort(404);
+        }
 
-        // Obtener productos relacionados (de la misma categoría)
-        $related_products = Product::whereHas('categories', function ($query) use ($product) {
-            $query->whereIn('id', $product->categories->pluck('id'));
-        })
-        ->where('id', '!=', $product->id) // Excluir el producto actual
-        ->take(8) // Limitar a 8 productos
-        ->get();
+        // Carga eficiente de relaciones para evitar N+1 queries.
+        $product->load(['categories', 'brand', 'reviews.user']);
 
-        return view('pages.shop.show', compact('product', 'related_products'));
+        // Inicializar colecciones para los carruseles de productos
+        $additional_products = collect();
+        $related_products = collect();
+
+        // Obtener la primera categoría del producto para determinar las relaciones
+        $firstCategory = $product->categories->first();
+
+        if ($firstCategory) {
+            // --- Lógica para Productos Adicionales (de la misma categoría PADRE) ---
+            // Muestra productos de una categoría más amplia y relacionada.
+            if ($firstCategory->parent_id) {
+                $additional_products = Product::where('is_visible', true)
+                    ->whereHas('categories', function ($query) use ($firstCategory) {
+                        $query->where('parent_id', $firstCategory->parent_id);
+                    })
+                    ->where('id', '!=', $product->id) // Excluir el producto actual
+                    ->inRandomOrder()
+                    ->take(10)
+                    ->get();
+            }
+
+            // --- Lógica para Productos Relacionados (de la misma categoría EXACTA) ---
+            // Muestra productos que son alternativas directas.
+            $related_products = Product::where('is_visible', true)
+                ->whereHas('categories', function ($query) use ($firstCategory) {
+                    $query->where('id', $firstCategory->id);
+                })
+                ->where('id', '!=', $product->id) // Excluir el producto actual
+                ->whereNotIn('id', $additional_products->pluck('id')->all()) // No mostrar productos que ya están en la sección "adicional"
+                ->inRandomOrder()
+                ->take(10)
+                ->get();
+        }
+
+        // Pasar todos los datos a la vista
+        return view('pages.shop.show', compact('product', 'additional_products', 'related_products'));
     }
 }
