@@ -12,8 +12,13 @@
                                     <a class="breadcrumb-link" href="{{ route('home') }}">Inicio</a>
                                 </li>
                                 <li class="breadcrumb-li">
-                                    <span class="breadcrumb-text">Tienda</span>
+                                    <a class="breadcrumb-link" href="{{ route('shop.index') }}">Tienda</a>
                                 </li>
+                                @isset($searchTerm)
+                                    <li class="breadcrumb-li">
+                                        <span class="breadcrumb-text">Búsqueda</span>
+                                    </li>
+                                @endisset
                             </ul>
                         </div>
                     </div>
@@ -29,37 +34,36 @@
                     <div class="col">
                         <div class="section-capture">
                             <div class="section-title">
-                                <h2 data-animate="animate__fadeInUp"><span>Nuestra Colección</span></h2>
+                                @isset($searchTerm)
+                                    <h2 data-animate="animate__fadeInUp">Resultados para: <span>{{ $searchTerm }}</span></h2>
+                                @else
+                                    <h2 data-animate="animate__fadeInUp"><span>Nuestra Colección</span></h2>
+                                @endisset
                             </div>
                         </div>
                         
-                        <!-- product-area start: Modificado para coincidir con la plantilla collection.html -->
+                        <!-- product-area start -->
                         <div class="product-area">
                             @if($products->count() > 0)
-                                <div class="special-product grid-3">
-                                    <div class="collection-category">
-                                        <div class="row">
-                                            <div class="col">
-                                                <div class="collection-wrap">
-                                                    <ul class="product-view-ul">
-                                                        @foreach($products as $product)
-                                                            <li class="pro-item-li" data-animate="animate__fadeInUp">
-                                                                <x-product-card :product="$product" />
-                                                            </li>
-                                                        @endforeach
-                                                    </ul>
-                                                </div>
-                                            </div>
+                                <div class="row gy-4">
+                                    @foreach($products as $product)
+                                        <div class="col-lg-4 col-md-6 col-12" data-animate="animate__fadeInUp">
+                                            <x-product-card :product="$product" />
                                         </div>
-                                    </div>
+                                    @endforeach
                                 </div>
                             @else
                                 <div class="text-center">
-                                    <p>No hay productos en nuestra colección en este momento.</p>
+                                    @isset($searchTerm)
+                                        <p>No se encontraron productos para tu búsqueda '{{ $searchTerm }}'.</p>
+                                    @else
+                                        <p>No hay productos en nuestra colección en este momento.</p>
+                                    @endisset
                                 </div>
                             @endif
                             <div class="paginatoin-area">
-                                {{ $products->links('vendor.pagination.bootstrap-5') }}
+                                {{-- Aseguramos que la paginación persista en la búsqueda --}}
+                                {{ $products->appends(request()->input())->links('vendor.pagination.bootstrap-5') }}
                             </div>
                         </div>
                         <!-- product-area end -->

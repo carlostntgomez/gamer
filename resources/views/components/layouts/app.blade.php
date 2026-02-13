@@ -12,7 +12,7 @@
     // Valores específicos de la página
     $title = $defaultTitle;
     $description = $defaultDesc;
-    $keywords = $defaultKeywords;
+    $keywords = !empty($product->seo_keywords) ? (is_array($product->seo_keywords) ? implode(', ', $product->seo_keywords) : $product->seo_keywords) : $defaultKeywords;
     $ogType = 'website';
     $ogImage = asset('img/favicon/favicon8.png'); // Imagen Open Graph por defecto
 
@@ -66,7 +66,6 @@
         <link rel="stylesheet" type="text/css" href="{{ asset('css/all.min.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ asset('css/feather.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ asset('css/animate.min.css') }}">
-        <link rel="stylesheet" type="text/css" href="{{ asset('css/owl.carousel.min.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ asset('css/owl.theme.default.min.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ asset('css/swiper-bundle.min.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ asset('css/slick.css') }}">
@@ -93,8 +92,6 @@
 
         <x-cart-drawer />
         
-        <x-product-quick-view />
-
         <div class="bg-screen"></div>
 
         <div class="modal fade deliver-modal" id="deliver-modal" tabindex="-1" aria-hidden="true">
@@ -182,37 +179,6 @@
         <script>
         $(document).ready(function() {
 
-            // =========================================================================
-            // LÓGICA DE VISTA RÁPIDA (QUICK VIEW) - MÉTODO ROBUSTO CON EVENTOS DE BOOTSTRAP
-            // =========================================================================
-            var quickViewModal = document.getElementById('quickview');
-            quickViewModal.addEventListener('show.bs.modal', function (event) {
-                var button = event.relatedTarget; // Botón que disparó el modal
-                var productSlug = button.getAttribute('data-product-slug');
-                var modalBody = quickViewModal.querySelector('.modal-body');
-
-                // 1. Inmediatamente muestra un spinner de carga en el modal
-                modalBody.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="min-height: 300px;"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
-
-                // 2. Realiza la llamada AJAX para obtener el contenido del producto
-                $.ajax({
-                    url: '/shop/quick-view/' + productSlug,
-                    type: 'GET',
-                    success: function(response) {
-                        // 3. Cuando la llamada tiene éxito, inyecta el HTML recibido en el modal
-                        modalBody.innerHTML = response;
-                    },
-                    error: function(xhr) {
-                        // 4. Si hay un error, muestra un mensaje de error
-                        console.error("Error al cargar la vista rápida:", xhr.responseText);
-                        modalBody.innerHTML = '<div class="text-center p-5"><p class="text-danger">Error al cargar el producto. Por favor, inténtelo de nuevo más tarde.</p></div>';
-                    }
-                });
-            });
-
-            // =========================================================================
-            // LÓGICA PARA AÑADIR AL CARRITO DESDE TARJETAS DE PRODUCTO
-            // =========================================================================
             $(document).on('click', '.add-to-cart-btn', function(e) {
                 e.preventDefault();
                 var $button = $(this);
@@ -247,9 +213,6 @@
                 });
             });
 
-            // =========================================================================
-            // LÓGICA PARA FORMULARIO "HAZ UNA PREGUNTA" (se mantiene intacta)
-            // =========================================================================
             $('#ask-question-form').on('submit', function(e) {
                 e.preventDefault();
                 var form = $(this);

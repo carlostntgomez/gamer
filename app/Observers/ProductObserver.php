@@ -122,6 +122,8 @@ class ProductObserver
         $baseName = Str::slug($productName);
         $randomSuffix = Str::lower(Str::random(6));
         $newFileName = "{$baseName}-{$imageType}-{$randomSuffix}.webp";
+        
+        // Ensure the final path is always relative to the `products` directory
         $finalPath = 'products/' . $newFileName;
 
         try {
@@ -141,6 +143,7 @@ class ProductObserver
             imagewebp($image, $destinationFile, 80);
             imagedestroy($image);
 
+            // Return the clean, relative path
             return $finalPath;
         } catch (\Exception $e) {
             logger()->error("Image conversion failed for temp path {$tempPath}: " . $e->getMessage());

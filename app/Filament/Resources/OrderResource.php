@@ -150,33 +150,22 @@ class OrderResource extends Resource
                                 TextInput::make('city')->label('Ciudad')->required(),
                                 TextInput::make('state')->label('Departamento')->required(),
                                 Select::make('country')->label('País')->options(self::getCountries())->searchable()->native(false)->required(),
-                                TextInput::make('phone')->label('Teléfono')->required(),
-                                TextInput::make('email')->label('Email')->email()->required(),
                             ])->columns(2),
 
                         Section::make('Dirección de Facturación')
                             ->relationship('billingAddress') 
                             ->schema([
-                                Toggle::make('same_as_shipping')
-                                    ->label('Misma dirección de envío')
-                                    ->default(true)
-                                    ->live(),
-                                Group::make()
-                                    ->schema([
-                                        TextInput::make('first_name')->label('Nombres')->required(),
-                                        TextInput::make('last_name')->label('Apellidos')->required(),
-                                        TextInput::make('address')->label('Dirección')->required(),
-                                        TextInput::make('apartment')->label('Apto/Interior (Opcional)'),
-                                        TextInput::make('neighborhood')->label('Barrio')->required(),
-                                        TextInput::make('city')->label('Ciudad')->required(),
-                                        TextInput::make('state')->label('Departamento')->required(),
-                                        Select::make('country')->label('País')->options(self::getCountries())->searchable()->native(false)->required(),
-                                        TextInput::make('phone')->label('Teléfono')->required(),
-                                        TextInput::make('email')->label('Email')->email()->required(),
-                                    ])
-                                    ->hidden(fn (Get $get): bool => $get('same_as_shipping'))
-                                    ->columns(2),
-                            ]),
+                                TextInput::make('first_name')->label('Nombres')->required(),
+                                TextInput::make('last_name')->label('Apellidos')->required(),
+                                TextInput::make('address')->label('Dirección')->required(),
+                                TextInput::make('apartment')->label('Apto/Interior (Opcional)'),
+                                TextInput::make('neighborhood')->label('Barrio')->required(),
+                                TextInput::make('city')->label('Ciudad')->required(),
+                                TextInput::make('state')->label('Departamento')->required(),
+                                Select::make('country')->label('País')->options(self::getCountries())->searchable()->native(false)->required(),
+                                TextInput::make('phone')->label('Teléfono')->required(),
+                                TextInput::make('email')->label('Email')->email()->required(),
+                            ])->columns(2),
                     ])->columnSpanFull(),
             ])->columnSpanFull(),
         ]);

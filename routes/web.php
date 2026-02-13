@@ -37,10 +37,10 @@ Route::get('/posts/search', [PostController::class, 'search'])->name('posts.sear
 Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
 
 Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
-Route::get('/brands/{brand}', [BrandController::class, 'show'])->name('brands.show');
+Route::get('/brands/{brand:slug}', [BrandController::class, 'show'])->name('brands.show');
 
 // --- Rutas del Modal de Vista RÁPIDA ---
-Route::get('/shop/quick-view/{product:slug}', [ProductController::class, 'quickView'])->name('product.quickView');
+// Route::get('/shop/quick-view/{product:slug}', [ProductController::class, 'quickView'])->name('product.quickView'); // ELIMINADO
 
 // Rutas del Carrito
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');

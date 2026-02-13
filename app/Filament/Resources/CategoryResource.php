@@ -81,7 +81,7 @@ PROMPT;
 
                         try {
                             $response = Http::withHeaders(['Content-Type' => 'application/json'])
-                                ->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $apiKey, [
+                                ->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=' . $apiKey, [
                                     'contents' => [
                                         ['parts' => [
                                             ['text' => $prompt]

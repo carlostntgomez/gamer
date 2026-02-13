@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,6 +16,19 @@ class DatabaseSeeder extends Seeder
         $this->command->info('======================================================================');
         $this->command->info('    Iniciando el proceso de siembra de la base de datos completa    ');
         $this->command->info('======================================================================');
+
+        // --- Creación del Usuario Administrador ---
+        $this->command->comment('Creando usuario administrador principal...');
+        User::firstOrCreate(
+            ['email' => 'admin@tecnny.com'],
+            [
+                'name' => 'Admin Tecnny',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+            ]
+        );
+        $this->command->info('Usuario administrador: admin@tecnny.com | Contraseña: password');
+        // --- Fin Creación ---
 
         $this->call([
             // 1. Configuración Base y Esencial

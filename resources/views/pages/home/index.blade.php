@@ -4,5 +4,6 @@
     <x-home.banners :banners="$banners" />
     <x-home.trending-products :featured-products="$featuredProducts" />
     <x-home.offers />
-    <x-home.brand-logos />
+    <x-home.new-products :new-products="$newProducts" />
+    <x-home.brand-logos :brands="$brands" />
 </x-layouts.app>

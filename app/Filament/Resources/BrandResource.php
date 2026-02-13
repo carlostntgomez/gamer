@@ -15,7 +15,7 @@ use Filament\Forms\Components\Section;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Filament\Tables\Columns\ToggleColumn;
 
 class BrandResource extends Resource
 {
@@ -48,7 +48,7 @@ class BrandResource extends Resource
 
                         FileUpload::make('logo_path')
                             ->label('Logo')
-                            ->directory('temp-uploads')
+                            ->directory('temp-uploads') // <-- CAMBIO REALIZADO AQUÍ
                             ->disk('public')
                             ->image()
                             ->imageEditor()
@@ -106,6 +106,8 @@ class BrandResource extends Resource
                     ->label('Nombre')
                     ->searchable()
                     ->sortable(),
+                ToggleColumn::make('is_visible')
+                    ->label('Visible'),
                 TextColumn::make('products_count')->counts('products')
                     ->label('Productos')
                     ->sortable(),

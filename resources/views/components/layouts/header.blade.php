@@ -1,3 +1,4 @@
+
 <!-- header start -->
 <header class="main-header">
     <div class="header-top-area" id="stickyheader">
@@ -71,11 +72,6 @@
                                                                     </a>
                                                                 </li>
                                                                 <li class="menusup-li">
-                                                                    <a href="/pro-wishlist" class="menusup-title">
-                                                                        <span class="sp-link-title">Lista de deseos</span>
-                                                                    </a>
-                                                                </li>
-                                                                <li class="menusup-li">
                                                                     <a href="/pro-tickets" class="menusup-title">
                                                                         <span class="sp-link-title">Mis tickets</span>
                                                                     </a>
@@ -123,11 +119,6 @@
                                                                 <li class="menusup-li">
                                                                     <a href="/cart-page" class="menusup-title">
                                                                         <span class="sp-link-title">Página del carrito</span>
-                                                                    </a>
-                                                                </li>
-                                                                <li class="menusup-li">
-                                                                    <a href="/wishlist-product" class="menusup-title">
-                                                                        <span class="sp-link-title">Producto de lista de deseos</span>
                                                                     </a>
                                                                 </li>
                                                                 <li class="menusup-li">
@@ -212,33 +203,12 @@
                                             </button>
                                         </div>
                                     </li>
-                                    <li class="side-wrap user-wrap">
-                                        <div class="user-wrapper">
-                                            <a class="javascript:void(0)" data-bs-toggle="collapse" href="#store-account" aria-expanded="false">
-                                                <span class="user-icon"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
-                                            </a>
-                                            <div class="user-drower collapse" id="store-account" style="">
-                                                <a href="/login-account">Iniciar Sesión</a>
-                                                <a href="/create-account">Registrarse</a>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li class="side-wrap wishlist-wrap">
-                                        <div class="wishlist-wrapper">
-                                            <a href="/wishlist-empty">
-                                                <span class="wishlist-icon-count">
-                                                    <span class="wishlist-icon"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg></span>
-                                                    <span class="wishlist-count">0</span>
-                                                </span>
-                                            </a>
-                                        </div>
-                                    </li>
                                     <li class="side-wrap cart-wrap">
                                         <div class="cart-wrapper">
                                             <a href="javascript:void(0)" class="js-cart-drawer">
                                                 <span class="cart-icon-count">
                                                     <span class="cart-icon"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg></span>
-                                                    <span class="cart-count">4</span>
+                                                    <span class="cart-count">{{ $cartCount ?? 0 }}</span>
                                                 </span>
                                             </a>
                                         </div>

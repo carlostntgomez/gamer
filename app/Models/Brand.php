@@ -19,6 +19,11 @@ class Brand extends Model
         'slug',
         'logo_path',
         'description',
+        'is_visible',
+    ];
+
+    protected $casts = [
+        'is_visible' => 'boolean',
     ];
 
     protected $appends = [

@@ -149,13 +149,16 @@
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <button type="button" class="btn add-to-cart ajax-spin-cart add-to-cart-ajax" data-product-id="{{ $product->id }}">
+                                                    <button type="button" class="btn add-to-cart ajax-spin-cart add-to-cart-btn" data-product-id="{{ $product->id }}">
                                                         <span class="cart-title">Añadir al carrito</span>
                                                     </button>
                                                 </div>
-                                                <a href="cart-empty.html" class="btn btn-cart btn-theme">
-                                                    <span>Comprar ahora</span>
-                                                </a>
+                                            </div>
+                                            <div class="drawer-cart-checkout mt-3">
+                                                <div class="cart-checkout-btn">
+                                                    <a href="{{ route('checkout.index') }}" class="btn btn-style2">Finalizar Compra</a>
+                                                    <a href="{{ route('cart.index') }}" class="btn btn-style">Ver Carrito</a>
+                                                </div>
                                             </div>
                                         </form>
                                     </div>
@@ -194,10 +197,10 @@
                                                 <table>
                                                     <tbody>
                                                         @if(is_array($product->specifications))
-                                                            @foreach($product->specifications as $spec)
+                                                            @foreach($product->specifications as $key => $value)
                                                                 <tr class="product-info">
-                                                                    <th>{{ $spec['key'] }}</th>
-                                                                    <td>{{ $spec['value'] }}</td>
+                                                                    <th>{{ $key }}</th>
+                                                                    <td>{{ $value }}</td>
                                                                 </tr>
                                                             @endforeach
                                                         @endif
@@ -369,7 +372,7 @@
         </div>
     </section>
     @endif
-    <!-- additional-product-section end -->
+    <!-- related-product-section end -->
 
     <!-- related-product-tranding start -->
     @if (isset($related_products) && $related_products->count() > 0)

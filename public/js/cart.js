@@ -1,10 +1,15 @@
+// Configuración global de AJAX para incluir el token CSRF en todas las peticiones
+$.ajaxSetup({
+    headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+    }
+});
+
 $(document).ready(function() {
 
     // =================================================================================
     // 1. FUNCIONES AUXILIARES PARA EL PANEL LATERAL DEL CARRITO (DRAWER)
     // =================================================================================
-
-    // Se adjuntan a 'window' para que sean accesibles globalmente desde otros scripts.
 
     window.openCartDrawer = () => {
         $("#cart-drawer").addClass('active');
@@ -25,13 +30,17 @@ $(document).ready(function() {
             success: function(responseHtml) {
                 const $existingDrawer = $('#cart-drawer');
                 if ($existingDrawer.length) {
-                    $existingDrawer.replaceWith(responseHtml);
+                    // Extraemos el contenido del HTML de respuesta
+                    const newContent = $(responseHtml).html();
+                    // Reemplazamos solo el contenido interno para no perder el estado (ej. la clase 'active')
+                    $existingDrawer.html(newContent);
                 } else {
+                    // Si el cajón no existe en absoluto, lo añadimos al body
                     $('body').append(responseHtml);
                 }
                 initializeCartDrawerEvents();
                 if (callback && typeof callback === 'function') {
-                    callback(); // Ejecuta el callback si existe (ej. openCartDrawer)
+                    callback();
                 }
             },
             error: (xhr) => console.error('Error al refrescar el cajón del carrito:', xhr.responseText)
@@ -67,10 +76,9 @@ $(document).ready(function() {
         $.ajax({
             url: url,
             method: method,
-            data: { ...data, _token: $('meta[name="csrf-token"]').attr('content') },
+            data: data,
             success: function(response) {
                 if(response.success) {
-                    // Única responsabilidad: refrescar el panel y actualizar el contador.
                     window.refreshCartDrawer(); 
                     $('.cart-count').text(response.cart_count);
                 } else {
@@ -83,7 +91,6 @@ $(document).ready(function() {
             }
         });
     };
-
 
     // =================================================================================
     // 2. LÓGICA DE "AÑADIR AL CARRITO" DESDE LA PÁGINA DE PRODUCTO
@@ -102,7 +109,6 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     $('.cart-count').text(response.cart_count);
-                    // Refresca y abre el panel del carrito.
                     window.refreshCartDrawer(window.openCartDrawer);
                 } else {
                     alert(response.message || 'No se pudo añadir el producto.');
@@ -115,7 +121,6 @@ $(document).ready(function() {
             complete: () => $button.removeClass('loading').prop('disabled', false)
         });
     });
-
 
     // =================================================================================
     // 3. MANEJADORES DE EVENTOS GENERALES

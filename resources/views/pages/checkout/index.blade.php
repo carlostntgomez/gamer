@@ -39,8 +39,8 @@
                                 <div id="validation-errors" class="alert alert-danger d-none"></div>
                                 <div class="billing-form">
                                     <ul class="input-2" data-animate="animate__fadeInUp">
-                                        <li class="billing-li"><label>Nombres *</label><input form="checkout-form" type="text" name="f-name" placeholder="Tus nombres" value="{{ old('f-name', auth()->user()->name ?? '') }}" required></li>
-                                        <li class="billing-li"><label>Apellidos *</label><input form="checkout-form" type="text" name="l-name" placeholder="Tus apellidos" value="{{ old('l-name', auth()->user()->last_name ?? '') }}" required></li>
+                                        <li class="billing-li"><label>Nombres *</label><input form="checkout-form" type="text" name="first_name" placeholder="Tus nombres" value="{{ old('first_name', auth()->user()->name ?? '') }}" required></li>
+                                        <li class="billing-li"><label>Apellidos *</label><input form="checkout-form" type="text" name="last_name" placeholder="Tus apellidos" value="{{ old('last_name', auth()->user()->last_name ?? '') }}" required></li>
                                     </ul>
                                     <ul class="billing-ul">
                                         <li class="billing-li" data-animate="animate__fadeInUp"><label>Departamento *</label><input form="checkout-form" type="text" name="state" placeholder="Ej: Antioquia" value="{{ old('state') }}" required></li>
@@ -63,7 +63,7 @@
                                         <li class="billing-li" data-animate="animate__fadeInUp"><label>Interior, Apto, etc. (Opcional)</label><input form="checkout-form" type="text" name="apartment" placeholder="Ej: Apto 502" value="{{ old('apartment') }}"></li>
                                     </ul>
                                     <ul class="input-2" data-animate="animate__fadeInUp">
-                                        <li class="billing-li"><label>Email *</label><input form="checkout-form" type="email" name="mail" placeholder="tu@correo.com" value="{{ old('mail', auth()->user()->email ?? '') }}" required></li>
+                                        <li class="billing-li"><label>Email *</label><input form="checkout-form" type="email" name="email" placeholder="tu@correo.com" value="{{ old('email', auth()->user()->email ?? '') }}" required></li>
                                         <li class="billing-li"><label>Celular / WhatsApp *</label><input form="checkout-form" type="text" name="phone" placeholder="Ej: 3001234567" value="{{ old('phone') }}" required></li>
                                     </ul>
                                 </div>
@@ -81,8 +81,8 @@
                                         </li>
                                         <div id="shipping-address-form" class="billing-form {{ old('ship_to_different_address') ? '' : 'd-none' }}" data-animate="animate__fadeInUp">
                                             <ul class="input-2 mt-3">
-                                                <li class="billing-li"><label>Nombres de quien recibe *</label><input form="checkout-form" type="text" name="shipping_f-name" value="{{ old('shipping_f-name') }}" placeholder="Nombres de quien recibe"></li>
-                                                <li class="billing-li"><label>Apellidos de quien recibe *</label><input form="checkout-form" type="text" name="shipping_l-name" value="{{ old('shipping_l-name') }}" placeholder="Apellidos de quien recibe"></li>
+                                                <li class="billing-li"><label>Nombres de quien recibe *</label><input form="checkout-form" type="text" name="shipping_first_name" value="{{ old('shipping_first_name') }}" placeholder="Nombres de quien recibe"></li>
+                                                <li class="billing-li"><label>Apellidos de quien recibe *</label><input form="checkout-form" type="text" name="shipping_last_name" value="{{ old('shipping_last_name') }}" placeholder="Apellidos de quien recibe"></li>
                                             </ul>
                                             <ul class="billing-ul mt-3">
                                                 <li class="billing-li"><label>Departamento *</label><input form="checkout-form" type="text" name="shipping_state" value="{{ old('shipping_state') }}" placeholder="Departamento"></li>
@@ -115,10 +115,15 @@
                                 <h2>En tu carrito ({{ $cartCount }})</h2>
                                 <ul class="check-ul">
                                     @foreach($cart as $id => $details)
-                                    <li>
-                                        <div class="check-pro-img"><a href="#"><img src="{{ Storage::url($details['image']) }}" class="img-fluid" alt="{{ $details['name'] }}"></a></div>
-                                        <div class="check-content"><a href="#">{{ $details['name'] }}</a><div class="check-qty-pric"><span class="check-qty">{{ $details['quantity'] }} X</span><span class="check-price">${{ number_format($details['price'], 0, ',', '.') }}</span></div></div>
-                                    </li>
+                                        @php
+                                            $imageUrl = isset($details['image']) && $details['image'] ? Storage::url($details['image']) : url('/images/placeholder-product.png');
+                                        @endphp
+                                        <li>
+                                            <div class="check-pro-img">
+                                                <a href="#"><img src="{{ $imageUrl }}" class="img-fluid" alt="{{ $details['name'] }}"></a>
+                                            </div>
+                                            <div class="check-content"><a href="#">{{ $details['name'] }}</a><div class="check-qty-pric"><span class="check-qty">{{ $details['quantity'] }} X</span><span class="check-price">${{ number_format($details['price'], 0, ',', '.') }}</span></div></div>
+                                        </li>
                                     @endforeach
                                 </ul>
                             </div>
@@ -131,7 +136,7 @@
                             <form onsubmit="return false;">
                                 <ul class="order-form pro-submit">
                                     <li class="label-info" data-animate="animate__fadeInUp"><label class="box-area"><span class="text">Transferencia Bancaria (Bancolombia, Nequi)</span><input form="checkout-form" type="radio" name="payment_method" value="bank_transfer" checked="checked" class="cust-checkbox"><span class="cust-check"></span></label></li>
-                                    <li class="label-info" data-animate="animate__fadeInUp"><label class="box-area"><span class="text">Pago Contra Entrega</span><input form="checkout-form" type="radio" name="payment_method" value="Contraentrega" class="cust-checkbox"><span class="cust-check"></span></label></li>
+                                    <li class="label-info" data-animate="animate__fadeInUp"><label class="box-area"><span class="text">Pago Contra Entrega</span><input form="checkout-form" type="radio" name="payment_method" value="cash_on_delivery" class="cust-checkbox"><span class="cust-check"></span></label></li>
                                 </ul>
                                 <ul class="order-form pro-submit">
                                     <li class="check-box label-info" data-animate="animate__fadeInUp"><label class="box-area"><span class="text">He leído y acepto los <a href="{{ route('terms-condition.index') }}" target="_blank">términos y condiciones</a> *</span><input form="checkout-form" type="checkbox" name="terms_and_conditions" id="terms_and_conditions" class="cust-checkbox" required><span class="cust-check"></span></label></li>

@@ -15,8 +15,26 @@ class ShopController extends Controller
 
     public function search(Request $request)
     {
-        // La lógica de búsqueda puede implementarse aquí en el futuro
-        return redirect()->route('shop.index');
+        $query = $request->input('q');
+
+        // Si la búsqueda está vacía, redirigir a la tienda
+        if (!$query) {
+            return redirect()->route('shop.index');
+        }
+
+        // Realizar la búsqueda en la base de datos
+        $products = Product::where('is_visible', true)
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('description', 'like', "%{$query}%");
+            })
+            ->paginate(12);
+
+        // Devolver la vista con los resultados y el término de búsqueda
+        return view('pages.shop.index', [
+            'products' => $products,
+            'searchTerm' => $query,
+        ]);
     }
 
     public function show(Product $product)

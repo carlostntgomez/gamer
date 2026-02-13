@@ -93,7 +93,7 @@ PROMPT;
 
                         try {
                             $response = Http::withHeaders(['Content-Type' => 'application/json'])
-                                ->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $apiKey, [
+                                ->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=' . $apiKey, [
                                     'contents' => [
                                         ['parts' => [
                                             ['text' => $prompt]
@@ -146,23 +146,59 @@ PROMPT;
             ])->columnSpanFull(),
             Tabs::make('ProductTabs')->tabs([
                 Tabs\Tab::make('Principal')->icon('heroicon-o-clipboard-document')->schema([
-                    Forms\Components\TextInput::make('name')->label('Nombre del Producto')->required()->maxLength(255)->live(onBlur: true)->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, ?string $state, ?string $old) {
-                        if (!$state) { return; }
-                        $set('seo_title', $state);
-                        $currentSlug = $get('slug');
-                        $expectedOldSlug = Str::slug($old ?? '');
-                        if (empty($currentSlug) || $currentSlug === $expectedOldSlug) {
-                            $set('slug', Str::slug($state));
-                        }
-                    }),
-                    Forms\Components\TextInput::make('slug')->label('Slug')->required()->unique(Product::class, 'slug', ignoreRecord: true)->live()->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))->helperText('URL amigable. Se genera del nombre, pero puedes editarla manualmente.'),
-                    Forms\Components\Select::make('brand_id')->relationship('brand', 'name')->searchable()->required()->label('Marca'),
-                    Forms\Components\Select::make('categories')->relationship('categories', 'name')->multiple()->searchable()->required()->label('Categorías'),
-                ])->columns(2),
+                    Forms\Components\Group::make()->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nombre del Producto')
+                            ->required()
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, ?string $state, ?string $old) {
+                                if (!$state) { return; }
+                                $set('seo_title', $state);
+                                $currentSlug = $get('slug');
+                                $expectedOldSlug = Str::slug($old ?? '');
+                                if (empty($currentSlug) || $currentSlug === $expectedOldSlug) {
+                                    $set('slug', Str::slug($state));
+                                }
+                            })
+                            ->columnSpanFull(),
+                        Forms\Components\Grid::make(2)->schema([
+                            Forms\Components\TextInput::make('slug')
+                                ->label('Slug')
+                                ->required()
+                                ->unique(Product::class, 'slug', ignoreRecord: true)
+                                ->live()->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))
+                                ->helperText('URL amigable. Se genera del nombre, pero puedes editarla manualmente.'),
+                            Forms\Components\Select::make('brand_id')
+                                ->relationship('brand', 'name')
+                                ->searchable()
+                                ->required()
+                                ->label('Marca'),
+                        ]),
+                        Forms\Components\Select::make('categories')
+                            ->relationship('categories', 'name')
+                            ->multiple()
+                            ->searchable()
+                            ->required()
+                            ->label('Categorías')
+                            ->columnSpanFull(),
+                    ])->columnSpanFull(),
+                ]),
                 Tabs\Tab::make('Contenido')->icon('heroicon-o-pencil-square')->schema([
-                    Forms\Components\Textarea::make('short_description')->label('Descripción Corta')->rows(3)->columnSpanFull()->helperText('Un resumen breve para listados y vistas previas.'),
+                    Forms\Components\Textarea::make('short_description')
+                        ->label('Descripción Corta')
+                        ->rows(3)
+                        ->columnSpanFull()
+                        ->helperText('Un resumen breve para listados y vistas previas.'),
                     Forms\Components\RichEditor::make('long_description')->label('Descripción Larga')->columnSpanFull(),
-                    Forms\Components\KeyValue::make('specifications')->label('Especificaciones')->keyLabel('Característica')->valueLabel('Valor')->columnSpanFull()->helperText('Añade las especificaciones técnicas del producto.'),
+                    Forms\Components\KeyValue::make('specifications')
+                        ->label('Especificaciones')
+                        ->keyLabel('Característica')
+                        ->keyPlaceholder('Ej: Procesador')
+                        ->valueLabel('Valor')
+                        ->valuePlaceholder('Ej: AMD Ryzen 7 5800X')
+                        ->columnSpanFull()
+                        ->helperText('Añade las especificaciones técnicas del producto.'),
                 ]),
                 Tabs\Tab::make('Detalles y Stock')->icon('heroicon-o-archive-box')->schema([
                     Forms\Components\TextInput::make('sku')->label('SKU (Stock Keeping Unit)')->unique(Product::class, 'sku', ignoreRecord: true)->helperText('Código único para identificar el producto. Ej: CAM-ROJ-L-001'),
@@ -237,7 +273,7 @@ PROMPT;
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nombre')
-                    ->searchable()
+                    ->searchable(['name', 'sku'])
                     ->sortable()
                     ->weight('bold')
                     ->description(fn (Product $record): string => $record->sku ? "SKU: {$record->sku}" : 'SKU no definido')
@@ -309,9 +345,11 @@ PROMPT;
                     ->color('success')
                     ->tooltip('Ver producto en la tienda')
                     ->iconButton(),
-                Tables\Actions\ViewAction::make()->icon('heroicon-o-document-magnifying-glass')->color('gray')->tooltip('Ver detalles del producto')->iconButton(),
-                Tables\Actions\EditAction::make()->icon('heroicon-o-pencil-square')->color('warning')->tooltip('Editar producto')->iconButton(),
-                Tables\Actions\DeleteAction::make()->icon('heroicon-o-trash')->color('danger')->tooltip('Eliminar producto')->iconButton(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make()->icon('heroicon-o-document-magnifying-glass')->color('gray')->tooltip('Ver detalles del producto'),
+                    Tables\Actions\EditAction::make()->icon('heroicon-o-pencil-square')->color('warning')->tooltip('Editar producto'),
+                    Tables\Actions\DeleteAction::make()->icon('heroicon-o-trash')->color('danger')->tooltip('Eliminar producto'),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([ Tables\Actions\DeleteBulkAction::make() ]),

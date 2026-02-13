@@ -1,5 +1,6 @@
 <x-layouts.app>
     @php
+        // Se vuelve a la lógica original basada en la sesión, como la usa el JS personalizado
         $cart = session('cart', []);
         $subtotal = array_reduce($cart, fn($carry, $item) => $carry + $item['price'] * $item['quantity'], 0);
         $cartCount = count($cart);
@@ -48,14 +49,13 @@
                                         </span>
                                     </div>
                                     <div class="item-wrap">
-                                        {{-- INICIO DE LA SECCIÓN CORREGIDA --}}
+                                        {{-- Se restaura la lógica original para que coincida con el JS --}}
                                         @foreach($cart as $id => $details)
                                             @php
                                                 $product = \App\Models\Product::find($id);
                                                 $productUrl = $product ? route('shop.show', $product->slug) : '#';
-                                                $imageUrl = $details['image'] ? Storage::url($details['image']) : url('/images/placeholder-product.png');
+                                                $imageUrl = isset($details['image']) && $details['image'] ? Storage::url($details['image']) : url('/images/placeholder-product.png');
                                             @endphp
-                                            {{-- Se restaura la estructura original de la plantilla para la página del carrito --}}
                                             <ul class="cart-wrap cart-item" data-id="{{ $id }}">
                                                 <li class="item-info">
                                                     <div class="item-img">
@@ -82,7 +82,6 @@
                                                     </div>
                                                     <div class="item-remove">
                                                         <span class="remove-wrap" data-animate="animate__fadeInUp">
-                                                             {{-- Se reemplaza el texto "Eliminar" por el icono de la plantilla --}}
                                                             <a href="javascript:void(0)" class="text-danger cart-remove" data-id="{{ $id }}" style="font-size: 1.2rem;"><i class="bi bi-trash"></i></a>
                                                         </span>
                                                     </div>
@@ -92,7 +91,6 @@
                                                 </li>
                                             </ul>
                                         @endforeach
-                                        {{-- FIN DE LA SECCIÓN CORREGIDA --}}
                                     </div>
                                     <div class="cart-buttons" data-animate="animate__fadeInUp">
                                         <a href="{{ route('shop.index') }}" class="btn-style2">Continuar comprando</a>
@@ -123,6 +121,7 @@
                         </div>
                     </div>
                 </div>
+                {{-- Este formulario es para limpiar todo el carrito, necesita el token CSRF --}}
                 <form id="clear-cart-form" action="{{ route('cart.clear') }}" method="POST" style="display: none;">
                     @csrf
                     @method('DELETE')
@@ -147,90 +146,4 @@
         </div>
     </section>
     <!-- cart-page end -->
-
-    <!-- product-tranding start -->
-    @if($relatedProducts->isNotEmpty())
-    <section class="Trending-product bg-color section-ptb">
-        <div class="collection-category">
-            <div class="container">
-                <div class="row">
-                    <div class="col">
-                        <div class="section-capture">
-                            <div class="section-title">
-                                <span class="sub-title" data-animate="animate__fadeInUp">Browse collection</span>
-                                <h2><span data-animate="animate__fadeInUp">También te podría interesar</span></h2>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="container">
-                <div class="row">
-                    <div class="col">
-                        <div class="collection-wrap">
-                            <div class="collection-slider swiper" id="Trending-product">
-                                <div class="swiper-wrapper">
-                                    @foreach ($relatedProducts as $product)
-                                        <div class="swiper-slide" data-animate="animate__fadeInUp">
-                                            <x-product-card :product="$product" />
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                             <div class="swiper-buttons">
-                                <div class="swiper-buttons-wrap">
-                                    <button class="swiper-prev swiper-prev-Trending"><span><i class="feather-arrow-left"></i></span></button>
-                                    <button class="swiper-next swiper-next-Trending"><span><i class="feather-arrow-right"></i></span></button>
-                                </div>
-                            </div>
-                            <div class="swiper-dots">
-                                <div class="swiper-pagination swiper-pagination-Trending"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    @endif
-    <!-- product-tranding end -->
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Inicializar el carrusel de productos relacionados
-            if (document.getElementById('Trending-product')) {
-                new Swiper('#Trending-product', {
-                    slidesPerView: 4,
-                    spaceBetween: 30,
-                    loop: true,
-                    navigation: {
-                        nextEl: '.swiper-next-Trending',
-                        prevEl: '.swiper-prev-Trending',
-                    },
-                    pagination: {
-                        el: '.swiper-pagination-Trending',
-                        clickable: true,
-                    },
-                    breakpoints: {
-                        0: {
-                            slidesPerView: 1,
-                            spaceBetween: 15,
-                        },
-                        480: {
-                            slidesPerView: 2,
-                            spaceBetween: 15,
-                        },
-                        768: {
-                            slidesPerView: 3,
-                            spaceBetween: 20,
-                        },
-                        1200: {
-                            slidesPerView: 4,
-                            spaceBetween: 30,
-                        }
-                    }
-                });
-            }
-        });
-    </script>
 </x-layouts.app>

@@ -78,7 +78,9 @@
                                                 <div class="collection-wrap">
                                                     <ul class="product-view-ul">
                                                         @foreach($products as $product)
-                                                            <x-product-card :product="$product" />
+                                                            <li class="pro-item-li" data-animate="animate__fadeInUp">
+                                                                <x-product-card :product="$product" />
+                                                            </li>
                                                         @endforeach
                                                     </ul>
                                                 </div>
