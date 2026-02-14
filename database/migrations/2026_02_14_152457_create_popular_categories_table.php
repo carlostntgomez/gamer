@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('popular_categories', function (Blueprint $table) {
-            $table->integer('id')->primary();
-            $table->integer('category_id');
+            $table->id();
+            $table->foreignId('category_id');
             $table->integer('sort_order')->default(0);
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();

@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('posts', function (Blueprint $table) {
-            $table->integer('id')->primary();
+            $table->id();
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('content');
             $table->text('excerpt')->nullable();
             $table->dateTime('published_at')->nullable();
-            $table->integer('user_id');
+            $table->foreignId('user_id');
             $table->string('seo_title')->nullable();
             $table->text('seo_description')->nullable();
             $table->text('seo_keywords')->nullable();
@@ -27,7 +27,7 @@ return new class extends Migration
             $table->dateTime('deleted_at')->nullable();
             $table->string('image_path')->nullable();
             $table->boolean('is_published')->default(false);
-            $table->integer('author_id')->nullable();
+            $table->foreignId('author_id')->nullable();
             $table->string('main_image_path')->nullable();
         });
     }

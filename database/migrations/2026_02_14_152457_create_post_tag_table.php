@@ -12,13 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('post_tag', function (Blueprint $table) {
-            $table->integer('id')->primary();
-            $table->integer('post_id');
-            $table->integer('tag_id');
-            $table->dateTime('created_at')->nullable();
-            $table->dateTime('updated_at')->nullable();
+            $table->foreignId('post_id');
+            $table->foreignId('tag_id');
 
-            $table->unique(['post_id', 'tag_id']);
+            $table->primary(['post_id', 'tag_id']);
         });
     }
 

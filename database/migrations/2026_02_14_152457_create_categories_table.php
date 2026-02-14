@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('categories', function (Blueprint $table) {
-            $table->integer('id')->primary();
+            $table->id();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->integer('parent_id')->nullable();
+            $table->foreignId('parent_id')->nullable();
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();
             $table->string('seo_title')->nullable();

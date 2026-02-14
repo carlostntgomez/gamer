@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('billing_addresses', function (Blueprint $table) {
-            $table->integer('id')->primary();
-            $table->integer('order_id');
+            $table->id();
+            $table->foreignId('order_id');
             $table->string('first_name');
             $table->string('last_name');
             $table->string('address');

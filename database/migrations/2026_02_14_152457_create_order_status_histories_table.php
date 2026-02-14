@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('order_status_histories', function (Blueprint $table) {
-            $table->integer('id')->primary();
-            $table->integer('order_id');
+            $table->id();
+            $table->foreignId('order_id');
             $table->string('status');
             $table->text('notes')->nullable();
             $table->dateTime('created_at')->nullable();

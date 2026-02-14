@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('deal_of_the_days', function (Blueprint $table) {
-            $table->integer('id')->primary();
-            $table->integer('product_id');
+            $table->id();
+            $table->foreignId('product_id');
             $table->decimal('deal_price');
             $table->date('end_date');
             $table->dateTime('created_at')->nullable();

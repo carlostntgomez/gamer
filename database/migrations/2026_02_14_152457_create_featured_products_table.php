@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('featured_products', function (Blueprint $table) {
-            $table->integer('id')->primary();
-            $table->integer('product_id');
+            $table->id();
+            $table->foreignId('product_id');
             $table->integer('order')->default(0);
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();
