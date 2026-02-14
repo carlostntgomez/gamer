@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('main_sliders', function (Blueprint $table) {
-            $table->boolean('is_visible')->default(true)->after('button_link');
+        Schema::table('billing_addresses', function (Blueprint $table) {
+            $table->foreign(['order_id'], null)->references(['id'])->on('orders')->onUpdate('no action')->onDelete('cascade');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('main_sliders', function (Blueprint $table) {
-            $table->dropColumn('is_visible');
+        Schema::table('billing_addresses', function (Blueprint $table) {
+            $table->dropForeign();
         });
     }
 };

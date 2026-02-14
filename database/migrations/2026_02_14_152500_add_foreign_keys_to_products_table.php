@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('gemini_api_keys', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::table('products', function (Blueprint $table) {
+            $table->foreign(['brand_id'], null)->references(['id'])->on('brands')->onUpdate('no action')->onDelete('set null');
         });
     }
 
@@ -22,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('gemini_api_keys');
+        Schema::table('products', function (Blueprint $table) {
+            $table->dropForeign();
+        });
     }
 };

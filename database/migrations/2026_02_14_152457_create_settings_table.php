@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('shipping_addresses', function (Blueprint $table) {
-            $table->string('apartment')->nullable()->after('address');
+        Schema::create('settings', function (Blueprint $table) {
+            $table->integer('id')->primary();
+            $table->string('key')->unique();
+            $table->text('value')->nullable();
+            $table->dateTime('created_at')->nullable();
+            $table->dateTime('updated_at')->nullable();
         });
     }
 
@@ -21,8 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('shipping_addresses', function (Blueprint $table) {
-            $table->dropColumn('apartment');
-        });
+        Schema::dropIfExists('settings');
     }
 };
